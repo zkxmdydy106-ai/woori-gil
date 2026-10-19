@@ -1,0 +1,7 @@
+node_modules/
+output/
+site/
+.wrangler/
+cloudflare/wrangler.toml
+.DS_Store
+Thumbs.db

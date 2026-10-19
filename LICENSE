@@ -1,0 +1,14 @@
+우리학교 길잡이 — 사용 조건
+
+Copyright (c) 2026 zkxmdydy106-ai
+
+이 저장소의 직접 만든 코드·디자인·문구는 크리에이티브 커먼즈 저작자표시-비영리 4.0 국제 라이선스(CC BY-NC 4.0)로 공개합니다.
+https://creativecommons.org/licenses/by-nc/4.0/deed.ko
+
+- 학교·교사·교육 목적이라면 누구나 자유롭게 쓰고, 고치고, 다시 나눌 수 있어요.
+- 출처(이 저장소)를 밝혀 주세요.
+- 돈을 받고 팔거나 영리 서비스에 쓰는 것은 안 돼요.
+
+함께 들어 있는 공개 라이브러리는 각자의 라이선스를 따릅니다:
+pdf.js (Apache-2.0), Tabler Icons (MIT), rhwp 한글 편집기 (MIT, CDN 으로 불러옴),
+ONNX Runtime (MIT), Tesseract.js (Apache-2.0), PaddleOCR 모델 (Apache-2.0).

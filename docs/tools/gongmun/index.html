@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>공문 기안 도우미</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  /* 공문 기안 도우미: 종류를 고르고 칸을 채우면 에듀파인 기안문 본문이 오른쪽에 바로 만들어진다. AI 없이 규칙으로만 만든다. */
+  :root {
+    --bg: #f6f7f5; --panel: #fff; --ink: #1c211e; --muted: #5d665f; --faint: #8b938c; --line: #e1e5df; --line2: #cdd3cb;
+    --accent: #1f6b57; --accent-ink: #fff; --accent-soft: #e3f1ea; --warn: #b3541e; --warn-soft: #fcefe4; --paper: #fffdf8;
+    --r: 12px; color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #141715; --panel: #1d211e; --ink: #e8ece8; --muted: #a6aea7; --faint: #7b837c; --line: #2c322d; --line2: #3b423c;
+    --accent: #5cc3a2; --accent-ink: #0d1a14; --accent-soft: #1b3229; --warn: #f0a070; --warn-soft: #3a261a; --paper: #1a1d1b; color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --bg: #141715; --panel: #1d211e; --ink: #e8ece8; --muted: #a6aea7; --faint: #7b837c; --line: #2c322d; --line2: #3b423c;
+    --accent: #5cc3a2; --accent-ink: #0d1a14; --accent-soft: #1b3229; --warn: #f0a070; --warn-soft: #3a261a; --paper: #1a1d1b; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15.5px/1.55 Pretendard, "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif; word-break: keep-all; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 18px 16px 60px; }
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  header h1 { font-size: 21px; margin: 0; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--muted); font-size: 14px; flex-basis: 100%; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 15.5px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .n { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: 12.5px; font-weight: 800; }
+  .hint { color: var(--faint); font-size: 13px; margin: -4px 0 10px; }
+  .types { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .type { text-align: left; border: 1px solid var(--line2); background: var(--panel); border-radius: 10px; padding: 9px 11px; cursor: pointer; }
+  .type b { display: block; font-size: 14.5px; }
+  .type span { font-size: 12.5px; color: var(--muted); }
+  .type.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; font-weight: 650; color: var(--muted); min-width: 0; }
+  input.i, select.i, textarea.i { width: 100%; border: 1px solid var(--line2); border-radius: 9px; padding: 8px 10px; background: var(--panel); font-weight: 400; color: var(--ink); }
+  textarea.i { resize: vertical; min-height: 60px; line-height: 1.5; }
+  input.i:focus, select.i:focus, textarea.i:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .row { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 8px; }
+  .row.three { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; }
+  .row.item { grid-template-columns: 104px minmax(0, 0.8fr) minmax(0, 2fr) auto; align-items: end; }
+  .row.att { grid-template-columns: minmax(0, 1fr) 70px auto; align-items: end; }
+  .stack { display: grid; gap: 8px; }
+  .btn { border: 1px solid var(--line2); background: var(--panel); border-radius: 9px; padding: 7px 12px; cursor: pointer; font-weight: 650; font-size: 14px; }
+  .btn:hover { border-color: var(--ink); }
+  .btn.pri { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.sm { padding: 6px 9px; font-size: 13px; }
+  .btn.x { color: var(--faint); border-color: transparent; padding: 6px 8px; }
+  .btn.x:hover { color: var(--warn); }
+  .chk { display: flex; align-items: center; gap: 7px; font-size: 14px; margin: 4px 0; }
+  .chk input { width: 17px; height: 17px; accent-color: var(--accent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid var(--line2); background: var(--panel); border-radius: 999px; padding: 6px 13px; cursor: pointer; font-weight: 650; font-size: 14px; color: var(--ink); }
+  .chip:hover { border-color: var(--accent); }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  div.f > span { font-size: 13.5px; font-weight: 650; color: var(--muted); }
+  .pick { display: flex; gap: 6px; margin-top: 4px; }
+  .pick .i { padding: 5px 8px; font-size: 13.5px; }
+  .tips { margin-top: 10px; font-size: 13px; color: var(--muted); background: var(--panel); border: 1px dashed var(--line2); border-radius: 10px; padding: 9px 12px; }
+  .tips b { color: var(--ink); }
+  .money { font-size: 12.5px; color: var(--accent); font-weight: 650; }
+  .out { position: sticky; top: 14px; }
+  .paper { background: var(--paper); border: 1px solid var(--line2); border-radius: var(--r); padding: 18px 18px 22px; min-height: 260px; }
+  .paper pre { margin: 0; white-space: pre-wrap; word-break: break-all; font: 15.5px/1.75 "함초롬바탕", "HCR Batang", "Batang", "Nanum Myeongjo", serif; tab-size: 4; }
+  .out-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+  .out-bar .t { font-weight: 800; font-size: 15.5px; }
+  .out-bar .sp { flex: 1; }
+  .warn { margin-top: 10px; background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 8px 12px; font-size: 13.5px; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 90px); background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 10px; font-weight: 650; transition: transform .2s; z-index: 9; }
+  .toast.show { transform: translate(-50%, 0); }
+  .ai textarea.i { margin-bottom: 8px; }
+  .ai-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+  a.btn { text-decoration: none; color: var(--ink); display: inline-block; }
+  .gem { background: var(--warn-soft); color: var(--ink); border-radius: 10px; padding: 9px 12px; font-size: 14px; margin-bottom: 8px; }
+  .opt { font-weight: 500; color: var(--faint); font-size: 13px; }
+  .card h2 .n { min-width: 22px; width: auto; padding: 0 5px; border-radius: 11px; }
+  .back { color: var(--muted); text-decoration: none; font-size: 14px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .out { position: static; } }
+  @media (max-width: 560px) {
+    .row, .row.three, .row.item { grid-template-columns: 1fr 1fr; }
+    .row.three > :first-child, .row.item > :nth-child(3) { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>공문 기안 도우미</h1>
+    <p>종류를 고르고 칸을 채우면 오른쪽(휴대폰은 아래)에 에듀파인 기안 본문이 바로 만들어져요. 복사해서 에듀파인 본문 칸에 붙여 넣으세요. 입력한 내용은 이 기기에만 남아요.</p>
+  </header>
+
+  <div class="grid">
+    <div>
+      <section class="card">
+        <h2><span class="n">1</span>관련 문서</h2>
+        <p class="hint">받은 공문을 근거로 쓸 때 적어요. 없으면 비워 두거나 '관련 줄 넣기'를 꺼요.</p>
+        <label class="chk"><input type="checkbox" id="useRel" checked> 관련 줄 넣기 (끄면 본문이 번호 없이 시작해요)</label>
+        <div class="stack" id="rels"></div>
+        <button class="btn sm" id="addRel" type="button">+ 관련 문서 추가</button>
+      </section>
+
+      <section class="card ai">
+        <h2><span class="n">AI</span>공문서 작성기 GPT로 쓰기 <span class="opt">(선택)</span></h2>
+        <p class="hint">무엇을 쓸지 적고 버튼을 누르면 '에듀파인 공문서 작성기' GPT가 새 탭으로 열려요. 관련·오늘 날짜는 질문 앞에 자동으로 붙어요. GPT가 에듀파인 형식에 맞춰 답하니 <b>답을 복사해 바로 에듀파인 본문에 붙여 넣으면 끝</b>이에요. 이 화면에 다시 붙일 필요 없어요. 학생 이름 같은 개인정보는 적지 마세요.</p>
+        <textarea class="i" id="aiAsk" rows="2" placeholder="예: 다음 주 수요일 교과협의회 다과 12만원 품의, 교직원 40명"></textarea>
+        <div class="ai-btns"><a class="btn" target="_blank" rel="noopener" data-ai="gpt" href="https://chatgpt.com/g/g-69deedbead108191b32215ce5735e6a7-edyupain-gongmunseo-jagseonggiv2">공문서 작성기 GPT에 묻기</a></div>
+        <p class="hint" id="aiMsg" style="margin:0"></p>
+      </section>
+
+      <section class="card">
+        <h2><span class="n">2</span>어떤 문서인가요?</h2>
+        <div class="types" id="types"></div>
+      </section>
+
+      <section class="card">
+        <h2><span class="n">3</span>본문</h2>
+        <div id="body"></div>
+      </section>
+
+      <section class="card">
+        <h2><span class="n">4</span>붙임</h2>
+        <p class="hint">파일 이름만 적으면 '1부.'와 번호는 알아서 붙어요. 없으면 비워 두세요.</p>
+        <div class="stack" id="atts"></div>
+        <button class="btn sm" id="addAtt" type="button">+ 붙임 추가</button>
+        <label class="chk" style="margin-top:10px"><input type="checkbox" id="blankBefore" checked> 붙임 앞에 빈 줄 한 줄 (편람: 붙여 써도, 띄워 써도 돼요)</label>
+        <label class="chk"><input type="checkbox" id="wonAfter" checked> 금액 숫자 뒤에 '원' 쓰기 (편람: 금113,560원(금일십일만삼천오백육십원))</label>
+      </section>
+    </div>
+
+    <div class="out">
+      <div class="out-bar"><span class="t">기안 본문</span><span class="sp"></span><button class="btn" id="reset" type="button">모두 지우기</button><button class="btn pri" id="copy" type="button">복사</button></div>
+      <div class="paper"><pre id="pv"></pre></div>
+      <p class="hint" id="draftNote" hidden style="margin:8px 0 0">AI가 채운 문안을 보여 주는 중이에요. 왼쪽 칸을 고치면 칸 내용으로 다시 만들어져요. <button class="btn sm" type="button" id="dropDraft">칸 내용으로 돌아가기</button></p>
+      <div class="warn" id="warn" hidden></div>
+      <div class="tips"><b>에듀파인에 붙인 뒤</b> · 두 줄 넘게 이어지는 항목은 둘째 줄 첫 글자에 커서를 두고 <b>Shift+Tab</b>을 눌러 내용 첫 글자에 맞춰요(스페이스로 맞추면 다른 기관에서 어긋나요). · 본문이 오른쪽 끝에서 끝나면 '끝.'은 다음 줄 처음에 2타 띄우고 써요.</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+  /* ── 문서 종류 (지침: 01~05) ── */
+  var TYPES = [
+    { id: 'simple', name: '간단 보고·송부', sub: '붙임과 같이 보고·제출' },
+    { id: 'notice', name: '대외 시행공문', sub: '안내·협조·제출 요청' },
+    { id: 'expense', name: '지출·구입 품의', sub: '간식·물품·운영비' },
+    { id: 'plan', name: '계획·운영 품의', sub: '행사·프로그램 운영' },
+    { id: 'lecturer', name: '강사 품의', sub: '위촉·대체·강사료' },
+    { id: 'refund', name: '환불 품의', sub: '수강료·참가비 환불' },
+    { id: 'free', name: '복잡형 (직접 구성)', sub: '항목을 단계별로' }
+  ];
+  var IND = '  ';                                  // 하위 항목 들여쓰기
+  var GA = '가나다라마바사아자차카타파하거너더러머버서어저처커터퍼허'.split('');
+  var CIRC = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'.split('');
+  var CGA = '㉮㉯㉰㉱㉲㉳㉴㉵㉶㉷㉸㉹㉺㉻'.split('');
+  var MARK = [function (i) { return GA[i] + '.'; }, function (i) { return (i + 1) + ')'; }, function (i) { return GA[i] + ')'; }, function (i) { return '(' + (i + 1) + ')'; },
+    function (i) { return '(' + GA[i] + ')'; }, function (i) { return CIRC[i] || '(' + (i + 1) + ')'; }, function (i) { return CGA[i] || '(' + GA[i] + ')'; }];
+  var LV_NAME = ['가.', '1)', '가)', '(1)', '(가)', '①', '㉮'];
+
+  var KEY = 'gongmun.v1';
+  var blank = function () {
+    return { type: 'expense', useRel: true, blankBefore: true, rel: [{ org: '', no: '', date: '' }], att: [{ name: '', n: 1 }],
+      f: { subject: '', verb: '보고', sentence: '', name: '', act: '구입', target: '', when: '', what: '', amount: '', reason: '', program: '', lact: '위촉', items: [{ lv: 1, label: '', text: '' }] } };
+  };
+  var st;
+  try { st = JSON.parse(localStorage.getItem(KEY)) || blank(); } catch (e) { st = blank(); }
+  var save = function () { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+
+  /* ── 글자 다루기 ── */
+  // 받침에 따라 을/를, 이/가
+  function josa(w, a, b) {
+    var t = String(w || '').trim().replace(/[\s'"’”)\]]+$/, ''); if (!t) return a;
+    var c = t.charCodeAt(t.length - 1);
+    if (c >= 0xAC00 && c <= 0xD7A3) return (c - 0xAC00) % 28 ? a : b;
+    if (/[0-9]$/.test(t)) return /[013678]$/.test(t) ? a : b;
+    return /[lmnr]$/i.test(t) ? a : b;
+  }
+  // 2026-03-23 → 2026. 3. 23.
+  function fmtDate(v) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); return m ? (+m[1]) + '. ' + (+m[2]) + '. ' + (+m[3]) + '.' : String(v || '').trim(); }
+  // 120000 → 금120,000(금일십이만원)
+  function hanNum(n) {
+    var D = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'], U = ['', '십', '백', '천'], B = ['', '만', '억', '조'];
+    if (!n) return '영';
+    var out = '', g = 0;
+    while (n > 0) {
+      var part = n % 10000, s = '';
+      for (var i = 0; i < 4; i++) { var d = Math.floor(part / Math.pow(10, i)) % 10; if (d) s = D[d] + U[i] + s; }
+      if (s) out = s + B[g] + out;
+      n = Math.floor(n / 10000); g++;
+    }
+    return out;
+  }
+  function money(v) {
+    var n = parseInt(String(v || '').replace(/[^\d]/g, ''), 10);
+    if (!n) return '';
+    return '금' + n.toLocaleString('ko-KR') + (st.wonAfter === false ? '' : '원') + '(금' + hanNum(n) + '원)';
+  }
+  var clean = function (s) { return String(s || '').trim().replace(/\s+/g, ' '); };
+
+  /* ── 기안문 만들기 ── */
+  function build() {
+    var L = [], warn = [];
+    var rel = st.rel.filter(function (r) { return clean(r.org) || clean(r.no) || r.date; });
+    var fmtRel = function (r) { return clean(r.org) + (clean(r.no) ? '-' + clean(r.no) : '') + (r.date ? '(' + fmtDate(r.date) + ')' : ''); };
+    if (st.useRel) {
+      if (rel.length === 0) L.push('1. 관련:');
+      else if (rel.length <= 2) L.push('1. 관련: ' + rel.map(fmtRel).join(', '));
+      else { L.push('1. 관련'); rel.forEach(function (r, i) { L.push(IND + GA[i] + '. ' + fmtRel(r)); }); }
+    }
+    var pre = st.useRel ? '2. ' : '';
+    var f = st.f, t = st.type;
+    var item = function (i, label, value) { L.push(IND + GA[i] + '. ' + label + ': ' + clean(value)); };
+
+    if (t === 'simple') {
+      var sj = clean(f.subject) || '○○';
+      var verbs = { '보고': '붙임과 같이 보고하고자 합니다.', '제출': '붙임과 같이 제출하고자 합니다.', '송부': '붙임과 같이 송부합니다.', '통보': '붙임과 같이 알려 드립니다.' };
+      var tail = f.verb === '직접 입력' ? (clean(f.verbX) || '붙임과 같이 ○○합니다.') : (verbs[f.verb] || verbs['보고']);
+      L.push(pre + sj + josa(sj, '을', '를') + ' ' + tail);
+      if (!clean(f.subject)) warn.push('사안명을 적어 주세요.');
+    } else if (t === 'notice') {
+      L.push(pre + (clean(f.sentence) || '○○'));
+      writeItems(L, f.items);
+      if (!clean(f.sentence)) warn.push('본문 문장을 적어 주세요.');
+    } else if (t === 'expense' || t === 'plan') {
+      var nm = clean(f.name) || '○○';
+      // 직접 입력이면 문장 끝(…합니다)까지 그대로 쓴다
+      if (t !== 'plan' && f.act === '직접 입력') L.push(pre + nm + josa(nm, '을', '를') + ' ' + (clean(f.actX) || '다음과 같이 ○○합니다.'));
+      else L.push(pre + nm + josa(nm, '을', '를') + ' 다음과 같이 ' + (t === 'plan' ? '운영' : pick('act', '구입')) + '하고자 합니다.');
+      item(0, '대상', f.target); item(1, '일시', f.when); item(2, '활동내용', f.what); item(3, '금액', money(f.amount));
+      if (!clean(f.name)) warn.push('사안명을 적어 주세요.');
+    } else if (t === 'lecturer') {
+      var pg = clean(f.program) || '○○', la = pick('lact', '위촉');
+      if (f.lact === '직접 입력') L.push(pre + pg + ' ' + (clean(f.lactX) || '강사를 다음과 같이 ○○합니다.'));
+      else L.push(pre + pg + ' 강사 ' + la + josa(la, '을', '를') + ' 다음과 같이 하고자 합니다.');
+      item(0, '대상', f.target); item(1, '일시', f.when); item(2, '활동내용', f.what); item(3, '금액', money(f.amount));
+    } else if (t === 'refund') {
+      var rn = clean(f.name) || '○○';
+      L.push(pre + rn + josa(rn, '을', '를') + ' 다음과 같이 환불하고자 합니다.');
+      item(0, '환불 대상', f.target); item(1, '환불 사유', f.reason); item(2, '금액', money(f.amount));
+    } else {
+      L.push(pre + (clean(f.sentence) || '○○'));
+      writeItems(L, f.items);
+    }
+
+    // 붙임
+    var att = st.att.filter(function (a) { return clean(a.name); });
+    var cnt = function (a) { var s = clean(a.name).replace(/\s*\d*\s*부\.?$/, '').replace(/\.$/, ''); return s + ' ' + (Math.max(1, +a.n || 1)) + '부.'; };
+    if (att.length) {
+      if (st.blankBefore) L.push('');
+      if (att.length === 1) L.push('붙임  ' + cnt(att[0]) + '  끝.');
+      else att.forEach(function (a, i) { L.push((i ? '      ' : '붙임  ') + (i + 1) + '. ' + cnt(a) + (i === att.length - 1 ? '  끝.' : '')); });
+    } else {
+      L[L.length - 1] = L[L.length - 1].replace(/\s+$/, '') + '  끝.';
+    }
+    if (/^(expense|plan|lecturer|refund)$/.test(t) && !att.length) warn.push('품의는 보통 붙임에 지출품의서 1부를 둬요.');
+    if (t === 'notice' || t === 'free') {
+      var hasItems = (f.items || []).some(function (it) { return clean(it.label) || clean(it.text); });
+      if (/붙임과 같이/.test(f.sentence) && hasItems) warn.push("아래에 항목이 이어지면 '붙임과 같이' 대신 '다음과 같이'가 자연스러워요.");
+      if (/(다음|아래)과 같이|아래와 같이/.test(f.sentence) && !hasItems && att.length) warn.push("항목 없이 바로 붙임이 오면 '붙임과 같이'가 자연스러워요.");
+    }
+    return { text: L.join('\n'), warn: warn };
+  }
+  // 단계별 항목 (편람): 단계마다 2타씩 들여 쓰고 기호와 내용 사이는 1타. 항목이 하나뿐이면 기호를 붙이지 않는다
+  function writeItems(L, items) {
+    var list = (items || []).filter(function (it) { return clean(it.label) || clean(it.text); });
+    var count = [0, 0, 0, 0, 0, 0, 0];
+    list.forEach(function (it) {
+      var lv = Math.min(7, Math.max(1, +it.lv || 1)) - 1;
+      for (var k = lv + 1; k < 7; k++) count[k] = 0;
+      var m = list.length === 1 ? '' : MARK[lv](count[lv]++) + ' ';
+      var indent = new Array(lv + 2).join(IND);
+      L.push(indent + m + (clean(it.label) ? clean(it.label) + ': ' : '') + clean(it.text));
+    });
+  }
+
+  /* ── 화면 ── */
+  function render() {
+    $('types').innerHTML = TYPES.map(function (t) { return '<button type="button" class="type' + (t.id === st.type ? ' on' : '') + '" data-type="' + t.id + '"><b>' + t.name + '</b><span>' + t.sub + '</span></button>'; }).join('');
+    $('useRel').checked = st.useRel; $('blankBefore').checked = st.blankBefore; $('wonAfter').checked = st.wonAfter !== false;
+    $('rels').innerHTML = st.rel.map(function (r, i) {
+      return '<div class="row three"><label class="f">기관(부서)<input class="i" data-rel="' + i + '" data-k="org" value="' + esc(r.org) + '" placeholder="예: ○○교육청 교육과정과"></label>' +
+        '<label class="f">문서 번호<input class="i" data-rel="' + i + '" data-k="no" value="' + esc(r.no) + '" placeholder="예: 1234"></label>' +
+        '<label class="f">날짜<input class="i" type="date" data-rel="' + i + '" data-k="date" value="' + esc(r.date) + '"></label>' +
+        '<button class="btn x" type="button" data-delrel="' + i + '" aria-label="관련 문서 빼기">✕</button></div>';
+    }).join('');
+    $('atts').innerHTML = st.att.map(function (a, i) {
+      return '<div class="row att"><label class="f">붙임 파일 이름<input class="i" data-att="' + i + '" data-k="name" value="' + esc(a.name) + '" placeholder="예: 지출품의서"></label>' +
+        '<label class="f">부수<input class="i" type="number" min="1" data-att="' + i + '" data-k="n" value="' + esc(a.n) + '"></label>' +
+        '<button class="btn x" type="button" data-delatt="' + i + '" aria-label="붙임 빼기">✕</button></div>';
+    }).join('');
+    $('body').innerHTML = bodyForm();
+    update();
+  }
+  var inp = function (k, label, ph, wide) { return '<label class="f"' + (wide ? ' style="grid-column:1/-1"' : '') + '>' + label + '<input class="i" data-f="' + k + '" value="' + esc(st.f[k]) + '" placeholder="' + esc(ph || '') + '"></label>'; };
+  var area = function (k, label, ph) { return '<label class="f" style="grid-column:1/-1">' + label + '<textarea class="i" data-f="' + k + '" placeholder="' + esc(ph || '') + '">' + esc(st.f[k]) + '</textarea></label>'; };
+  // 고르는 칸: 버튼을 늘어놓고 바로 누른다. 목록에 없으면 '직접 입력'
+  var sel = function (k, label, opts, ph) {
+    var cur = st.f[k] || opts[0], custom = cur === '직접 입력';
+    return '<div class="f"><span>' + label + '</span><div class="chips" role="group" aria-label="' + esc(label) + '">' +
+      opts.concat(['직접 입력']).map(function (o) { return '<button type="button" class="chip' + (cur === o ? ' on' : '') + '" aria-pressed="' + (cur === o) + '" data-chip="' + k + '" data-v="' + esc(o) + '">' + esc(o) + '</button>'; }).join('') + '</div>' +
+      (custom ? '<input class="i" data-f="' + k + 'X" value="' + esc(st.f[k + 'X'] || '') + '" placeholder="' + esc(ph || '') + '" style="margin-top:6px">' : '') + '</div>';
+  };
+  var pick = function (k, d) { var v = st.f[k] || d; return v === '직접 입력' ? (clean(st.f[k + 'X']) || '○○') : v; };
+  var when = function (label, ph) {
+    return '<label class="f">' + label + '<input class="i" data-f="when" value="' + esc(st.f.when) + '" placeholder="' + esc(ph) + '">' +
+      '<span class="pick"><input class="i" type="date" id="whenD" aria-label="날짜 고르기"><input class="i" type="time" id="whenT" aria-label="시간 고르기"></span></label>';
+  };
+  var amount = function () { return '<label class="f">금액 (숫자만)<input class="i" data-f="amount" inputmode="numeric" value="' + esc(st.f.amount) + '" placeholder="예: 120000"><span class="money" id="moneyTxt"></span></label>'; };
+  function bodyForm() {
+    var t = st.type;
+    if (t === 'simple') return '<div class="row">' + inp('subject', '사안명', '예: 2026학년도 3월 전국연합학력평가 3학년 성적 분석 결과', true) + sel('verb', '어떻게', ['보고', '제출', '송부', '통보'], '사안명 뒤 문장 끝까지 직접. 예: 붙임과 같이 회신합니다.') + '</div>';
+    if (t === 'expense') return '<div class="row">' + inp('name', '사안명', '예: 교직원 협의회 다과') + sel('act', '하려는 일', ['구입', '운영', '지출', '집행'], '사안명 뒤 문장 끝까지 직접. 예: 다음과 같이 계약을 체결합니다.') + inp('target', '가. 대상', '예: 교직원 40명') + when('나. 일시', '예: 2026. 3. 23.(월) 15:00') + area('what', '다. 활동내용', '예: 교과 협의회 다과 구입') + amount() + '</div>';
+    if (t === 'plan') return '<div class="row">' + inp('name', '사업·행사명', '예: 2026학년도 진로 캠프', true) + inp('target', '가. 대상', '예: 1학년 학생 120명') + when('나. 일시', '예: 2026. 4. 10.(금) 09:00~16:00') + area('what', '다. 활동내용', '예: 직업인 특강, 진로 체험 부스 운영') + amount() + '</div>';
+    if (t === 'lecturer') return '<div class="row">' + inp('program', '프로그램명', '예: 방과후학교 수학') + sel('lact', '하려는 일', ['위촉', '대체 활용', '강사료 지급'], '프로그램명 뒤 문장 끝까지 직접. 예: 강사를 다음과 같이 해촉하고자 합니다.') + inp('target', '가. 대상(강사)', '예: 외부 강사 1명') + when('나. 일시', '예: 2026. 3. 2.~7. 18.') + area('what', '다. 활동내용', '예: 방과후 수학 심화반 수업') + amount() + '</div>';
+    if (t === 'refund') return '<div class="row">' + inp('name', '환불할 경비', '예: 방과후학교 수강료', true) + inp('target', '가. 환불 대상', '예: 1학년 학생 2명') + inp('reason', '나. 환불 사유', '예: 전학') + amount() + '</div>';
+    var head = t === 'notice'
+      ? '<div class="row">' + area('sentence', '본문 문장', '예: 2026학년도 학부모 교육 운영과 관련하여 다음과 같이 안내하오니 많은 참여 바랍니다.') + '</div><p class="hint" style="margin:6px 0 8px">세부 항목 (가., 나., … 순서로 붙어요)</p>'
+      : '<div class="row">' + area('sentence', '본문 문장', '예: 2026학년도 학교 교육과정 운영 계획을 다음과 같이 수립하고자 합니다.') + '</div><p class="hint" style="margin:6px 0 8px">항목마다 단계를 골라요: 가. → 1) → 가) → (1) → (가) → ① → ㉮ (행정업무운영편람 순서)</p>';
+    return head + '<div class="stack">' + st.f.items.map(function (it, i) {
+      return '<div class="row item"><label class="f">단계<select class="i" data-item="' + i + '" data-k="lv" ' + (t === 'notice' ? 'disabled' : '') + '>' + [1, 2, 3, 4, 5, 6, 7].map(function (n) { return '<option value="' + n + '"' + (+it.lv === n ? ' selected' : '') + '>' + n + '단계 ' + LV_NAME[n - 1] + '</option>'; }).join('') + '</select></label>' +
+        '<label class="f">항목 이름<input class="i" data-item="' + i + '" data-k="label" value="' + esc(it.label) + '" placeholder="예: 일시"></label>' +
+        '<label class="f">내용<input class="i" data-item="' + i + '" data-k="text" value="' + esc(it.text) + '" placeholder="예: 2026. 4. 10.(금) 19:00"></label>' +
+        '<button class="btn x" type="button" data-delitem="' + i + '" aria-label="항목 빼기">✕</button></div>';
+    }).join('') + '</div><button class="btn sm" type="button" id="addItem" style="margin-top:8px">+ 항목 추가</button>';
+  }
+  // 날짜·시간 고르기 → 편람 형식
+  function whenPick() {
+    var d = ($('whenD') || {}).value, t = ($('whenT') || {}).value;
+    if (!d) return;
+    var wd = '일월화수목금토'[new Date(d + 'T00:00:00').getDay()];
+    st.f.when = fmtDate(d) + '(' + wd + ')' + (t ? ' ' + t : '');
+    var inpEl = document.querySelector('[data-f=when]'); if (inpEl) inpEl.value = st.f.when;
+    update();
+  }
+  function update() {
+    var r = build();
+    $('pv').textContent = st.draft || r.text;
+    $('draftNote').hidden = !st.draft;
+    var w = $('warn'); w.hidden = !r.warn.length; w.textContent = r.warn.join(' ');
+    var m = $('moneyTxt'); if (m) m.textContent = money(st.f.amount);
+    save();
+  }
+
+  document.addEventListener('input', function (e) {
+    var el = e.target, k = el.dataset.k;
+    if (el.dataset.f) st.f[el.dataset.f] = el.value;
+    else if (el.dataset.rel) { st.rel[+el.dataset.rel][k] = el.value; aiLinks(); }
+    else if (el.dataset.att) st.att[+el.dataset.att][k] = el.value;
+    else if (el.dataset.item) st.f.items[+el.dataset.item][k] = el.value;
+    else if (el.id === 'useRel') st.useRel = el.checked;
+    else if (el.id === 'blankBefore') st.blankBefore = el.checked;
+    else if (el.id === 'wonAfter') st.wonAfter = el.checked;
+    else if (el.id === 'aiAsk') { aiLinks(); return; }
+    else if (el.id === 'aiAns') return;
+    else if (el.id === 'whenD' || el.id === 'whenT') { whenPick(); return; }
+    else return;
+    st.draft = '';   // 칸을 고치면 칸 내용으로 다시 만든다
+    update();
+  });
+  document.addEventListener('change', function (e) { if (e.target.tagName === 'SELECT' || e.target.type === 'checkbox') e.target.dispatchEvent(new Event('input', { bubbles: true })); });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[data-ai]'); if (a) { openAI(a.dataset.ai, e); return; }
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.type) {
+      st.draft = '';
+      var prev = st.type; st.type = b.dataset.type;
+      // 품의는 붙임 기본값이 '지출품의서'
+      var exp = /^(expense|plan|lecturer|refund)$/;
+      if (exp.test(st.type) && !st.att.some(function (a) { return a.name; })) st.att = [{ name: '지출품의서', n: 1 }];
+      if (!exp.test(st.type) && exp.test(prev) && st.att.length === 1 && st.att[0].name === '지출품의서') st.att = [{ name: '', n: 1 }];
+      render(); return;
+    }
+    if (b.dataset.chip) {
+      st.draft = '';
+      st.f[b.dataset.chip] = b.dataset.v; $('body').innerHTML = bodyForm(); update();
+      var x = document.querySelector('[data-f="' + b.dataset.chip + 'X"]'); if (x) x.focus();
+      return;
+    }
+    if (b.id === 'addRel') { st.rel.push({ org: '', no: '', date: '' }); render(); }
+    else if (b.dataset.delrel) { st.rel.splice(+b.dataset.delrel, 1); if (!st.rel.length) st.rel.push({ org: '', no: '', date: '' }); render(); }
+    else if (b.id === 'addAtt') { st.att.push({ name: '', n: 1 }); render(); }
+    else if (b.dataset.delatt) { st.att.splice(+b.dataset.delatt, 1); if (!st.att.length) st.att.push({ name: '', n: 1 }); render(); }
+    else if (b.id === 'addItem') { var last = st.f.items[st.f.items.length - 1]; st.f.items.push({ lv: last ? last.lv : 1, label: '', text: '' }); render(); }
+    else if (b.dataset.delitem) { st.f.items.splice(+b.dataset.delitem, 1); if (!st.f.items.length) st.f.items.push({ lv: 1, label: '', text: '' }); render(); }
+    else if (b.id === 'reset') { var ty = st.type; st = blank(); st.type = ty; if (/^(expense|plan|lecturer|refund)$/.test(ty)) st.att = [{ name: '지출품의서', n: 1 }]; render(); }
+    else if (b.id === 'copy') copy();
+    else if (b.id === 'aiFill') aiApply();
+    else if (b.id === 'dropDraft') { st.draft = ''; update(); }
+  });
+  // 복사: 글자 그대로 (한글 기안기는 웹에서 붙인 문단 서식을 버리고 줄 앞 빈칸까지 지우므로 서식은 싣지 않는다)
+  function copy() {
+    var t = $('pv').textContent;
+    var ok = function () { toast('복사했어요. 에듀파인 본문 칸에 붙여 넣으세요.'); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(ok, legacy); else legacy();
+    function legacy() { var ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.left = '-9999px'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); ok(); } catch (e) { toast('복사하지 못했어요. 글을 직접 골라 복사해 주세요.'); } ta.remove(); }
+  }
+  /* ── AI로 채우기 (API 없이: 질문을 채운 AI 창을 열고, 답을 붙여 넣으면 읽는다) ── */
+  function todayText() { var d = new Date(); return d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate() + '.(' + '일월화수목금토'[d.getDay()] + ')'; }
+  // AI 에게 줄 틀: 요청에 맞는 종류로 지금 칸 내용을 만들고, 빈 항목 자리는 ○○ 로 보여 준다
+  function templateFor(ask) {
+    var NL = String.fromCharCode(10), PUM = /^(expense|plan|lecturer|refund)$/;
+    var g = guessType(ask);
+    if (g && g !== st.type) {
+      st.type = g;
+      // 품의 ↔ 다른 종류로 바뀌면 붙임 기본값도 맞춘다
+      if (PUM.test(g) && !st.att.some(function (a) { return a.name; })) st.att = [{ name: '지출품의서', n: 1 }];
+      if (!PUM.test(g) && st.att.length === 1 && st.att[0].name === '지출품의서') st.att = [{ name: '', n: 1 }];
+      st.draft = ''; render();
+    }
+    var f = st.f, keep = { sentence: f.sentence };
+    if (st.type === 'notice' && !clean(f.sentence)) f.sentence = '○○ 관련하여 다음과 같이 안내하오니 ○○하여 주시기 바랍니다.';
+    if (st.type === 'free' && !clean(f.sentence)) f.sentence = '○○을(를) 다음과 같이 ○○하고자 합니다.';
+    var r = build().text.split(NL).map(function (l) { return l.replace(/\s+끝\.$/, ''); });   // 끝은 맨 끝에 다시 붙인다
+    f.sentence = keep.sentence;
+    if ((st.type === 'notice' || st.type === 'free') && !(f.items || []).some(function (it) { return clean(it.label) || clean(it.text); })) {
+      var k = r.findIndex(function (l) { return /^2\. /.test(l); }); if (k < 0) k = st.useRel ? 1 : 0;
+      r.splice(k + 1, 0, IND + '가. ○○: ', IND + '나. ○○: ');
+    }
+    var t = r.join(NL).replace(/○○[을를](?!\()/g, '○○을(를)');
+    // 붙임이 비어 있으면 '붙임  ○○ 1부.' 자리를 보여 준다
+    if (!st.att.some(function (a) { return clean(a.name); })) t = t.replace(/\s+$/, '') + (st.blankBefore ? NL + NL : NL) + '붙임  ○○ 1부.  끝.';
+    else t = t.replace(/\s+$/, '') + '  끝.';
+    return t;
+  }
+  function aiPrompt(ask) {
+    return [
+      '아래 학교 에듀파인 기안문 틀을 내 요청에 맞게 채워 줘.',
+      '- 틀의 줄바꿈, 줄 앞 빈칸, 번호(1. 가. 1)), "붙임  ○○ 1부.  끝." 모양은 그대로 두고, ○○ 자리와 "항목: " 뒤 빈칸만 채워.',
+      '- 요청에 없는 공문번호·날짜·금액·대상은 지어내지 말고 빈칸으로 둬(○○도 지워).',
+      '- 날짜는 2026. 3. 25.(수) 15:00 처럼, 금액은 금120,000원(금일십이만원) 처럼. 오늘은 ' + todayText() + ', "다음 주"는 오늘이 속한 주(월~일)의 다음 주.',
+      '- 같은 낱말을 겹쳐 쓰지 마(× 다과협의회 다과 → ○ 협의회 다과). 항목이 더 필요하면 같은 모양으로 줄을 더해.',
+      '- 따옴표·별표·설명·인사 없이, 채운 문안만 답해.',
+      '',
+      '[틀]',
+      templateFor(ask),
+      '',
+      '[요청] ' + ask
+    ].join(String.fromCharCode(10));
+  }
+  // 공문서 작성기 GPT: 규칙은 GPT 안에 있으므로 적은 내용만 보낸다. 주소에 채우고, 안 채워지면 붙여 넣도록 복사도 해 둔다
+  var GPT_URL = 'https://chatgpt.com/g/g-69deedbead108191b32215ce5735e6a7-edyupain-gongmunseo-jagseonggiv2';
+  // 질문 = 관련(기관-번호(날짜)) + 오늘 날짜 + 적은 내용
+  function gptQuestion() {
+    var ask = $('aiAsk').value.trim(); if (!ask) return '';
+    var rel = st.useRel ? st.rel.filter(function (r) { return clean(r.org) || clean(r.no) || r.date; })
+      .map(function (r) { return clean(r.org) + (clean(r.no) ? '-' + clean(r.no) : '') + (r.date ? '(' + fmtDate(r.date) + ')' : ''); }) : [];
+    return (rel.length ? '관련: ' + rel.join(', ') + String.fromCharCode(10) : '') + '오늘: ' + todayText() + String.fromCharCode(10) + ask;
+  }
+  function aiLinks() {
+    var q = gptQuestion();
+    document.querySelector('[data-ai=gpt]').href = q ? GPT_URL + '?q=' + encodeURIComponent(q) : GPT_URL;
+  }
+  function copyText(t, done) {
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(done, legacy); else legacy();
+    function legacy() { var ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.left = '-9999px'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) {} ta.remove(); }
+  }
+  function openAI(which, e) {
+    var ask = $('aiAsk').value.trim();
+    if (!ask) { e.preventDefault(); toast('무엇을 쓸지 먼저 한두 줄 적어 주세요'); $('aiAsk').focus(); return; }
+    aiLinks();
+    copyText(gptQuestion(), function () {});
+    $('aiMsg').textContent = '열린 GPT의 답을 복사해 바로 에듀파인 본문에 붙여 넣으세요. GPT 질문 칸이 비어 있으면 Ctrl+V 하면 돼요.';
+  }
+  function guessType(ask) {
+    var t = String(ask || '');
+    if (/환불/.test(t)) return 'refund';
+    if (/강사|강사료|위촉/.test(t)) return 'lecturer';
+    // 돈이 들지 않는 계획 수립·결재는 복잡형(항목 구성)
+    if (/계획/.test(t) && /수립|결재/.test(t) && !/원|비용|금액|예산|구입|다과|간식|강사료|지출/.test(t)) return 'free';
+    if (/품의|결재/.test(t) && /운영|행사|캠프|연수|설명회|대회|체험|프로그램/.test(t) && !/다과|간식|물품|구입/.test(t)) return 'plan';
+    if (/품의|지출|구입|다과|간식|식비|물품|재료비|운영비|집행/.test(t)) return 'expense';
+    if (/안내|협조|요청|알림|참여|신청 받/.test(t)) return 'notice';
+    if (/보고|송부|제출|통보|회신/.test(t)) return 'simple';
+    return null;
+  }
+  // AI 가 채운 문안 정리: 둥근 따옴표·별표·코드블록·인사말을 빼고, 붙임·끝 표기를 바로잡는다
+  function cleanDraft(raw) {
+    var NL = String.fromCharCode(10);
+    var L = String(raw || '').replace(/\r/g, '').replace(/[“”„‟″＂]/g, '"').replace(/[‘’‚‛′]/g, "'")
+      .replace(/ /g, ' ').replace(/\*\*/g, '').split(NL)
+      .filter(function (l) { return !/^\s*```/.test(l) && !/^\s*\[(틀|요청)\]/.test(l); })
+      .map(function (l) { return l.replace(/^>\s?/, '').replace(/\s+$/, ''); });
+    var a = L.findIndex(function (l) { return /^\s*(1\.|2\.|붙임)/.test(l); }); if (a > 0) L = L.slice(a);
+    var z = -1; L.forEach(function (l, k) { if (/끝\.\s*$/.test(l)) z = k; }); if (z >= 0) L = L.slice(0, z + 1);
+    L = L.map(function (l) { return l.replace(/^붙임\s*[:：]?\s*/, '붙임  ').replace(/^(\s*)["']+/, '$1').replace(/["']+$/, ''); });
+    var t = L.join(NL).replace(/\n{3,}/g, NL + NL).trim();
+    return t.replace(/\s*끝\.?\s*$/, '') + '  끝.';
+  }
+  function aiApply() {
+    var raw = $('aiAns').value.trim();
+    if (!raw) { toast('AI 답을 먼저 붙여 넣어 주세요'); return; }
+    if (raw.charAt(0) === '{' || /^```json/.test(raw)) return aiFill();   // 예전 방식(JSON) 답도 받는다
+    st.draft = cleanDraft(raw);
+    update();
+    var left = (st.draft.match(/○○/g) || []).length;
+    $('aiMsg').textContent = left ? 'AI가 못 채운 ○○ 자리가 ' + left + '곳 있어요. 오른쪽에서 확인해 주세요.' : '넣었어요. 오른쪽 문안을 확인하고 복사하세요. 왼쪽 칸을 고치면 칸 내용으로 다시 만들어져요.';
+    toast('AI 문안을 넣었어요');
+  }
+  function aiFill() {
+    // AI 마다 둥근 따옴표(“ ”)·끝 쉼표·코드블록을 섞어 쓰므로 고쳐서 읽는다
+    var raw = $('aiAns').value.replace(/[“”„‟″＂]/g, '"').replace(/[‘’‚‛′]/g, "'").replace(/ /g, ' ');
+    var m = raw.indexOf('{'), n = raw.lastIndexOf('}');
+    if (m < 0 || n < m) { toast('AI 답에서 { … } 부분을 찾지 못했어요'); return; }
+    var body = raw.slice(m, n + 1).replace(/,\s*([}\]])/g, '$1');
+    var o;
+    try { o = JSON.parse(body); } catch (e) { toast('AI 답을 읽지 못했어요. 답 전체를 다시 복사해 붙여 주세요'); return; }
+    var types = TYPES.map(function (t) { return t.id; });
+    if (types.indexOf(o.type) >= 0) st.type = o.type;
+    // 요청 낱말로 종류를 먼저 정하고, AI가 다르게 골라도 그 종류의 틀로 고정한다 (틀은 종류마다 고정, AI는 값만 채움)
+    var ask = $('aiAsk').value, PUM = /^(expense|plan|lecturer|refund)$/;
+    var guess = guessType(ask);
+    if (guess) st.type = guess;
+    var hasAtt = Array.isArray(o.att) && o.att.some(function (x) { return x && x.name; });
+    if (PUM.test(st.type) && !hasAtt) o.att = [{ name: '지출품의서', n: 1 }];
+    // 품의가 아닌 종류인데 앞서 품의 기본 붙임(지출품의서)만 남아 있으면 지운다
+    if (!PUM.test(st.type) && !hasAtt && st.att.length === 1 && st.att[0].name === '지출품의서') st.att = [{ name: '', n: 1 }];
+    // 간단 보고: 붙임이 없으면 사안명 자료를 붙임으로 (붙임  ○○ 1부.)
+    if (st.type === 'simple' && !hasAtt && o.subject) o.att = [{ name: String(o.subject), n: 1 }];
+    var f = st.f, S = function (v) { return v == null ? '' : String(v); };
+    ['subject', 'sentence', 'name', 'program', 'target', 'when', 'what', 'reason'].forEach(function (k) { if (o[k] != null) f[k] = S(o[k]); });
+    if (['보고', '제출', '송부', '통보'].indexOf(o.verb) >= 0) f.verb = o.verb;
+    if (['구입', '운영', '지출', '집행'].indexOf(o.act) >= 0) f.act = o.act;
+    if (['위촉', '대체 활용', '강사료 지급'].indexOf(o.lact) >= 0) f.lact = o.lact;
+    if (o.amount != null && o.amount !== '') f.amount = S(o.amount).replace(/[^\d]/g, '');
+    if (Array.isArray(o.items) && o.items.length) f.items = o.items.map(function (it) { return { lv: Math.min(4, Math.max(1, +it.lv || 1)), label: S(it.label), text: S(it.text) }; });
+    if (Array.isArray(o.rel)) {
+      var rel = o.rel.map(function (r) { return { org: S(r.org), no: S(r.no), date: /^\d{4}-\d{2}-\d{2}$/.test(S(r.date)) ? S(r.date) : '' }; }).filter(function (r) { return r.org || r.no || r.date; });
+      st.rel = rel.length ? rel : [{ org: '', no: '', date: '' }];
+    }
+    if (Array.isArray(o.att)) {
+      var att = o.att.map(function (a) { return { name: S(a.name).replace(/\s*\d*\s*부\.?$/, ''), n: Math.max(1, +a.n || 1) }; }).filter(function (a) { return a.name; });
+      st.att = att.length ? att : [{ name: '', n: 1 }];
+    }
+    render();
+    $('aiMsg').textContent = '채웠어요. 오른쪽 문안을 확인하고, 틀린 칸은 직접 고쳐 주세요.';
+    toast('AI 답으로 칸을 채웠어요');
+  }
+
+  function toast(m) { var el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(function () { el.classList.remove('show'); }, 2200); }
+  // 처음 쓰는 품의는 붙임 기본값
+  if (/^(expense|plan|lecturer|refund)$/.test(st.type) && !st.att.some(function (a) { return a.name; })) st.att = [{ name: '지출품의서', n: 1 }];
+  render();
+})();
+</script>
+</body>
+</html>

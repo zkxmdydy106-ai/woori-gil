@@ -1,0 +1,887 @@
+<!doctype html>
+<!-- roles.html: 1인 1역 배정표. 역할 목록과 학생 명단으로 기간마다 역할을 공평하게 돌려 배정한다. 이름은 이 화면에서만 쓰고 어디에도 보내지 않는다(선택 시 이 기기에만 기억). -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1인 1역 배정표</title>
+<style>
+:root{--bg:#f4f6f5;--card:#fcfdfc;--text:#17201c;--muted:#56625c;--line:#dde3df;--accent:#14684e;--soft:#e1efe8;--on:#f6fbf8;--warn:#8a5300;--warnbg:#fbf1e2;--sel:#fff2c2;--selline:#b88a00;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#101412;--card:#171c19;--text:#e6ece8;--muted:#a3aea8;--line:#29312d;--accent:#4fb48d;--soft:#1a2e25;--on:#0b1510;--warn:#f0b45c;--warnbg:#2b2213;--sel:#3a3112;--selline:#e0b84a;color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.55;word-break:keep-all}
+main{max-width:1240px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:26px;letter-spacing:-.03em;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 18px}
+h2{font-size:16px;margin:22px 0 8px;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+h2:first-child{margin-top:0}
+h2 .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--soft);color:var(--accent);font-size:13px}
+.grid{display:grid;grid-template-columns:400px minmax(0,1fr);gap:18px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+label{font-weight:600;font-size:14.5px}
+.lab{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 5px}
+.help{font-weight:400;color:var(--muted);font-size:13px}
+textarea,input[type=text],input[type=number],input[type=date],input[type=search],select{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;background:var(--bg);color:var(--text);min-height:40px}
+textarea{min-height:120px;resize:vertical;font-size:14.5px}
+input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{font:inherit;font-weight:650;min-height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+button:hover{border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:default;border-color:var(--line)}
+button.p{background:var(--accent);border-color:var(--accent);color:var(--on)}
+button.ic{padding:0;width:36px;min-height:36px}
+button.sm{min-height:32px;padding:0 10px;font-size:13.5px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chk{display:flex;gap:8px;align-items:center;font-weight:500;font-size:14px;margin-top:12px}
+.chk input{width:18px;height:18px;accent-color:var(--accent)}
+.msg{font-size:13.5px;color:var(--warn);min-height:1.2em;margin:6px 0 0}
+.msg.ok{color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-height:32px;padding:0 10px;border-radius:999px;font-size:13.5px;font-weight:600}
+.chip[aria-pressed=true]{background:var(--soft);border-color:var(--accent);color:var(--accent)}
+.chip.out{text-decoration:line-through;color:var(--muted);background:var(--bg)}
+.chip.dup{border-color:var(--warn);color:var(--warn)}
+.cnt{font-size:13px;color:var(--muted);font-weight:500}
+/* 역할 편집 */
+.roles{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.role{border:1px solid var(--line);border-radius:12px;padding:8px;background:var(--bg);display:grid;gap:6px}
+.rtop,.rbot{display:flex;gap:6px;align-items:center}
+.rtop input,.rbot input{min-height:36px;padding:6px 9px;background:var(--card);flex:1;min-width:0;width:auto}
+.rtop .rname{font-weight:650}
+.rbot .rdesc{font-size:13.5px}
+.rnum{flex:none;width:24px;text-align:center;color:var(--muted);font-size:13px;font-weight:650}
+.step{flex:none;display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.step button{border:0;min-height:34px;width:32px;padding:0;background:transparent}
+.step output{min-width:30px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.step output::after{content:"명";font-size:11.5px;font-weight:500;color:var(--muted);margin-left:1px}
+.slots{margin-top:10px;border-radius:10px;padding:10px 12px;font-size:13.5px;background:var(--soft);color:var(--text)}
+.slots.warn{background:var(--warnbg)}
+.slots b{color:var(--accent)}.slots.warn b{color:var(--warn)}
+.slots .row{margin-top:8px}
+.period{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.period .full{grid-column:1/-1}
+.period label{display:block;font-size:13.5px;margin-bottom:4px}
+.nrow{display:flex;gap:6px}.nrow input{width:90px;flex:none}
+details{margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
+summary{cursor:pointer;font-weight:650;font-size:14.5px}
+details .chips{margin-top:8px}
+.prelist{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.prelist li{display:flex;align-items:center;gap:8px;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:4px 6px 4px 10px}
+.prelist li span{flex:1}
+.mini{font-size:12.5px;color:var(--muted);margin:10px 0 2px;font-weight:600}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+/* 결과 */
+.titlein{font-size:18px;font-weight:700;min-height:44px}
+.bar{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0 4px}
+.tabs{display:flex;gap:4px;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:12px;max-width:100%;overflow-x:auto}
+.tabs button{border:0;min-height:36px;background:transparent;white-space:nowrap}
+.tabs button[aria-selected=true]{background:var(--card);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tools{display:flex;gap:6px;flex-wrap:wrap}
+.empty{color:var(--muted);text-align:center;padding:48px 12px}
+.phead{display:flex;align-items:center;gap:10px;margin:10px 0 14px}
+.phead .mid{flex:1;text-align:center;min-width:0}
+.ptitle{font-size:24px;font-weight:800;letter-spacing:-.03em;line-height:1.25}
+.plabel{color:var(--accent);font-weight:700;font-size:16px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.rc{border:1px solid var(--line);border-radius:14px;padding:14px 14px 12px;background:var(--card);box-shadow:inset 0 4px 0 var(--accent);display:flex;flex-direction:column;gap:4px;break-inside:avoid}
+.rc.h{box-shadow:inset 0 4px 0 var(--muted)}
+.rc .rn{font-weight:800;font-size:16.5px;display:flex;gap:8px;align-items:baseline;letter-spacing:-.02em}
+.rc .rn i{font-style:normal;font-size:12px;font-weight:700;color:var(--accent);background:var(--soft);border-radius:6px;padding:0 6px}
+.rc .rd{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
+.who{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:6px}
+.nm{min-height:36px;padding:0 12px;border-radius:999px;font-size:16px;font-weight:750;background:var(--soft);border:1.5px solid transparent;color:var(--text)}
+.nm:hover{border-color:var(--accent)}
+.nm.sel{background:var(--sel);border-color:var(--selline)}
+.nm svg{width:14px;height:14px;color:var(--accent)}
+.slot{min-height:36px;border:1.5px dashed var(--line);border-radius:999px;font-size:13px;color:var(--muted);font-weight:500;background:transparent}
+.hint{font-size:13px;color:var(--muted);margin:12px 0 0}
+.seg{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:10px;background:var(--bg);margin:10px 0}
+.seg button{border:0;min-height:32px;font-size:13.5px;background:transparent}
+.seg button[aria-pressed=true]{background:var(--card);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;max-width:100%;-webkit-overflow-scrolling:touch}
+table{border-collapse:separate;border-spacing:0;font-size:14px;width:max-content;min-width:100%}
+th,td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;background:var(--card)}
+thead th{background:var(--bg);font-size:13.5px;white-space:nowrap;position:sticky;top:0}
+tbody th{position:sticky;left:0;z-index:1;min-width:120px;max-width:160px;font-weight:700}
+thead th:first-child{position:sticky;left:0;z-index:2}
+th.now,td.now{background:var(--soft)}
+td .nm{min-height:30px;font-size:14px;padding:0 9px;margin:2px 2px 2px 0}
+td .slot{min-height:30px;margin:2px 0}
+td .rl{display:inline-block}
+td .nm.rl{background:transparent;border-color:var(--line);font-weight:600}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:10px}
+.sc{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);break-inside:avoid}
+.sc h3{margin:0 0 4px;font-size:16px;display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.sc h3 small{font-size:12px;color:var(--muted);font-weight:500}
+.sc ol{list-style:none;margin:0;padding:0;font-size:13.5px}
+.sc li{display:flex;gap:8px;padding:2px 0;border-top:1px dashed var(--line)}
+.sc li:first-child{border-top:0}
+.sc li b{flex:none;min-width:58px;color:var(--muted);font-weight:600}
+.sc li.now{color:var(--accent);font-weight:700}
+.print-only{display:none}
+/* 크게 보기 */
+.show{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;padding:clamp(14px,3vw,40px)}
+.show[hidden]{display:none}
+.show .phead{margin-top:0}
+.show .ptitle{font-size:clamp(26px,4vw,52px)}
+.show .plabel{font-size:clamp(18px,2.4vw,30px)}
+.show .pgrid{grid-template-columns:repeat(auto-fill,minmax(clamp(200px,22vw,320px),1fr));gap:clamp(10px,1.4vw,18px)}
+.show .rc .rn{font-size:clamp(18px,2vw,28px)}
+.show .rc .rd{font-size:clamp(13px,1.3vw,18px)}
+.show .nm{font-size:clamp(17px,2vw,28px);min-height:clamp(36px,3.6vw,52px);padding:0 clamp(12px,1.2vw,18px);cursor:default}
+.show .close{position:fixed;top:12px;right:12px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+@media (max-width:480px){h1{font-size:22px}.ptitle{font-size:20px}.pgrid{grid-template-columns:1fr 1fr}.rc{padding:10px}.nm{font-size:15px}.period{grid-template-columns:1fr}.tools button .t{display:none}.tools button{padding:0;width:40px}.rc .rn{font-size:15px}}
+@media (max-width:360px){.pgrid{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){.nm,.rc,button{transition:background-color .15s,border-color .15s}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+@page{size:A4;margin:12mm}
+@page wide{size:A4 landscape;margin:10mm}
+@media print{
+  :root{--bg:#fff;--card:#fff;--text:#000;--muted:#444;--line:#999;--soft:#eef4f1;--accent:#14684e;color-scheme:light}
+  body{background:#fff;color:#000}
+  main{padding:0;max-width:none}
+  .no-print,.show{display:none!important}
+  .print-only{display:block}
+  .grid{display:block}.card{border:0;padding:0}
+  .nm{background:transparent;border:1px solid #999;min-height:0;padding:1px 8px;font-size:14px}
+  .nm.sel{background:transparent;border-color:#999}
+  .slot{display:none}
+  .phead{margin:0 0 10px}
+  .ptitle{font-size:26px}
+  .pgrid{grid-template-columns:repeat(3,1fr);gap:8px}
+  .rc{border:1px solid #999;box-shadow:inset 0 3px 0 #333;padding:10px 10px 8px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .tw{overflow:visible;border:0}
+  body.v-table main{page:wide}
+  th,td{vertical-align:middle}
+  table{width:100%;font-size:11px}
+  th,td{position:static!important;border-color:#999;padding:3px 5px}
+  td .nm{font-size:11px;padding:0 5px;border:0;margin:0 4px 0 0}
+  th.now,td.now{background:#fff}
+  .sgrid{grid-template-columns:repeat(4,1fr);gap:6px}
+  .sc{padding:6px 8px}.sc li{font-size:11.5px}
+  .sc li.now{color:#000}
+  .ph{font-size:18px;font-weight:800;margin:0 0 8px}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1 class="no-print">1인 1역 배정표</h1>
+  <p class="sub no-print">역할과 학생 이름을 넣으면 기간마다 역할을 공평하게 돌려 배정해요. 이름은 이 화면에서만 쓰고 어디에도 보내지 않아요.</p>
+  <div class="grid">
+    <section class="card no-print" aria-label="설정">
+      <h2><span class="n">1</span>학생 명단</h2>
+      <div class="lab"><label for="names">학생 이름 <span class="help">한 줄에 한 명, 쉼표·탭도 돼요</span></label><span class="cnt" id="count">0명</span></div>
+      <textarea id="names" placeholder="예) 가람&#10;나래&#10;다온" spellcheck="false"></textarea>
+      <p class="msg" id="rosterMsg" role="status"></p>
+      <div id="exWrap" hidden>
+        <p class="mini">누르면 배정에서 빼요 (전학·장기 결석 등)</p>
+        <div class="chips" id="exChips"></div>
+      </div>
+
+      <h2><span class="n">2</span>역할 목록</h2>
+      <ul class="roles" id="roles"></ul>
+      <div class="row" style="margin-top:8px"><button type="button" id="addRole" class="sm" data-ic="plus">역할 추가</button><button type="button" id="sampleRoles" class="sm">예시 역할로 바꾸기</button></div>
+      <div class="slots" id="slots" role="status"></div>
+
+      <h2><span class="n">3</span>바꾸는 주기</h2>
+      <div class="period">
+        <div><label for="mode">주기</label><select id="mode"><option value="month">매월</option><option value="2w">2주마다</option><option value="week">매주</option><option value="sem">학기마다</option></select></div>
+        <div><label for="start">시작일</label><input type="date" id="start"></div>
+        <div class="full"><label for="n">기간 수</label><div class="nrow"><input type="number" id="n" min="1" max="52" value="5"><button type="button" id="autoN" class="sm">학년 말(2월)까지</button></div></div>
+      </div>
+
+      <details id="preBox">
+        <summary>희망 역할·고정 정하기 <span class="help">(선택)</span></summary>
+        <p class="help" style="margin:6px 0 0">학생 이름을 누른 뒤 역할을 누르면 <b>첫 기간</b>에 그 역할을 맡아요. <b>고정</b>을 켜면 모든 기간 같은 역할을 해요.</p>
+        <p class="mini">학생</p>
+        <div class="chips" id="preStu"></div>
+        <p class="mini">역할</p>
+        <div class="chips" id="preRoles"></div>
+        <ul class="prelist" id="preList"></ul>
+        <p class="msg" id="preMsg" role="status"></p>
+      </details>
+
+      <label class="chk"><input type="checkbox" id="remember"><span>이 기기에 기억하기 <span class="help">(이 브라우저에만 저장)</span></span></label>
+      <div class="acts"><button type="button" class="p" id="sample">예시 넣기</button><button type="button" id="clear">명단 비우기</button></div>
+    </section>
+
+    <section class="card" aria-label="배정 결과">
+      <input type="text" id="title" class="titlein no-print" aria-label="제목" value="우리 반 1인 1역" maxlength="40">
+      <div class="bar no-print">
+        <div class="tabs" role="tablist" aria-label="보기">
+          <button type="button" role="tab" id="tab-poster" data-view="poster" aria-selected="true">이번 달</button>
+          <button type="button" role="tab" id="tab-table" data-view="table" aria-selected="false">전체표</button>
+          <button type="button" role="tab" id="tab-student" data-view="student" aria-selected="false">학생별</button>
+        </div>
+        <div class="tools">
+          <button type="button" id="big" data-ic="expand" title="크게 보기 (교실 TV)"><span class="t">크게 보기</span></button>
+          <button type="button" id="shuffle" data-ic="shuffle" title="다시 섞기"><span class="t">다시 섞기</span></button>
+          <button type="button" id="undo" data-ic="undo" title="되돌리기" disabled><span class="t">되돌리기</span></button>
+          <button type="button" id="copy" data-ic="copy" title="표로 복사"><span class="t">표로 복사</span></button>
+          <button type="button" id="print" data-ic="print" title="인쇄"><span class="t">인쇄</span></button>
+        </div>
+      </div>
+      <p class="msg no-print" id="msg" role="status" aria-live="polite"></p>
+      <div id="view" role="tabpanel"></div>
+    </section>
+  </div>
+</main>
+
+<div class="show" id="show" hidden role="dialog" aria-modal="true" aria-label="크게 보기">
+  <button type="button" class="close" id="closeShow" data-ic="x">닫기 (Esc)</button>
+  <div id="showBody"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const ROSTER_KEY = 'gil.class.roster.v1';
+  const KEY = 'gil.roles.v2';
+  const HELP = '_h';
+  const SAMPLE_NAMES = ['가람', '나래', '다온', '라온', '마루', '바다', '사랑', '아름', '자람', '하늘', '한결', '소담', '이든', '도담', '새봄', '여름', '윤슬', '보람', '슬기', '미르', '누리', '단비', '별하', '초롱', '해솔', '온유'];
+  // [이름, 할 일, 인원, 여럿이 해도 좋은 역할]
+  const SAMPLE_ROLES = [
+    ['칠판 지킴이', '쉬는 시간마다 칠판을 지우고 분필·마커를 챙겨요', 2, false],
+    ['우유 당번', '우유 상자를 가져오고 빈 팩을 정리해요', 2, true],
+    ['출석부 도우미', '출석부를 교무실에서 가져오고 돌려놔요', 1, false],
+    ['전등·에어컨', '이동 수업과 하교 때 전등과 냉난방기를 꺼요', 1, false],
+    ['창문 환기', '쉬는 시간에 창문을 열어 공기를 바꿔요', 2, true],
+    ['분리수거', '종이·플라스틱을 나눠 버리고 통을 비워요', 3, true],
+    ['게시판 꾸미기', '학급 게시판 자료를 바꿔 붙이고 정리해요', 2, true],
+    ['학급 문고', '책을 제자리에 꽂고 빌린 책을 확인해요', 2, true],
+    ['급식 안내', '급식 순서를 안내하고 줄을 정리해요', 2, true],
+    ['알림장 기록', '칠판에 오늘의 알림과 준비물을 적어요', 1, false],
+    ['화분 물주기', '월·목요일에 화분에 물을 줘요', 1, true],
+    ['컴퓨터·TV', '수업 전에 켜고 수업이 끝나면 꺼요', 1, false],
+    ['사물함 점검', '금요일에 사물함 정리 상태를 살펴봐요', 1, true],
+    ['수행평가 알리미', '다가오는 수행평가 날짜를 게시판에 적어요', 1, false],
+    ['교실 정돈', '하교 전에 책상 줄을 맞추고 바닥을 살펴봐요', 2, true],
+    ['우편 배달부', '가정통신문과 학습지를 나눠 줘요', 2, true]
+  ];
+  const HELP_DESC = '빈 역할을 돕고 선생님 심부름을 해요';
+  const MAX_COUNT = 10;
+
+  const ICONS = {
+    shuffle: 'M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5',
+    undo: 'M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11',
+    copy: 'M11 9h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2zM5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1',
+    print: 'M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z',
+    expand: 'M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3',
+    left: 'm15 18-6-6 6-6', right: 'm9 18 6-6-6-6', up: 'm18 15-6-6-6 6', down: 'm6 9 6 6 6-6',
+    x: 'M18 6 6 18M6 6l12 12', plus: 'M12 5v14M5 12h14', minus: 'M5 12h14',
+    pin: 'M9 3h6l-1 6 3 3v2H7v-2l3-3zM12 14v7'
+  };
+  const ic = (k, sz) => `<svg viewBox="0 0 24 24" width="${sz || 18}" height="${sz || 18}" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[k]}"/></svg>`;
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } },
+    del(k) { try { localStorage.removeItem(k); } catch (e) { /* 무시 */ } }
+  };
+
+  /* ---------- 날짜 ---------- */
+  const pad = (n) => String(n).padStart(2, '0');
+  const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const parseYmd = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+  const today = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  function defaultStart(mode) {
+    const t = today();
+    if (mode === 'month') return new Date(t.getFullYear(), t.getMonth(), 1);
+    if (mode === 'week' || mode === '2w') return addDays(t, -((t.getDay() + 6) % 7));
+    return t;
+  }
+  const schoolEnd = (d) => new Date(d.getMonth() >= 2 ? d.getFullYear() + 1 : d.getFullYear(), 2, 0); // 학년 말 = 2월 말일
+  const semOf = (d) => { const m = d.getMonth() + 1, y = d.getFullYear(); return m >= 3 && m <= 8 ? { y, s: 1 } : m >= 9 ? { y, s: 2 } : { y: y - 1, s: 2 }; };
+  const startOf = (st) => parseYmd(st.start) || defaultStart(st.mode);
+  function autoN(mode, start) {
+    const end = schoolEnd(start); let n;
+    if (mode === 'month') n = (end.getFullYear() - start.getFullYear()) * 12 + end.getMonth() - start.getMonth() + 1;
+    else if (mode === 'sem') n = semOf(start).s === 1 ? 2 : 1;
+    else { const len = mode === 'week' ? 7 : 14; n = Math.ceil((Math.round((end - start) / 864e5) + 1) / len); }
+    return Math.max(1, Math.min(52, n));
+  }
+  function periodsOf(st) {
+    const s0 = startOf(st), res = [];
+    for (let i = 0; i < st.n; i++) {
+      let a, b, label, full;
+      if (st.mode === 'month') {
+        a = new Date(s0.getFullYear(), s0.getMonth() + i, 1); b = new Date(a.getFullYear(), a.getMonth() + 1, 1);
+        label = (a.getMonth() + 1) + '월'; full = a.getFullYear() + '년 ' + label;
+      } else if (st.mode === 'sem') {
+        const s = semOf(s0); const k = s.s - 1 + i; const y = s.y + Math.floor(k / 2); const sem = (k % 2) + 1;
+        a = sem === 1 ? new Date(y, 2, 1) : new Date(y, 8, 1); b = sem === 1 ? new Date(y, 8, 1) : new Date(y + 1, 2, 1);
+        label = sem + '학기'; full = y + '학년도 ' + label;
+      } else {
+        const len = st.mode === 'week' ? 7 : 14;
+        a = addDays(s0, i * len); b = addDays(a, len); const last = addDays(b, -1);
+        label = (a.getMonth() + 1) + '/' + a.getDate() + '~' + (last.getMonth() + 1) + '/' + last.getDate();
+        full = a.getFullYear() + '년 ' + (a.getMonth() + 1) + '월 ' + a.getDate() + '일 ~ ' + (last.getMonth() + 1) + '월 ' + last.getDate() + '일';
+      }
+      res.push({ a, b, label, full });
+    }
+    return res;
+  }
+  const NOW_WORD = { month: '이번 달', '2w': '이번 2주', week: '이번 주', sem: '이번 학기' };
+
+  /* ---------- 명단 ---------- */
+  function parseNames(text) {
+    const list = [], cnt = new Map();
+    String(text || '').split(/[\n,\t;]+/).forEach((raw) => {
+      const s = raw.replace(/^\s*\d+\s*(?:번|[.)\]:\-])?\s*/, '').replace(/\s+/g, ' ').trim();
+      if (!s) return;
+      if (!cnt.has(s)) list.push(s);
+      cnt.set(s, (cnt.get(s) || 0) + 1);
+    });
+    const dups = [...cnt].filter(([, c]) => c > 1).map(([n, c]) => n + '(' + c + ')');
+    return { list, dups };
+  }
+
+  /* ---------- 상태 ---------- */
+  let uid = 0;
+  const newId = () => 'r' + Date.now().toString(36) + (uid++).toString(36);
+  const sampleRoles = () => SAMPLE_ROLES.map(([name, desc, count, flex]) => ({ id: newId(), name, desc, count, flex }));
+  const S = {
+    title: '우리 반 1인 1역', names: '', excluded: [], roles: sampleRoles(),
+    mode: 'month', start: ymd(defaultStart('month')), n: 5, nAuto: true,
+    pre: {}, seed: (Math.random() * 1e9) | 0, plan: null, view: 'poster', axis: 'role', cur: 0, remember: false
+  };
+  S.n = autoN(S.mode, startOf(S));
+  const undoStack = [];
+  const PERSIST = ['title', 'names', 'excluded', 'roles', 'mode', 'start', 'n', 'nAuto', 'pre', 'seed', 'plan', 'view', 'axis'];
+  const snap = () => JSON.stringify(PERSIST.reduce((o, k) => (o[k] = S[k], o), {}));
+  function pushUndo(s) { undoStack.push(s || snap()); if (undoStack.length > 40) undoStack.shift(); $('#undo').disabled = false; }
+
+  const students = () => { const ex = new Set(S.excluded); return parseNames(S.names).list.filter((n) => !ex.has(n)); };
+  const roleMap = () => { const m = {}; S.roles.forEach((r) => (m[r.id] = r)); return m; };
+  const roleName = (id, m) => id === HELP ? '도우미' : (m[id] ? (m[id].name || '(이름 없는 역할)') : '(지운 역할)');
+  function activePre(list) {
+    const m = roleMap(), act = new Set(list), out = {};
+    Object.keys(S.pre).sort().forEach((n) => { const p = S.pre[n]; if (act.has(n) && m[p.r]) out[n] = { r: p.r, f: !!p.f }; });
+    return out;
+  }
+
+  /* 자리 계산: 학생이 많으면 도우미, 적으면 여럿이 하는 역할부터 한 자리씩 줄인다 */
+  function capsFor(list, roles, pre) {
+    const total = roles.reduce((a, r) => a + r.count, 0), N = list.length, cap = {};
+    roles.forEach((r) => (cap[r.id] = r.count));
+    let helpers = 0, short = 0;
+    if (N > total) helpers = N - total;
+    else if (N < total) {
+      short = total - N;
+      const floor = {}; Object.values(pre).forEach((p) => (floor[p.r] = (floor[p.r] || 0) + 1));
+      for (let k = short; k > 0; k--) {
+        let best = null;
+        for (let i = roles.length - 1; i >= 0; i--) { const r = roles[i]; if (cap[r.id] > (floor[r.id] || 0) && (!best || cap[r.id] > cap[best.id])) best = r; }
+        if (!best) break;
+        cap[best.id]--;
+      }
+    }
+    return { cap, helpers, short, total, N };
+  }
+
+  function rngOf(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  // 최소 비용 배정(헝가리안). rows <= cols
+  function hungarian(a) {
+    const n = a.length, m = a[0].length, INF = 1e18;
+    const u = new Array(n + 1).fill(0), v = new Array(m + 1).fill(0), p = new Array(m + 1).fill(0), way = new Array(m + 1).fill(0);
+    for (let i = 1; i <= n; i++) {
+      p[0] = i; let j0 = 0; const minv = new Array(m + 1).fill(INF), used = new Array(m + 1).fill(false);
+      do {
+        used[j0] = true; const i0 = p[j0]; let delta = INF, j1 = 0;
+        for (let j = 1; j <= m; j++) if (!used[j]) {
+          const cur = a[i0 - 1][j - 1] - u[i0] - v[j];
+          if (cur < minv[j]) { minv[j] = cur; way[j] = j0; }
+          if (minv[j] < delta) { delta = minv[j]; j1 = j; }
+        }
+        for (let j = 0; j <= m; j++) { if (used[j]) { u[p[j]] += delta; v[j] -= delta; } else minv[j] -= delta; }
+        j0 = j1;
+      } while (p[j0] !== 0);
+      do { const j1 = way[j0]; p[j0] = p[j1]; j0 = j1; } while (j0);
+    }
+    const ans = new Array(n).fill(-1);
+    for (let j = 1; j <= m; j++) if (p[j]) ans[p[j] - 1] = j - 1;
+    return ans;
+  }
+
+  function sigOf() {
+    const list = students(), roles = S.roles, pre = activePre(list);
+    const c = capsFor(list, roles, pre);
+    return JSON.stringify([list, roles.map((r) => [r.id, r.count]), c.short ? roles.map((r) => r.id) : 0, S.n, pre, S.seed]);
+  }
+
+  function generate() {
+    const list = students(), roles = S.roles, pre = activePre(list);
+    const { cap, helpers } = capsFor(list, roles, pre);
+    const rng = rngOf(S.seed), hist = {}, prev = {}, periods = [];
+    list.forEach((s) => (hist[s] = {}));
+    for (let p = 0; p < S.n; p++) {
+      const asg = {}, left = Object.assign({}, cap);
+      if (helpers) left[HELP] = helpers;
+      list.forEach((s) => { const pr = pre[s]; if (pr && (pr.f || p === 0) && left[pr.r] > 0) { asg[s] = pr.r; left[pr.r]--; } });
+      const free = list.filter((s) => !(s in asg));
+      const slots = [];
+      roles.forEach((r) => { for (let k = 0; k < left[r.id]; k++) slots.push(r.id); });
+      for (let k = 0; k < (left[HELP] || 0); k++) slots.push(HELP);
+      while (slots.length < free.length) slots.push(HELP);
+      if (free.length) {
+        const cost = free.map((s) => slots.map((r) => (hist[s][r] || 0) * 100 + (prev[s] === r ? 1000 : 0) + rng() * 30));
+        const ans = hungarian(cost);
+        free.forEach((s, i) => (asg[s] = slots[ans[i]]));
+      }
+      list.forEach((s) => { const r = asg[s]; hist[s][r] = (hist[s][r] || 0) + 1; prev[s] = r; });
+      periods.push(asg);
+    }
+    return { sig: sigOf(), periods };
+  }
+  function ensurePlan() {
+    const sig = sigOf();
+    if (!S.plan || S.plan.sig !== sig || !Array.isArray(S.plan.periods)) { S.plan = generate(); sel = null; }
+    if (S.cur >= S.n) S.cur = S.n - 1;
+    if (S.cur < 0) S.cur = 0;
+  }
+  function currentIndex() {
+    const t = today(), ps = periodsOf(S);
+    for (let i = 0; i < ps.length; i++) if (t >= ps[i].a && t < ps[i].b) return i;
+    return ps.length && t >= ps[ps.length - 1].b ? ps.length - 1 : 0;
+  }
+
+  /* ---------- 저장 ---------- */
+  function save() {
+    if (!S.remember) return;
+    store.set(ROSTER_KEY, JSON.stringify({ names: S.names }));
+    const o = JSON.parse(snap()); delete o.names;
+    store.set(KEY, JSON.stringify(o));
+  }
+  function load() {
+    try { const r = JSON.parse(store.get(ROSTER_KEY) || 'null'); if (r && typeof r.names === 'string') S.names = r.names; } catch (e) { /* 무시 */ }
+    try {
+      const o = JSON.parse(store.get(KEY) || 'null');
+      if (o && typeof o === 'object') {
+        PERSIST.forEach((k) => { if (k !== 'names' && k in o) S[k] = o[k]; });
+        if (!Array.isArray(S.roles)) S.roles = sampleRoles();
+        S.roles.forEach((r) => { if (!r.id) r.id = newId(); r.count = Math.max(1, Math.min(MAX_COUNT, +r.count || 1)); });
+        if (!Array.isArray(S.excluded)) S.excluded = [];
+        if (!S.pre || typeof S.pre !== 'object') S.pre = {};
+        S.n = Math.max(1, Math.min(52, +S.n || 1));
+        S.remember = true;
+      }
+    } catch (e) { /* 무시 */ }
+  }
+
+  /* ---------- 메시지 ---------- */
+  let msgTimer = 0;
+  function say(text, ok, el) {
+    const m = el || $('#msg'); m.textContent = text || ''; m.classList.toggle('ok', !!ok);
+    if (!el) { clearTimeout(msgTimer); if (text) msgTimer = setTimeout(() => { m.textContent = ''; }, 6000); }
+  }
+
+  /* ---------- 설정 화면 ---------- */
+  function renderRoster() {
+    const { list, dups } = parseNames(S.names);
+    const ex = new Set(S.excluded.filter((n) => list.includes(n)));
+    const act = list.length - ex.size;
+    $('#count').textContent = list.length ? (ex.size ? `${act}명 (제외 ${ex.size}명)` : `${list.length}명`) : '0명';
+    say(dups.length ? `같은 이름이 있어요: ${dups.join(', ')}. 한 명으로 셌어요. 구분되게 바꿔 주세요 (예: 가람A, 가람B).` : '', false, $('#rosterMsg'));
+    $('#exWrap').hidden = !list.length;
+    const dupSet = new Set(dups.map((d) => d.replace(/\(\d+\)$/, '')));
+    $('#exChips').innerHTML = list.map((n) => `<button type="button" class="chip${ex.has(n) ? ' out' : ''}${dupSet.has(n) ? ' dup' : ''}" data-ex="${esc(n)}" aria-pressed="${ex.has(n)}" aria-label="${esc(n)} ${ex.has(n) ? '제외됨, 누르면 다시 넣어요' : '누르면 제외해요'}">${esc(n)}</button>`).join('');
+  }
+
+  function renderRoles() {
+    const ul = $('#roles'), last = S.roles.length - 1;
+    ul.innerHTML = S.roles.map((r, i) => `<li class="role" data-id="${r.id}">
+      <div class="rtop"><span class="rnum">${i + 1}</span><input type="text" class="rname" data-f="name" value="${esc(r.name)}" placeholder="역할 이름" aria-label="${i + 1}번 역할 이름" maxlength="20">
+        <div class="step" role="group" aria-label="인원"><button type="button" data-act="dec" aria-label="${esc(r.name || '역할')} 인원 줄이기" ${r.count <= 1 ? 'disabled' : ''}>${ic('minus', 16)}</button><output aria-live="polite">${r.count}</output><button type="button" data-act="inc" aria-label="${esc(r.name || '역할')} 인원 늘리기" ${r.count >= MAX_COUNT ? 'disabled' : ''}>${ic('plus', 16)}</button></div></div>
+      <div class="rbot"><span class="rnum"></span><input type="text" class="rdesc" data-f="desc" value="${esc(r.desc)}" placeholder="할 일 (예: 쉬는 시간에 칠판 지우기)" aria-label="${i + 1}번 역할 할 일" maxlength="40">
+        <button type="button" class="ic" data-act="up" aria-label="위로" ${i === 0 ? 'disabled' : ''}>${ic('up')}</button><button type="button" class="ic" data-act="down" aria-label="아래로" ${i === last ? 'disabled' : ''}>${ic('down')}</button><button type="button" class="ic" data-act="del" aria-label="${esc(r.name || '역할')} 지우기">${ic('x')}</button></div>
+    </li>`).join('');
+  }
+
+  function renderSlots() {
+    const list = students(), pre = activePre(list), c = capsFor(list, S.roles, pre), box = $('#slots');
+    let h = '', warn = false;
+    if (!S.roles.length) { h = '역할을 하나 이상 넣어 주세요.'; warn = true; }
+    else if (!c.N) h = `역할 자리 <b>${c.total}개</b>예요. 학생 이름을 넣으면 바로 배정해요.`;
+    else if (c.helpers) {
+      warn = true;
+      const flex = S.roles.filter((r) => r.flex && r.count < MAX_COUNT);
+      const sug = (flex.length ? flex : S.roles.filter((r) => r.count < MAX_COUNT)).slice(0, 6).map((r) => esc(r.name)).join(', ');
+      h = `학생 <b>${c.N}명</b>, 역할 자리 <b>${c.total}개</b>예요. 남는 <b>${c.helpers}명</b>은 기간마다 돌아가며 <b>도우미</b>가 돼요.`
+        + (sug ? `<br><span class="help">인원을 늘리기 좋은 역할: ${sug}</span>` : '')
+        + `<div class="row"><button type="button" class="sm" id="grow">남는 만큼 인원 늘리기</button></div>`;
+    } else if (c.short) {
+      warn = true;
+      const cut = S.roles.filter((r) => c.cap[r.id] < r.count).map((r) => `${esc(r.name)} ${r.count}→${c.cap[r.id]}`);
+      h = `학생 <b>${c.N}명</b>, 역할 자리 <b>${c.total}개</b>예요. 자리가 <b>${c.short}개</b> 남아서 여럿이 하는 역할부터 한 명씩 줄여 배정해요.`
+        + (cut.length ? `<br><span class="help">줄인 역할: ${cut.join(', ')}</span>` : '')
+        + `<div class="row"><button type="button" class="sm" id="shrink">역할 인원을 학생 수에 맞추기</button></div>`;
+    } else h = `학생 <b>${c.N}명</b>, 역할 자리 <b>${c.total}개</b>로 딱 맞아요.`;
+    box.innerHTML = h; box.classList.toggle('warn', warn);
+  }
+
+  let preSel = null;
+  function renderPre() {
+    const list = students(), m = roleMap();
+    if (preSel && !list.includes(preSel)) preSel = null;
+    $('#preStu').innerHTML = list.length ? list.map((n) => { const p = S.pre[n] && m[S.pre[n].r]; return `<button type="button" class="chip" data-ps="${esc(n)}" aria-pressed="${preSel === n}">${esc(n)}${p ? ' ✓' : ''}</button>`; }).join('') : '<span class="help">학생 이름을 먼저 넣어 주세요.</span>';
+    $('#preRoles').innerHTML = S.roles.map((r) => `<button type="button" class="chip" data-pr="${r.id}" ${preSel ? '' : 'disabled'}>${esc(r.name || '(이름 없음)')}</button>`).join('');
+    const items = list.filter((n) => S.pre[n] && m[S.pre[n].r]);
+    $('#preList').innerHTML = items.map((n) => { const p = S.pre[n]; return `<li><span><b>${esc(n)}</b> → ${esc(m[p.r].name)} <span class="help">${p.f ? '모든 기간' : '첫 기간'}</span></span><button type="button" class="chip sm" data-pf="${esc(n)}" aria-pressed="${!!p.f}">${ic('pin', 14)}고정</button><button type="button" class="ic" data-pd="${esc(n)}" aria-label="${esc(n)} 지정 지우기">${ic('x')}</button></li>`; }).join('');
+    const sum = $('#preBox summary .help'); sum.textContent = items.length ? `(${items.length}명 정함)` : '(선택)';
+  }
+
+  /* ---------- 결과 화면 ---------- */
+  let sel = null; // {p, name}
+  function groupsFor(p) {
+    const list = students(), asg = (S.plan.periods[p] || {});
+    const c = capsFor(list, S.roles, activePre(list));
+    const groups = S.roles.map((r) => ({ id: r.id, name: r.name || '(이름 없음)', desc: r.desc, cap: c.cap[r.id], who: [] }));
+    const gm = {}; groups.forEach((g) => (gm[g.id] = g));
+    const helpers = { id: HELP, name: '도우미', desc: HELP_DESC, cap: 0, who: [] };
+    list.forEach((s) => { const r = asg[s]; if (gm[r]) gm[r].who.push(s); else helpers.who.push(s); });
+    if (helpers.who.length) groups.push(helpers);
+    return groups;
+  }
+  const fixedOf = (name) => { const p = S.pre[name]; return p && p.f; };
+  function nameBtn(p, n, big) {
+    const pin = fixedOf(n) ? ic('pin', 14) : '';
+    if (big) return `<span class="nm" style="display:inline-flex;align-items:center;gap:4px">${esc(n)}${pin}</span>`;
+    const on = sel && sel.p === p && sel.name === n;
+    return `<button type="button" class="nm${on ? ' sel' : ''}" data-sw="${p}" data-name="${esc(n)}" aria-pressed="${!!on}"${fixedOf(n) ? ' title="고정된 학생"' : ''}>${esc(n)}${pin}</button>`;
+  }
+  function posterHTML(p, big) {
+    const ps = periodsOf(S), per = ps[p];
+    const groups = groupsFor(p);
+    const cards = groups.map((g, i) => {
+      const open = g.id === HELP ? 0 : Math.max(0, g.cap - g.who.length);
+      const slots = big ? '' : Array.from({ length: open }, () => `<button type="button" class="slot no-print" data-slot="${p}" data-role="${g.id}">+ 빈자리</button>`).join('');
+      const who = g.who.map((n) => nameBtn(p, n, big)).join('') + slots;
+      return `<article class="rc${g.id === HELP ? ' h' : ''}"><div class="rn">${g.id === HELP ? '' : `<i>${i + 1}</i>`}${esc(g.name)}</div>${g.desc ? `<p class="rd">${esc(g.desc)}</p>` : ''}<div class="who">${who || '<span class="help">이번에는 비어 있어요</span>'}</div></article>`;
+    }).join('');
+    const nav = (dir, k) => `<button type="button" class="ic${big ? '' : ' no-print'}" data-nav="${dir}" aria-label="${dir < 0 ? '이전 기간' : '다음 기간'}" ${k ? '' : 'disabled'}>${ic(dir < 0 ? 'left' : 'right', 22)}</button>`;
+    return `<div class="phead">${nav(-1, p > 0)}<div class="mid"><div class="ptitle">${esc(S.title || '우리 반 1인 1역')}</div><div class="plabel" title="${esc(per.full)}">${esc(per.label)}${S.n > 1 ? ` <span class="help">(${p + 1}/${S.n})</span>` : ''}</div></div>${nav(1, p < S.n - 1)}</div><div class="pgrid">${cards}</div>`;
+  }
+  function tableHTML() {
+    const ps = periodsOf(S), list = students(), m = roleMap(), now = currentIndex();
+    const head = `<thead><tr><th scope="col">${S.axis === 'role' ? '역할' : '이름'}</th>${ps.map((x, i) => `<th scope="col" class="${i === now ? 'now' : ''}" title="${esc(x.full)}">${esc(x.label)}</th>`).join('')}</tr></thead>`;
+    let body = '';
+    if (S.axis === 'role') {
+      const all = ps.map((_, p) => groupsFor(p));
+      const ids = S.roles.map((r) => r.id); if (all.some((g) => g.some((x) => x.id === HELP))) ids.push(HELP);
+      body = ids.map((id) => `<tr><th scope="row">${esc(roleName(id, m))}</th>${ps.map((_, p) => { const g = all[p].find((x) => x.id === id); const open = g && id !== HELP ? Math.max(0, g.cap - g.who.length) : 0; return `<td class="${p === now ? 'now' : ''}">${g ? g.who.map((n) => nameBtn(p, n)).join('') : ''}${Array.from({ length: open }, () => `<button type="button" class="slot no-print" data-slot="${p}" data-role="${id}">+</button>`).join('')}</td>`; }).join('')}</tr>`).join('');
+    } else {
+      body = list.map((s) => `<tr><th scope="row">${esc(s)}${fixedOf(s) ? ' ' + ic('pin', 13) : ''}</th>${ps.map((_, p) => { const r = S.plan.periods[p] && S.plan.periods[p][s]; const on = sel && sel.p === p && sel.name === s; return `<td class="${p === now ? 'now' : ''}"><button type="button" class="nm rl${on ? ' sel' : ''}" data-sw="${p}" data-name="${esc(s)}" aria-pressed="${!!on}" aria-label="${esc(s)}, ${esc(ps[p].label)}: ${esc(roleName(r, m))}">${esc(roleName(r, m))}</button></td>`; }).join('')}</tr>`).join('');
+    }
+    return `<div class="seg no-print" role="group" aria-label="표 기준"><button type="button" data-axis="role" aria-pressed="${S.axis === 'role'}">역할 × 기간</button><button type="button" data-axis="student" aria-pressed="${S.axis === 'student'}">학생 × 기간</button></div>
+      <div class="print-only ph">${esc(S.title)} · ${esc(ps[0].label)}~${esc(ps[ps.length - 1].label)}</div>
+      <div class="tw" tabindex="0" aria-label="전체 배정표 (가로로 넘겨 보세요)"><table>${head}<tbody>${body}</tbody></table></div>`;
+  }
+  let filterText = '';
+  function studentCards() {
+    const ps = periodsOf(S), m = roleMap(), now = currentIndex(), f = filterText.trim();
+    const list = students().filter((s) => !f || s.includes(f));
+    if (!list.length) return '<p class="empty">찾는 이름이 없어요.</p>';
+    return list.map((s) => {
+      const rs = ps.map((_, p) => S.plan.periods[p] && S.plan.periods[p][s]);
+      const kinds = new Set(rs.filter((r) => r && r !== HELP)).size;
+      return `<article class="sc"><h3>${esc(s)}${fixedOf(s) ? ' ' + ic('pin', 14) : ''}<small>역할 ${kinds}가지</small></h3><ol>${ps.map((x, p) => `<li class="${p === now ? 'now' : ''}"><b>${esc(x.label)}</b>${esc(roleName(rs[p], m))}</li>`).join('')}</ol></article>`;
+    }).join('');
+  }
+  function studentHTML() {
+    const ps = periodsOf(S);
+    return `<div class="row no-print" style="margin-top:10px"><input type="search" id="filter" placeholder="이름 찾기" aria-label="이름 찾기" style="max-width:240px" value="${esc(filterText)}"></div>
+      <div class="print-only ph">${esc(S.title)} · 학생별 (${esc(ps[0].label)}~${esc(ps[ps.length - 1].label)})</div>
+      <div class="sgrid" id="sgrid">${studentCards()}</div>`;
+  }
+  function renderResult() {
+    document.querySelectorAll('.tabs [role=tab]').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.view === S.view)));
+    $('#tab-poster').textContent = NOW_WORD[S.mode] || '이번 달';
+    $('#view').setAttribute('aria-labelledby', 'tab-' + S.view);
+    document.body.className = 'v-' + S.view;
+    const v = $('#view'), list = students();
+    const ready = list.length && S.roles.length && S.plan;
+    ['shuffle', 'copy', 'print', 'big'].forEach((id) => ($('#' + id).disabled = !ready));
+    $('#big').hidden = S.view !== 'poster';
+    if (!ready) {
+      v.innerHTML = `<p class="empty">${!S.roles.length ? '역할을 하나 이상 넣어 주세요.' : '왼쪽에 학생 이름을 넣거나 <b>예시 넣기</b>를 눌러 보세요.'}</p>`;
+      return;
+    }
+    if (S.view === 'poster') v.innerHTML = posterHTML(S.cur) + `<p class="hint no-print">이름 두 개를 차례로 누르면 서로 바꿔요. 이름을 누르고 <b>+ 빈자리</b>를 누르면 옮겨요. ${ic('pin', 13)} 표시는 고정된 학생이에요.</p>`;
+    else if (S.view === 'table') v.innerHTML = tableHTML() + `<p class="hint no-print">같은 기간(세로 칸)의 이름 두 개를 차례로 누르면 서로 바꿔요.</p>`;
+    else v.innerHTML = studentHTML();
+    if (showOpen) renderShow();
+  }
+
+  function update() {
+    ensurePlan();
+    renderRoster(); renderSlots(); renderPre(); renderResult();
+    save();
+  }
+
+  /* ---------- 크게 보기 ---------- */
+  let showOpen = false, fsOn = false, lastFocus = null;
+  function renderShow() { $('#showBody').innerHTML = posterHTML(S.cur, true); }
+  function openShow() {
+    if (!S.plan || !students().length) return;
+    lastFocus = document.activeElement; showOpen = true; renderShow();
+    $('#show').hidden = false; document.body.style.overflow = 'hidden';
+    $('#closeShow').focus();
+    try { const el = $('#show'); if (el.requestFullscreen) { const r = el.requestFullscreen(); if (r && r.then) r.then(() => { fsOn = true; }, () => { }); } } catch (e) { /* 전체 화면을 못 써도 괜찮아요 */ }
+  }
+  function closeShow() {
+    if (!showOpen) return;
+    showOpen = false; $('#show').hidden = true; document.body.style.overflow = '';
+    try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => { }); } catch (e) { /* 무시 */ }
+    fsOn = false;
+    renderResult();
+    if (lastFocus && lastFocus.focus && document.contains(lastFocus)) lastFocus.focus(); else { const b = $('#big'); if (b) b.focus(); }
+  }
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && fsOn) { fsOn = false; closeShow(); } });
+  $('#closeShow').addEventListener('click', closeShow);
+  $('#big').addEventListener('click', openShow);
+  $('#show').addEventListener('click', (e) => { const b = e.target.closest('[data-nav]'); if (b && !b.disabled) go(+b.dataset.nav); });
+
+  function go(d) {
+    const n = Math.max(0, Math.min(S.n - 1, S.cur + d)); if (n === S.cur) return;
+    S.cur = n; sel = null; renderResult();
+    const b = document.querySelector((showOpen ? '#show ' : '#view ') + `[data-nav="${d}"]`); if (b && !b.disabled) b.focus();
+  }
+
+  /* ---------- 바꾸기 ---------- */
+  function swapClick(p, name) {
+    const ps = periodsOf(S), m = roleMap();
+    if (!sel || sel.p !== p) { sel = { p, name }; say(`${name} 선택 (${ps[p].label}). 같은 기간의 다른 이름을 누르면 서로 바꿔요.`, true); }
+    else if (sel.name === name) { sel = null; say(''); }
+    else {
+      const per = S.plan.periods[p], a = sel.name, ra = per[a], rb = per[name];
+      if (ra === rb) { sel = { p, name }; say(`두 학생이 같은 역할이에요. ${name}을(를) 선택했어요.`); }
+      else {
+        pushUndo(); per[a] = rb; per[name] = ra; sel = null;
+        say(`${ps[p].label}: ${a} → ${roleName(rb, m)}, ${name} → ${roleName(ra, m)}로 바꿨어요.`, true);
+        if (fixedOf(a) || fixedOf(name)) say(`${ps[p].label}: 바꿨어요. 고정된 학생도 이 기간만 바뀌었어요.`, true);
+        save();
+      }
+    }
+    renderResult();
+  }
+  function slotClick(p, roleId) {
+    const ps = periodsOf(S), m = roleMap();
+    if (!sel || sel.p !== p) { say('먼저 옮길 학생 이름을 누른 뒤 빈자리를 눌러요.'); return; }
+    pushUndo(); S.plan.periods[p][sel.name] = roleId;
+    say(`${ps[p].label}: ${sel.name} → ${roleName(roleId, m)}로 옮겼어요.`, true);
+    sel = null; save(); renderResult();
+  }
+
+  /* ---------- 복사 ---------- */
+  function tsv() {
+    const ps = periodsOf(S), m = roleMap(), list = students(), clean = (s) => String(s).replace(/[\t\n\r]+/g, ' ');
+    const rows = [];
+    if (S.view === 'poster') {
+      rows.push([S.title + ' (' + ps[S.cur].label + ')']); rows.push(['역할', '할 일', '이름']);
+      groupsFor(S.cur).forEach((g) => rows.push([g.name, g.desc || '', g.who.join(', ')]));
+    } else if (S.view === 'table' && S.axis === 'role') {
+      rows.push(['역할', '할 일'].concat(ps.map((x) => x.label)));
+      const all = ps.map((_, p) => groupsFor(p));
+      const ids = S.roles.map((r) => r.id); if (all.some((g) => g.some((x) => x.id === HELP))) ids.push(HELP);
+      ids.forEach((id) => rows.push([roleName(id, m), id === HELP ? HELP_DESC : (m[id].desc || '')].concat(all.map((g) => { const x = g.find((y) => y.id === id); return x ? x.who.join(', ') : ''; }))));
+    } else {
+      rows.push(['이름'].concat(ps.map((x) => x.label)));
+      list.forEach((s) => rows.push([s].concat(ps.map((_, p) => roleName(S.plan.periods[p][s], m)))));
+    }
+    return rows.map((r) => r.map(clean).join('\t')).join('\n');
+  }
+  function copyText(text) {
+    const fallback = () => {
+      const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; } ta.remove(); return ok;
+    };
+    const done = (ok) => say(ok ? '표를 복사했어요. 한글·엑셀·구글 시트에 붙여 넣으세요.' : '복사하지 못했어요. 인쇄를 이용해 주세요.', ok);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) { navigator.clipboard.writeText(text).then(() => done(true), () => done(fallback())); return; }
+    } catch (e) { /* 아래로 */ }
+    done(fallback());
+  }
+
+  /* ---------- 이벤트: 설정 ---------- */
+  let pending = null, rTimer = 0;
+  document.addEventListener('focusin', (e) => { if (e.target.matches('#names, #title, .rname, .rdesc')) pending = snap(); });
+  document.addEventListener('change', (e) => { if (e.target.matches('#names, #title, .rname, .rdesc') && pending) { if (pending !== snap()) pushUndo(pending); pending = null; } });
+
+  $('#names').addEventListener('input', (e) => { S.names = e.target.value; clearTimeout(rTimer); rTimer = setTimeout(update, 250); });
+  $('#title').addEventListener('input', (e) => { S.title = e.target.value; renderResult(); save(); });
+  $('#exChips').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ex]'); if (!b) return;
+    pushUndo(); const n = b.dataset.ex, i = S.excluded.indexOf(n);
+    if (i >= 0) S.excluded.splice(i, 1); else S.excluded.push(n);
+    update();
+    const nb = [...document.querySelectorAll('#exChips [data-ex]')].find((x) => x.dataset.ex === n); if (nb) nb.focus();
+  });
+
+  const roleOf = (el) => { const li = el.closest('.role'); return li && S.roles.find((r) => r.id === li.dataset.id); };
+  $('#roles').addEventListener('input', (e) => {
+    const r = roleOf(e.target); if (!r || !e.target.dataset.f) return;
+    r[e.target.dataset.f] = e.target.value; renderPre(); renderResult(); save();
+  });
+  $('#roles').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+    const r = roleOf(b); if (!r) return; const i = S.roles.indexOf(r), act = b.dataset.act;
+    pushUndo();
+    if (act === 'inc') r.count = Math.min(MAX_COUNT, r.count + 1);
+    else if (act === 'dec') {
+      const need = Object.values(activePre(students())).filter((p) => p.r === r.id).length;
+      if (r.count - 1 < Math.max(1, need)) { undoStack.pop(); $('#undo').disabled = !undoStack.length; say(`${r.name}에 미리 정한 학생이 ${need}명이라 더 줄일 수 없어요.`); return; }
+      r.count--;
+    } else if (act === 'up' && i > 0) { S.roles.splice(i, 1); S.roles.splice(i - 1, 0, r); }
+    else if (act === 'down' && i < S.roles.length - 1) { S.roles.splice(i, 1); S.roles.splice(i + 1, 0, r); }
+    else if (act === 'del') {
+      S.roles.splice(i, 1);
+      Object.keys(S.pre).forEach((n) => { if (S.pre[n].r === r.id) delete S.pre[n]; });
+      say(`'${r.name || '역할'}'을(를) 지웠어요. 되돌리기로 살릴 수 있어요.`, true);
+    }
+    renderRoles(); update();
+    const li = document.querySelector(`.role[data-id="${r.id}"]`);
+    if (li) { const nb = li.querySelector(`[data-act="${act}"]`); (nb && !nb.disabled ? nb : li.querySelector('.rname')).focus(); }
+    else { const f = document.querySelector('#roles .rname') || $('#addRole'); f.focus(); }
+  });
+  $('#addRole').addEventListener('click', () => {
+    pushUndo(); const r = { id: newId(), name: '', desc: '', count: 1, flex: false }; S.roles.push(r);
+    renderRoles(); update(); const inp = document.querySelector(`.role[data-id="${r.id}"] .rname`); if (inp) inp.focus();
+  });
+  $('#sampleRoles').addEventListener('click', () => {
+    pushUndo(); S.roles = sampleRoles(); S.pre = {}; renderRoles(); update();
+    say('예시 역할 16가지로 바꿨어요. 되돌리기로 이전 역할을 살릴 수 있어요.', true);
+  });
+  $('#slots').addEventListener('click', (e) => {
+    const list = students(), c = capsFor(list, S.roles, activePre(list));
+    if (e.target.closest('#grow')) {
+      pushUndo(); let k = c.helpers; const flex = S.roles.filter((r) => r.flex); let pool = flex.length ? flex : S.roles.slice(); let guard = 0;
+      while (k > 0 && guard++ < 500) {
+        pool = pool.filter((r) => r.count < MAX_COUNT); if (!pool.length) { pool = S.roles.filter((r) => r.count < MAX_COUNT); if (!pool.length) break; }
+        for (const r of pool) { if (k <= 0) break; if (r.count < MAX_COUNT) { r.count++; k--; } }
+      }
+      renderRoles(); update(); say('남는 학생 수만큼 역할 인원을 늘렸어요.', true);
+    } else if (e.target.closest('#shrink')) {
+      pushUndo(); S.roles.forEach((r) => (r.count = Math.max(1, c.cap[r.id] || 1))); renderRoles(); update();
+      say('역할 인원을 학생 수에 맞췄어요.', true);
+    }
+  });
+
+  function syncPeriodInputs() { $('#mode').value = S.mode; $('#start').value = S.start; $('#n').value = S.n; }
+  $('#mode').addEventListener('change', (e) => {
+    pushUndo(); S.mode = e.target.value; S.start = ymd(defaultStart(S.mode));
+    if (S.nAuto) S.n = autoN(S.mode, startOf(S));
+    syncPeriodInputs(); S.cur = currentIndex(); update();
+  });
+  $('#start').addEventListener('change', (e) => {
+    if (!parseYmd(e.target.value)) { e.target.value = S.start; return; }
+    pushUndo(); S.start = e.target.value; if (S.nAuto) S.n = autoN(S.mode, startOf(S));
+    syncPeriodInputs(); S.cur = currentIndex(); update();
+  });
+  $('#n').addEventListener('change', (e) => {
+    const v = Math.max(1, Math.min(52, Math.round(+e.target.value) || 1));
+    if (v === S.n) { e.target.value = v; return; }
+    pushUndo(); S.n = v; S.nAuto = false; e.target.value = v; update();
+  });
+  $('#autoN').addEventListener('click', () => { pushUndo(); S.nAuto = true; S.n = autoN(S.mode, startOf(S)); syncPeriodInputs(); update(); say(`학년 말까지 ${S.n}개 기간으로 맞췄어요.`, true); });
+
+  $('#preStu').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ps]'); if (!b) return;
+    preSel = preSel === b.dataset.ps ? null : b.dataset.ps; say('', false, $('#preMsg'));
+    renderPre(); const nb = [...document.querySelectorAll('#preStu [data-ps]')].find((x) => x.dataset.ps === b.dataset.ps); if (nb) nb.focus();
+  });
+  $('#preRoles').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pr]'); if (!b || !preSel) return;
+    const r = S.roles.find((x) => x.id === b.dataset.pr); if (!r) return;
+    const taken = Object.entries(activePre(students())).filter(([n, p]) => p.r === r.id && n !== preSel).length;
+    if (taken >= r.count) { say(`${r.name}은(는) ${r.count}명 자리가 이미 다 찼어요. 인원을 늘리거나 다른 역할을 골라 주세요.`, false, $('#preMsg')); return; }
+    pushUndo(); const f = S.pre[preSel] ? !!S.pre[preSel].f : false;
+    S.pre[preSel] = { r: r.id, f }; say(`${preSel} → ${r.name} (${f ? '모든 기간' : '첫 기간'})`, true, $('#preMsg'));
+    preSel = null; update();
+  });
+  $('#preList').addEventListener('click', (e) => {
+    const f = e.target.closest('[data-pf]'), d = e.target.closest('[data-pd]');
+    if (f) { pushUndo(); const p = S.pre[f.dataset.pf]; if (p) p.f = !p.f; update(); const nb = [...document.querySelectorAll('#preList [data-pf]')].find((x) => x.dataset.pf === f.dataset.pf); if (nb) nb.focus(); }
+    else if (d) { pushUndo(); delete S.pre[d.dataset.pd]; update(); say('지정을 지웠어요.', true, $('#preMsg')); }
+  });
+
+  $('#remember').addEventListener('change', (e) => {
+    S.remember = e.target.checked;
+    if (S.remember) { save(); say('이 브라우저에 명단과 배정을 기억해요. 공용 컴퓨터라면 꺼 주세요.', true); }
+    else { store.del(KEY); store.del(ROSTER_KEY); say('이 기기에 저장된 명단과 배정을 지웠어요.', true); }
+  });
+  $('#sample').addEventListener('click', () => {
+    pushUndo(); S.names = SAMPLE_NAMES.join('\n'); S.excluded = []; $('#names').value = S.names;
+    if (!S.roles.length) { S.roles = sampleRoles(); renderRoles(); }
+    S.cur = currentIndex(); update(); say('가상의 이름 26명을 넣었어요. 실제 명단으로 바꿔 써 주세요.', true);
+  });
+  $('#clear').addEventListener('click', () => {
+    if (!S.names && !S.excluded.length) return;
+    pushUndo(); S.names = ''; S.excluded = []; S.pre = {}; $('#names').value = ''; update(); say('명단을 비웠어요. 되돌리기로 다시 살릴 수 있어요.', true);
+  });
+
+  /* ---------- 이벤트: 결과 ---------- */
+  document.querySelector('.tabs').addEventListener('click', (e) => {
+    const t = e.target.closest('[data-view]'); if (!t) return; S.view = t.dataset.view; sel = null; renderResult(); save();
+  });
+  document.querySelector('.tabs').addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const tabs = [...document.querySelectorAll('.tabs [role=tab]')], i = tabs.findIndex((t) => t.dataset.view === S.view);
+    const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; S.view = n.dataset.view; renderResult(); n.focus(); e.preventDefault();
+  });
+  $('#view').addEventListener('click', (e) => {
+    const sw = e.target.closest('[data-sw]'), sl = e.target.closest('[data-slot]'), nv = e.target.closest('[data-nav]'), ax = e.target.closest('[data-axis]');
+    if (sw) { swapClick(+sw.dataset.sw, sw.dataset.name); const nb = [...document.querySelectorAll('#view [data-sw]')].find((x) => +x.dataset.sw === +sw.dataset.sw && x.dataset.name === sw.dataset.name); if (nb) nb.focus(); }
+    else if (sl) slotClick(+sl.dataset.slot, sl.dataset.role);
+    else if (nv && !nv.disabled) go(+nv.dataset.nav);
+    else if (ax) { S.axis = ax.dataset.axis; sel = null; renderResult(); save(); }
+    
+  });
+  $('#view').addEventListener('input', (e) => { if (e.target.id === 'filter') { filterText = e.target.value; $('#sgrid').innerHTML = studentCards(); } });
+  $('#shuffle').addEventListener('click', () => {
+    if (!students().length) return;
+    pushUndo(); S.seed = (Math.random() * 1e9) | 0; S.plan = null; update();
+    say('새로 섞었어요. 마음에 안 들면 되돌리기를 눌러요.', true);
+  });
+  $('#undo').addEventListener('click', () => {
+    const s = undoStack.pop(); if (!s) return;
+    try { const o = JSON.parse(s); PERSIST.forEach((k) => { if (k in o) S[k] = o[k]; }); } catch (e) { /* 무시 */ }
+    $('#undo').disabled = !undoStack.length; sel = null;
+    $('#names').value = S.names; $('#title').value = S.title; syncPeriodInputs();
+    renderRoles(); update(); say('되돌렸어요.', true);
+  });
+  $('#copy').addEventListener('click', () => { if (S.plan && students().length) copyText(tsv()); });
+  $('#print').addEventListener('click', () => { sel = null; renderResult(); try { window.print(); } catch (e) { say('인쇄 창을 열지 못했어요.'); } });
+
+  document.addEventListener('keydown', (e) => {
+    if (showOpen) {
+      if (e.key === 'Escape') { e.preventDefault(); closeShow(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(-1); }
+      else if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(1); }
+      else if (e.key === 'Tab') { e.preventDefault(); $('#closeShow').focus(); }
+      return;
+    }
+    if (e.key === 'Escape' && sel) { sel = null; say(''); renderResult(); }
+  });
+
+  /* ---------- 시작 ---------- */
+  document.querySelectorAll('[data-ic]').forEach((b) => b.insertAdjacentHTML('afterbegin', ic(b.dataset.ic)));
+  load();
+  $('#names').value = S.names; $('#title').value = S.title; $('#remember').checked = S.remember;
+  if (!['month', '2w', 'week', 'sem'].includes(S.mode)) S.mode = 'month';
+  if (!['poster', 'table', 'student'].includes(S.view)) S.view = 'poster';
+  if (!parseYmd(S.start)) S.start = ymd(defaultStart(S.mode));
+  syncPeriodInputs(); renderRoles();
+  S.cur = currentIndex();
+  update();
+
+  // 확인용(화면 동작에는 쓰지 않음)
+  window.RolesApp = { state: S, generate, update, students, capsFor, activePre, periodsOf, parseNames, HELP, renderRoles };
+})();
+</script>
+</body>
+</html>

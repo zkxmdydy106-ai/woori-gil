@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galton Board Simulation</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <main class="simulation-area">
+            <canvas id="galton-canvas"></canvas>
+        </main>
+        
+        <aside class="sidebar">
+            <div class="glass-panel controls">
+                <h1>Galton Board</h1>
+                <p class="subtitle">Normal Distribution Visualizer</p>
+                
+                <div class="button-group">
+                    <button id="start-btn" class="btn primary">Start</button>
+                    <button id="reset-btn" class="btn secondary">Reset</button>
+                </div>
+            </div>
+
+            <div class="glass-panel stats">
+                <h2>Statistics</h2>
+                <div class="stat-item">
+                    <span class="label">Total Balls</span>
+                    <span class="value" id="total-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Mean (μ)</span>
+                    <span class="value" id="mean-val">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Std Dev (σ)</span>
+                    <span class="value" id="std-dev-val">-</span>
+                </div>
+                <div class="stat-breakdown">
+                    <h3>Distribution Info</h3>
+                    <p id="distribution-desc">Waiting for data...</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

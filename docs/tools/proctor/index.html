@@ -1,0 +1,91 @@
+<!doctype html>
+<!-- 시험 감독 시간 계산기: 감독 배정표를 붙여 넣으면 선생님별 감독 횟수·시간을 센다. 모든 계산은 이 브라우저 안에서만 한다. -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시험 감독 시간 계산기</title>
+<style>
+:root{--bg:#f3f5f4;--surface:#fcfdfc;--text:#17201c;--muted:#56625c;--line:#dde3df;--accent:#14684e;--soft:#e1efe8;--on:#f6fbf8;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#101412;--surface:#171c19;--text:#e6ece8;--muted:#a3aea8;--line:#29312d;--accent:#4fb48d;--soft:#1a2e25;--on:#0b1510;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.6;word-break:keep-all}
+main{max-width:860px;margin:0 auto;padding:28px 16px 60px}
+h1{font-size:26px;letter-spacing:-.03em;margin:0 0 4px}p.sub{color:var(--muted);margin:0 0 22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+label{font-weight:600;display:block;margin-bottom:6px}.help{font-weight:400;color:var(--muted);font-size:14px}
+textarea{width:100%;min-height:180px;border:1px solid var(--line);border-radius:10px;padding:10px;font:14px/1.5 ui-monospace,Consolas,monospace;background:var(--bg);color:var(--text)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+input[type=number]{width:90px;height:40px;border:1px solid var(--line);border-radius:10px;padding:0 10px;font:inherit;background:var(--surface);color:var(--text)}
+button{font:inherit;font-weight:600;height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);cursor:pointer}
+button.p{background:var(--accent);border-color:var(--accent);color:var(--on)}
+table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:9px 10px;text-align:left}th{color:var(--muted);font-size:13.5px;border-bottom:1px solid var(--line)}
+tr+tr td{border-top:1px solid var(--line)}td.n{font-variant-numeric:tabular-nums}
+.bar{display:inline-block;height:8px;border-radius:4px;background:var(--accent);vertical-align:middle}
+.note{background:var(--soft);border-radius:10px;padding:10px 14px;font-size:14px;margin-top:12px}
+.err{color:#b3261e;font-size:14px;margin-top:8px}
+</style>
+</head>
+<body>
+<main>
+  <h1>시험 감독 시간 계산기</h1>
+  <p class="sub">엑셀 감독 배정표를 그대로 복사해 붙여 넣으면 선생님별 감독 횟수와 시간을 바로 셉니다.</p>
+  <div class="card">
+    <label for="src">감독 배정표 붙여넣기 <span class="help">첫 줄은 제목 줄. '정감독', '부감독' 열을 찾아 셉니다.</span></label>
+    <textarea id="src" spellcheck="false"></textarea>
+    <div class="row">
+      <label for="min" style="margin:0">한 교시</label><input id="min" type="number" value="50" min="10" max="120"><span class="help">분</span>
+      <span style="flex:1"></span>
+      <button id="sample">예시 넣기</button><button class="p" id="run">계산하기</button>
+    </div>
+    <div id="err" class="err" role="alert"></div>
+    <div class="note">붙여 넣은 내용은 서버로 보내지 않고 이 화면 안에서만 계산합니다. 창을 닫으면 사라집니다.</div>
+  </div>
+  <div class="card" id="out" hidden>
+    <div class="row" style="margin:0 0 10px"><b id="sum"></b><span style="flex:1"></span><button id="copy">결과 복사</button></div>
+    <table><thead><tr><th>선생님</th><th>정감독</th><th>부감독</th><th>합계</th><th>시간</th><th></th></tr></thead><tbody id="tb"></tbody></table>
+  </div>
+</main>
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  // 시연용 예시: 이름 대신 과목+번호
+  var SAMPLE = '날짜\t교시\t교실\t정감독\t부감독\n10/13\t1\t1-1\t국어1\t수학2\n10/13\t1\t1-2\t영어1\t과학1\n10/13\t2\t1-1\t수학1\t국어2\n10/13\t2\t1-2\t국어1\t영어2\n10/14\t1\t1-1\t과학1\t수학1\n10/14\t1\t1-2\t사회1\t국어1\n10/14\t2\t1-1\t영어1\t사회1\n10/14\t2\t1-2\t수학2\t과학2';
+  var last = [];
+  $('#sample').onclick = function () { $('#src').value = SAMPLE; run(); };
+  $('#run').onclick = run;
+  function run() {
+    $('#err').textContent = '';
+    var lines = $('#src').value.replace(/\r/g, '').split('\n').filter(function (l) { return l.trim(); });
+    if (lines.length < 2) { $('#err').textContent = '제목 줄과 배정 내용을 함께 붙여 넣어 주세요.'; return; }
+    var split = function (l) { return l.indexOf('\t') >= 0 ? l.split('\t') : l.split(','); };
+    var head = split(lines[0]).map(function (h) { return h.trim(); });
+    var ci = head.findIndex(function (h) { return /정\s*감독/.test(h); });
+    var bi = head.findIndex(function (h) { return /부\s*감독/.test(h); });
+    if (ci < 0 && bi < 0) { $('#err').textContent = "제목 줄에서 '정감독' 또는 '부감독' 열을 찾지 못했어요."; return; }
+    var min = Math.max(1, Number($('#min').value) || 50), map = {};
+    lines.slice(1).forEach(function (l) {
+      var c = split(l);
+      [[ci, 'a'], [bi, 'b']].forEach(function (p) {
+        if (p[0] < 0) return;
+        String(c[p[0]] || '').split(/[\/·,]/).map(function (x) { return x.trim(); }).filter(Boolean).forEach(function (n) {
+          map[n] = map[n] || { name: n, a: 0, b: 0 }; map[n][p[1]]++;
+        });
+      });
+    });
+    last = Object.keys(map).map(function (k) { var o = map[k]; o.t = o.a + o.b; return o; }).sort(function (x, y) { return y.t - x.t || x.name.localeCompare(y.name, 'ko'); });
+    var max = last.length ? last[0].t : 1;
+    $('#tb').innerHTML = last.map(function (o) {
+      return '<tr><td>' + esc(o.name) + '</td><td class="n">' + o.a + '</td><td class="n">' + o.b + '</td><td class="n"><b>' + o.t + '</b></td><td class="n">' + (o.t * min) + '분</td><td style="width:30%"><span class="bar" style="width:' + Math.round(o.t / max * 100) + '%"></span></td></tr>';
+    }).join('');
+    $('#sum').textContent = '선생님 ' + last.length + '명, 감독 ' + last.reduce(function (s, o) { return s + o.t; }, 0) + '회';
+    $('#out').hidden = false;
+  }
+  $('#copy').onclick = function () {
+    var txt = '선생님\t정감독\t부감독\t합계\t시간(분)\n' + last.map(function (o) { return [o.name, o.a, o.b, o.t, o.t * (Number($('#min').value) || 50)].join('\t'); }).join('\n');
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { $('#copy').textContent = '복사했어요'; }, function () { $('#copy').textContent = '복사 실패'; });
+  };
+})();
+</script>
+</body>
+</html>

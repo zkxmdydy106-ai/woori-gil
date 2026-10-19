@@ -1,0 +1,1084 @@
+<!doctype html>
+<!-- groups.html (v2): 모둠 만들기·발표 뽑기. 명단 하나로 모둠을 조건에 맞게 섞고, 발표할 학생을 겹치지 않게 뽑는다. 이름은 이 기기 밖으로 보내지 않는다(선택 시 이 기기에만 기억). -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>모둠 만들기·발표 뽑기</title>
+<style>
+/* 색 토큰: seat.html 과 같은 초록 계열 + 모둠 색 10가지(밝은/어두운 화면용) */
+:root{--bg:#f4f6f5;--card:#fcfdfc;--text:#17201c;--muted:#56625c;--line:#dde3df;--accent:#14684e;--accent-2:#0f5640;--soft:#e1efe8;--on:#f6fbf8;--warn:#8a5300;--warn-soft:#fbf0dc;--shadow:0 1px 2px rgba(20,40,30,.06),0 4px 14px rgba(20,40,30,.05);color-scheme:light;
+--g1:#1d7a57;--g1s:#e3f2ea;--g2:#2a64ad;--g2s:#e4edf9;--g3:#b4502f;--g3s:#fbe9e2;--g4:#6f4bb0;--g4s:#efe9f8;--g5:#8f5f00;--g5s:#f8efd9;--g6:#0f7480;--g6s:#ddf1f3;--g7:#ad3e70;--g7s:#f9e4ee;--g8:#56701a;--g8s:#edf2dc;--g9:#3f4fae;--g9s:#e6e9f8;--g10:#85543a;--g10s:#f3e8e0}
+@media screen and (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#101412;--card:#171c19;--text:#e6ece8;--muted:#a3aea8;--line:#29312d;--accent:#4fb48d;--accent-2:#6cc8a3;--soft:#1a2e25;--on:#0b1510;--warn:#f0b45c;--warn-soft:#2e2410;--shadow:0 1px 2px rgba(0,0,0,.4);color-scheme:dark;
+--g1:#6fd0a5;--g1s:#15281f;--g2:#8ab8f2;--g2s:#15223a;--g3:#f19a7c;--g3s:#33201a;--g4:#b9a0f0;--g4s:#241d38;--g5:#e8bf5c;--g5s:#2f2510;--g6:#6fd3dd;--g6s:#10292d;--g7:#f08fbc;--g7s:#33192a;--g8:#b7d16a;--g8s:#222a12;--g9:#9ba8f3;--g9s:#1b1f3b;--g10:#d9a88a;--g10s:#2e2219}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.55;word-break:keep-all;-webkit-text-size-adjust:100%}
+main{max-width:1200px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:26px;letter-spacing:-.03em;margin:0 0 4px}
+.sub{color:var(--muted);margin:0;font-size:14.5px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--accent);background:var(--soft);border-radius:999px;padding:5px 11px;font-weight:600}
+.pill svg{width:15px;height:15px}
+.layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:18px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+h2{font-size:16px;margin:0;letter-spacing:-.02em}
+label.lb{display:block;font-weight:650;font-size:14.5px;margin:0 0 5px}
+.help{font-weight:400;color:var(--muted);font-size:13px}
+textarea,input[type=text],input[type=number]{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;background:var(--bg);color:var(--text)}
+textarea{min-height:130px;resize:vertical;font-size:14.5px}
+button{font:inherit;font-weight:650;min-height:42px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent}
+button:hover{border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:default;border-color:var(--line)}
+button.p{background:var(--accent);border-color:var(--accent);color:var(--on)}
+button.p:hover{background:var(--accent-2)}
+button.ghost{border-color:transparent;background:transparent;color:var(--muted);min-height:34px;padding:0 8px;font-weight:600;font-size:13.5px}
+button.ghost:hover{color:var(--accent)}
+button svg,.ic{width:18px;height:18px;flex:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.msg{font-size:13.5px;color:var(--muted);margin:8px 0 0;min-height:1.2em}
+.msg.warn{color:var(--warn)}
+.msg.ok{color:var(--accent)}
+.msg button{min-height:28px;padding:0 8px;font-size:13px;margin-left:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.chk{display:flex;gap:8px;align-items:flex-start;font-weight:550;font-size:14px;cursor:pointer;line-height:1.4}
+.chk input{width:17px;height:17px;margin:1px 0 0;accent-color:var(--accent);flex:none}
+.chk small{display:block;color:var(--muted);font-weight:400;font-size:12.5px}
+.chk.dim{opacity:.6}
+
+/* 명단 */
+.side .count{font-size:13.5px;color:var(--muted);margin-top:6px}
+.side .count b{color:var(--text)}
+.sec{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:340px;overflow:auto;padding:2px}
+.chip{display:inline-flex;align-items:stretch;border:1px solid transparent;border-radius:999px;background:var(--soft);overflow:hidden}
+.chip button{min-height:34px;border:0;border-radius:0;background:transparent;color:var(--text)}
+.chip .cn{padding:0 12px;font-size:14.5px;font-weight:600;gap:4px}
+.chip .cn small{font-size:11.5px;color:var(--muted);font-weight:500}
+.chip .ct{min-width:30px;padding:0 6px;font-size:13px;border-left:1px solid var(--line);background:var(--card)}
+.chip .ct.set{color:var(--accent)}
+.chip.off{background:transparent;border:1px dashed var(--muted)}
+.chip.off .cn{color:var(--muted);text-decoration:line-through}
+.chip.off .cn small{text-decoration:none}
+.chip.dup{border-color:var(--warn)}
+.empty-s{color:var(--muted);font-size:13.5px;margin:8px 0 0}
+
+/* 탭 */
+.tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:14px;width:max-content;max-width:100%}
+.tabs button{border:0;min-height:40px;padding:0 18px;background:transparent;color:var(--muted)}
+.tabs button[aria-selected=true]{background:var(--accent);color:var(--on)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;background:var(--bg);gap:2px}
+.seg button{min-height:34px;border:0;background:transparent;padding:0 12px;border-radius:8px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--card);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.step button{min-height:38px;width:38px;padding:0;border:0;border-radius:0}
+.step input{width:50px;height:38px;text-align:center;border:0;border-left:1px solid var(--line);border-right:1px solid var(--line);border-radius:0;font-weight:700;font-size:17px;background:transparent;padding:0;-moz-appearance:textfield;appearance:textfield}
+.step input::-webkit-inner-spin-button,.step input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.preview{font-size:14px;color:var(--muted)}
+.preview b{color:var(--text)}
+details.opts{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+details.opts summary{cursor:pointer;font-weight:650;font-size:14.5px;list-style:none;display:flex;align-items:center;gap:6px}
+details.opts summary::-webkit-details-marker{display:none}
+details.opts summary::before{content:"";width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .2s;margin:0 4px 0 2px}
+details.opts[open] summary::before{transform:rotate(45deg)}
+.optgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 16px;margin-top:12px}
+.pairbox{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
+.pairbox h3{font-size:14px;margin:0 0 6px;display:flex;align-items:center;gap:6px}
+.pairs{list-style:none;margin:0 0 6px;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.pair{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 10px;font-size:14px;font-weight:600;background:var(--bg)}
+.pair svg{width:14px;height:14px;color:var(--muted)}
+.pair button{min-height:26px;width:26px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--muted)}
+.pair.gone{opacity:.5}
+.pair.gone::after{content:"명단 밖";font-size:11px;color:var(--muted);font-weight:500;margin-right:4px}
+.pp{margin-top:10px;border:1px dashed var(--accent);border-radius:12px;padding:10px;background:var(--bg)}
+.pp .chips{max-height:200px}
+.ppn{min-height:32px;border-radius:999px;padding:0 12px;font-size:14px;background:var(--card)}
+.ppn[aria-pressed=true]{background:var(--accent);color:var(--on);border-color:var(--accent)}
+.roles{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.roles .row input{flex:1;min-width:180px}
+.makebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+.makebar .p{min-height:48px;padding:0 22px;font-size:16.5px}
+
+/* 결과 */
+.tool{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 4px}
+.tool button{min-height:38px;padding:0 12px;font-size:14px}
+.tool .badge{font-size:11.5px;background:var(--soft);color:var(--accent);border-radius:999px;padding:0 6px;min-width:18px}
+.out{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px;margin-top:10px}
+.gcard{position:relative;background:var(--cs);border:1px solid var(--line);border-top:5px solid var(--c);border-radius:14px;padding:10px 12px 12px;transition:box-shadow .2s,transform .2s;min-height:120px}
+.gh{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.gname{flex:1;min-width:0;border:1px solid transparent;background:transparent;color:var(--c);font:inherit;font-weight:800;font-size:17px;padding:2px 4px;border-radius:6px;letter-spacing:-.02em}
+.gname:hover{border-color:var(--line)}
+.gname:focus{background:var(--card);outline:none;border-color:var(--c)}
+.gc{font-size:12.5px;color:var(--muted);font-weight:600;white-space:nowrap}
+.mems{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.mem{width:100%;justify-content:space-between;min-height:40px;padding:0 10px;border:1px solid transparent;background:var(--card);border-radius:9px;font-size:19px;font-weight:700;letter-spacing:-.02em;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;text-align:left}
+.mem:hover{border-color:var(--c)}
+.mem .role{font-size:11.5px;font-weight:700;color:var(--c);border:1px solid var(--c);border-radius:999px;padding:0 7px;white-space:nowrap;line-height:1.6}
+.mem.sel{background:var(--c);color:var(--card);border-color:var(--c)}
+.mem.sel .role{color:var(--card);border-color:var(--card)}
+.mem.dragging{opacity:.35}
+.mem.flash{animation:flash .9s ease}
+.mems .none{color:var(--muted);font-size:13.5px;padding:6px 2px}
+.drag-ghost{position:fixed;left:0;top:0;z-index:50;pointer-events:none;box-shadow:0 10px 26px rgba(0,0,0,.22);border-color:var(--accent);background:var(--card);color:var(--text);width:auto;transform-origin:center}
+.here{display:none;width:100%;margin-top:8px;min-height:36px;border:1.5px dashed var(--c);background:transparent;color:var(--c);font-size:14px}
+.out.selecting .gcard:not(.src) .here{display:inline-flex}
+.gcard.over{box-shadow:0 0 0 3px var(--c);transform:translateY(-2px)}
+.gcard.rv{animation:cardIn .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d)}
+.gcard.rv .mem{animation:memIn .45s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--d) + 180ms + var(--m))}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.97)}}
+@keyframes memIn{from{opacity:0;transform:translateY(8px)}}
+@keyframes flash{0%{box-shadow:0 0 0 3px var(--c)}100%{box-shadow:0 0 0 0 transparent}}
+.emptyb{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px 12px;border:1.5px dashed var(--line);border-radius:14px}
+.emptyb svg{width:44px;height:44px;color:var(--accent);opacity:.7}
+.emptyb p{margin:6px 0 0}
+.ptitle{display:none}
+
+/* 발표 뽑기 */
+.stage{position:relative;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px 14px;overflow:hidden}
+.slots{display:flex;flex-wrap:wrap;justify-content:center;gap:14px 22px;width:100%}
+.slot{min-width:2.4em;padding:4px 18px;border-radius:18px;transition:background .4s}
+.slot .sn{display:block;font-size:clamp(52px,10vw,124px);font-weight:850;letter-spacing:-.04em;line-height:1.15}
+.slots.many .slot .sn{font-size:clamp(36px,6vw,76px)}
+.slot .ss{display:block;font-size:clamp(15px,1.8vw,22px);color:var(--muted);font-weight:600;min-height:1.4em}
+.slot.wait .sn{color:var(--line)}
+.slot.rolling .sn{color:var(--muted)}
+.slot.land{background:var(--soft)}
+.slot.land .sn{color:var(--accent);animation:land .6s cubic-bezier(.2,1.4,.4,1)}
+@keyframes land{0%{transform:scale(1.14)}100%{transform:scale(1)}}
+.stage .left{margin-top:14px;color:var(--muted);font-size:15px}
+.stage .left b{color:var(--text)}
+.pickbar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.pickbar .p{min-height:56px;padding:0 34px;font-size:20px;border-radius:14px}
+.pickbar .p kbd{font:inherit;font-size:12px;font-weight:600;border:1px solid currentColor;border-radius:6px;padding:0 6px;opacity:.75}
+.pickopts{display:flex;gap:12px 20px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.pickopts .grp{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.hist{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.hist li{display:inline-flex;gap:6px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 12px 3px 4px;font-weight:600;font-size:14.5px}
+.hist li .hn{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:999px;background:var(--soft);color:var(--accent);font-size:12px}
+.hist li.new{border-color:var(--accent)}
+.sound[aria-pressed=true]{color:var(--accent);border-color:var(--accent)}
+
+/* 크게 보기 */
+.exitShow{display:none;position:fixed;top:14px;right:14px;z-index:40}
+body.show .exitShow{display:inline-flex}
+body.show main{max-width:none;padding:24px 28px}
+body.show .top,body.show .side,body.show .tabs,body.show .optcard,body.show .tool,body.show #gmsg,body.show .pickopts,body.show .histcard,body.show #pmsg{display:none!important}
+body.show .layout{grid-template-columns:1fr}
+body.show .out{grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:18px;margin-top:0}
+body.show .gname{font-size:clamp(20px,2.4vw,34px)}
+body.show .mem{font-size:clamp(22px,2.8vw,42px);min-height:1.9em}
+body.show .mem .role{font-size:.42em}
+body.show .gc{font-size:clamp(13px,1.2vw,18px)}
+body.show .stage{min-height:78vh;border:0;box-shadow:none;background:transparent}
+body.show .slot .sn{font-size:clamp(80px,16vw,240px)}
+body.show .slots.many .slot .sn{font-size:clamp(48px,8vw,130px)}
+
+@media (max-width:860px){.layout{grid-template-columns:1fr}.chips{max-height:220px}}
+@media (max-width:520px){main{padding:18px 16px 48px}h1{font-size:22px}textarea,input[type=text]{font-size:16px}.out{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.mem{font-size:17px}.tabs{width:100%}.tabs button{flex:1;padding:0 8px}.pickbar .p{width:100%}.stage{min-height:240px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* 인쇄: 모둠 결과만 A4 한 장에 */
+@media print{
+@page{size:A4;margin:14mm}
+body{background:#fff;color:#111}
+.top,.side,.tabs,.optcard,.tool,.msg,#tabPick,.here,.exitShow,.sr{display:none!important}
+main{max-width:none;padding:0}
+.layout{display:block}
+#tabGroups{display:block!important}
+.ptitle{display:flex;justify-content:space-between;align-items:baseline;font-size:20pt;margin:0 0 10px}
+.ptitle small{font-size:11pt;color:#555;font-weight:500}
+.out{grid-template-columns:repeat(3,1fr);gap:8px}
+.gcard{break-inside:avoid;background:#fff!important;border:1.5px solid #555;border-top:6px solid var(--c);box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact;animation:none!important}
+.gname{color:#111;font-size:14pt;border:0}
+.mem{background:transparent;border:0;border-bottom:1px solid #ddd;border-radius:0;color:#111;font-size:15pt;min-height:0;padding:3px 2px;animation:none!important;opacity:1!important}
+.mem .role{color:#333;border-color:#999}
+.emptyb{display:none}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-shuffle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3.5c2 0 3.3 1 4.4 2.8l2.2 4.4C14.2 16 15.5 17 17.5 17H21M3 17h3.5c1.4 0 2.4-.5 3.2-1.4M14.3 8.4c.8-.9 1.8-1.4 3.2-1.4H21M18 4l3 3-3 3M18 14l3 3-3 3"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 14 3 9l5-5M3 9h11a6 6 0 0 1 0 12h-3"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3h10v6M7 17H4.5A1.5 1.5 0 0 1 3 15.5v-5A1.5 1.5 0 0 1 4.5 9h15a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5H17M7 14h10v7H7z"/></symbol>
+    <symbol id="i-table" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16M15 4v16"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 7 7 17M7 7l10 10"/></symbol>
+    <symbol id="i-vol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 10 4 4M20 10l-4 4"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5M4 4v4.5h4.5"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="12" r="4.5"/><circle cx="15.5" cy="12" r="4.5"/></symbol>
+    <symbol id="i-apart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M8 8l-4 4 4 4M16 8l4 4-4 4"/></symbol>
+    <symbol id="i-group" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="8" r="2.5"/><circle cx="17" cy="8" r="2.5"/><circle cx="7" cy="17" r="2.5"/><circle cx="17" cy="17" r="2.5"/><circle cx="12" cy="12.5" r="1.2"/></symbol>
+  </defs>
+</svg>
+<main>
+  <header class="top">
+    <div>
+      <h1>모둠 만들기·발표 뽑기</h1>
+      <p class="sub">명단 하나로 모둠을 고르게 나누고, 발표할 학생을 겹치지 않게 뽑아요.</p>
+    </div>
+    <span class="pill"><svg><use href="#i-lock"/></svg>이름은 이 기기 밖으로 나가지 않아요</span>
+  </header>
+
+  <div class="layout">
+    <!-- 왼쪽: 같이 쓰는 명단 -->
+    <aside class="side card" aria-label="학생 명단">
+      <label class="lb" for="names">학생 명단 <span class="help">한 줄에 한 명 · 쉼표·탭도 돼요</span></label>
+      <textarea id="names" spellcheck="false" placeholder="예) 가람&#10;나래&#10;다온&#10;(번호가 붙어 있어도 알아서 빼요)"></textarea>
+      <div class="row between">
+        <div class="count" id="count" aria-live="polite"></div>
+        <div class="row" style="gap:2px"><button class="ghost" id="sample" type="button">예시 넣기</button><button class="ghost" id="clear" type="button">비우기</button></div>
+      </div>
+      <p class="msg warn" id="rmsg"></p>
+
+      <div class="sec">
+        <div class="row between">
+          <h2>오늘 출석</h2>
+          <button class="ghost" id="allIn" type="button">모두 출석</button>
+        </div>
+        <p class="help" style="margin:2px 0 0">이름을 누르면 <b>결석</b>으로 빠져요. 모둠과 뽑기 모두에서 빠져요.</p>
+        <div class="chips" id="chips"></div>
+        <label class="chk" style="margin-top:10px"><input type="checkbox" id="tagMode"><span>성별·수준 표시하기<small>고르게 섞을 때만 써요. 성별 칸은 남→여→없음, 수준 칸은 상→중→하→없음 순서로 바뀌어요.</small></span></label>
+      </div>
+
+      <div class="sec">
+        <label class="chk"><input type="checkbox" id="remember"><span>이 기기에 기억하기<small>명단과 설정을 이 브라우저에만 저장해요. 결석 표시는 오늘만 기억해요.</small></span></label>
+        <p class="msg" id="smsg"></p>
+      </div>
+    </aside>
+
+    <section class="mainp">
+      <div class="tabs" role="tablist" aria-label="기능 고르기">
+        <button role="tab" id="tab-g" aria-controls="tabGroups" aria-selected="true" data-tab="g" type="button">모둠 만들기</button>
+        <button role="tab" id="tab-p" aria-controls="tabPick" aria-selected="false" data-tab="p" type="button" tabindex="-1">발표 뽑기</button>
+      </div>
+
+      <!-- 탭 1: 모둠 만들기 -->
+      <div id="tabGroups" role="tabpanel" aria-labelledby="tab-g">
+        <div class="optcard card">
+          <div class="row" style="gap:12px">
+            <div class="seg" role="group" aria-label="나누는 방법">
+              <button type="button" data-mode="count" aria-pressed="true">모둠 수</button>
+              <button type="button" data-mode="size" aria-pressed="false">모둠당 인원</button>
+            </div>
+            <div class="step">
+              <button type="button" id="nMinus" aria-label="하나 줄이기"><svg><use href="#i-minus"/></svg></button>
+              <input type="number" id="n" min="1" max="20" value="6" inputmode="numeric" aria-label="숫자">
+              <button type="button" id="nPlus" aria-label="하나 늘리기"><svg><use href="#i-plus"/></svg></button>
+            </div>
+            <span class="preview" id="preview" aria-live="polite"></span>
+          </div>
+
+          <details class="opts" id="optsBox">
+            <summary>섞는 조건 <span class="help" id="optSum"></span></summary>
+            <div class="optgrid">
+              <label class="chk" id="bgWrap"><input type="checkbox" id="bg"><span>성별 고르게<small id="bgHint">명단에서 성별을 표시하면 써요</small></span></label>
+              <label class="chk" id="blWrap"><input type="checkbox" id="bl"><span>수준 고르게<small id="blHint">상·중·하가 모둠마다 고르게 들어가요</small></span></label>
+              <label class="chk"><input type="checkbox" id="prev"><span>지난 모둠원과 겹치지 않게<small>바로 전 결과와 같은 짝을 피해요</small></span></label>
+            </div>
+            <div class="pairbox">
+              <div>
+                <h3><svg class="ic"><use href="#i-apart"/></svg>떨어뜨릴 학생 쌍</h3>
+                <ul class="pairs" id="apartList"></ul>
+                <button type="button" class="ghost" id="addApart"><svg><use href="#i-plus"/></svg>쌍 넣기</button>
+              </div>
+              <div>
+                <h3><svg class="ic"><use href="#i-link"/></svg>함께할 학생 쌍</h3>
+                <ul class="pairs" id="togetherList"></ul>
+                <button type="button" class="ghost" id="addTogether"><svg><use href="#i-plus"/></svg>쌍 넣기</button>
+              </div>
+            </div>
+            <div class="pp" id="pp" hidden>
+              <p class="help" id="ppHint" style="margin:0" aria-live="polite"></p>
+              <div class="chips" id="ppNames"></div>
+              <div class="row" style="margin-top:8px"><button type="button" id="ppDone">다 골랐어요</button></div>
+            </div>
+          </details>
+
+          <div class="roles">
+            <label class="chk"><input type="checkbox" id="rolesOn"><span>역할 정하기<small>모둠마다 역할을 무작위로 나눠요. 인원이 더 많으면 앞에서부터 다시 돌아요.</small></span></label>
+            <div class="row" id="rolesRow" hidden style="margin-top:8px">
+              <input type="text" id="roles" aria-label="역할 목록 (쉼표로 구분)">
+              <button type="button" id="reRoles" style="min-height:40px">역할만 다시</button>
+            </div>
+          </div>
+
+          <div class="makebar">
+            <button class="p" id="make" type="button"><svg><use href="#i-shuffle"/></svg>모둠 만들기</button>
+          </div>
+        </div>
+
+        <div class="tool" id="gtool" hidden>
+          <button type="button" id="again"><svg><use href="#i-shuffle"/></svg>다시 섞기</button>
+          <button type="button" id="undo"><svg><use href="#i-undo"/></svg>되돌리기 <span class="badge" id="undoN"></span></button>
+          <button type="button" id="showG"><svg><use href="#i-expand"/></svg>크게 보기</button>
+          <button type="button" id="print"><svg><use href="#i-print"/></svg>인쇄</button>
+          <button type="button" id="copy"><svg><use href="#i-table"/></svg>표로 복사</button>
+        </div>
+        <p class="msg" id="gmsg" role="status"></p>
+        <h2 class="ptitle">모둠 편성표 <small id="pdate"></small></h2>
+        <div class="out" id="out"></div>
+      </div>
+
+      <!-- 탭 2: 발표 뽑기 -->
+      <div id="tabPick" role="tabpanel" aria-labelledby="tab-p" hidden>
+        <div class="stage card">
+          <div class="slots" id="slots"></div>
+          <div class="left" id="left"></div>
+          <div class="pickbar">
+            <button class="p" id="draw" type="button">뽑기 <kbd>스페이스</kbd></button>
+            <button type="button" id="restart"><svg><use href="#i-reset"/></svg>처음부터</button>
+          </div>
+          <p class="msg warn" id="pmsg" role="status"></p>
+        </div>
+        <div class="pickopts">
+          <div class="grp">뽑을 대상
+            <div class="seg" role="group" aria-label="뽑을 대상">
+              <button type="button" data-target="s" aria-pressed="true">학생</button>
+              <button type="button" data-target="g" aria-pressed="false">모둠</button>
+            </div>
+          </div>
+          <div class="grp">한 번에
+            <div class="step">
+              <button type="button" id="cMinus" aria-label="한 명 줄이기"><svg><use href="#i-minus"/></svg></button>
+              <input type="number" id="cnt" min="1" max="5" value="1" inputmode="numeric" aria-label="한 번에 뽑을 수">
+              <button type="button" id="cPlus" aria-label="한 명 늘리기"><svg><use href="#i-plus"/></svg></button>
+            </div>
+          </div>
+          <label class="chk"><input type="checkbox" id="noRep" checked><span>다 뽑힐 때까지 다시 안 나오기</span></label>
+          <button type="button" class="sound" id="sound" aria-pressed="false"><svg><use href="#i-mute"/></svg><span>소리 꺼짐</span></button>
+          <button type="button" id="showP"><svg><use href="#i-expand"/></svg>크게 보기</button>
+        </div>
+        <div class="card histcard" style="margin-top:14px">
+          <h2>뽑힌 순서</h2>
+          <ol class="hist" id="hist"></ol>
+          <p class="help" id="histEmpty" style="margin:6px 0 0">아직 뽑지 않았어요.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+<button type="button" class="exitShow" id="exitShow"><svg><use href="#i-x"/></svg>닫기 (Esc)</button>
+<div class="sr" aria-live="assertive" id="live"></div>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const pick1 = (a) => a[Math.floor(Math.random() * a.length)];
+  const pk = (a, b) => (a < b ? a + '\u0001' + b : b + '\u0001' + a);
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const reduce = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+  const today = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+  // 받침 따라 조사 고르기 (한글이 아니면 '을(를)'처럼 둘 다)
+  const jong = (w) => { const c = String(w).charCodeAt(String(w).length - 1); return c >= 0xac00 && c <= 0xd7a3 ? (c - 0xac00) % 28 : -1; };
+  const josa = (w, a, b) => { const j = jong(w); return w + (j < 0 ? a + '(' + b + ')' : j ? a : b); };
+  const eul = (w) => josa(w, '을', '를');
+  const wa = (w) => josa(w, '과', '와');
+  const ro = (w) => { const j = jong(w); return w + (j < 0 ? '(으)로' : j === 0 || j === 8 ? '로' : '으로'); };
+  const KEY = 'gil.groups.v2', RKEY = 'gil.class.roster.v1';
+  const SAMPLE = '가람 나래 다온 라온 마루 바다 사랑 아름 자람 하늘 한결 소담 이든 도담 새봄 여름 윤슬 보람 슬기 미르 누리 단비 별하 초롱 해솔 온유 은솔 다솜'.split(' ');
+  const DEF_ROLES = '모둠장, 기록, 발표, 시간 지킴이, 자료 담당';
+
+  // 상태
+  const S = {
+    remember: false, absent: new Set(), tags: {}, tagMode: false,
+    apart: [], together: [],
+    opt: { mode: 'count', n: 6, bg: false, bl: false, prev: false, rolesOn: false, roles: DEF_ROLES },
+    result: null, undo: [], tab: 'g',
+    pick: { count: 1, noRepeat: true, target: 's' }
+  };
+  let roster = { names: [], dups: [], total: 0 };
+
+  // ---------- 저장 ----------
+  function load() {
+    try {
+      const r = JSON.parse(localStorage.getItem(RKEY) || 'null');
+      if (r && typeof r.names === 'string') { $('#names').value = r.names; S.remember = true; }
+    } catch (e) { }
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (!s || typeof s !== 'object') return;
+      S.remember = true;
+      if (s.absent && s.absent.d === today() && Array.isArray(s.absent.list)) S.absent = new Set(s.absent.list.filter((x) => typeof x === 'string'));
+      if (s.tags && typeof s.tags === 'object') S.tags = s.tags;
+      ['apart', 'together'].forEach((k) => { if (Array.isArray(s[k])) S[k] = s[k].filter((p) => Array.isArray(p) && p.length === 2 && typeof p[0] === 'string' && typeof p[1] === 'string'); });
+      if (s.opt && typeof s.opt === 'object') {
+        const o = s.opt;
+        if (o.mode === 'count' || o.mode === 'size') S.opt.mode = o.mode;
+        if (Number.isFinite(o.n)) S.opt.n = clamp(Math.round(o.n), 1, 20);
+        ['bg', 'bl', 'prev', 'rolesOn'].forEach((k) => { S.opt[k] = !!o[k]; });
+        if (typeof o.roles === 'string') S.opt.roles = o.roles;
+      }
+      if (s.result && Array.isArray(s.result.groups)) S.result = s.result;
+      if (s.pick && typeof s.pick === 'object') {
+        if (Number.isFinite(s.pick.count)) S.pick.count = clamp(s.pick.count, 1, 5);
+        S.pick.noRepeat = s.pick.noRepeat !== false;
+        S.pick.target = s.pick.target === 'g' ? 'g' : 's';
+      }
+      S.tagMode = !!s.tagMode;
+      S.tab = s.tab === 'p' ? 'p' : 'g';
+    } catch (e) { }
+  }
+  let saveT = 0;
+  function save() { clearTimeout(saveT); saveT = setTimeout(saveNow, 250); }
+  function saveNow() {
+    if (!S.remember) return;
+    try {
+      let r = {}; try { r = JSON.parse(localStorage.getItem(RKEY) || '{}') || {}; } catch (e) { r = {}; }
+      r.names = $('#names').value;
+      localStorage.setItem(RKEY, JSON.stringify(r));
+      const tags = {}; roster.names.forEach((n) => { if (S.tags[n]) tags[n] = S.tags[n]; });
+      localStorage.setItem(KEY, JSON.stringify({
+        v: 2, absent: { d: today(), list: [...S.absent].filter((n) => roster.names.includes(n)) }, tags, tagMode: S.tagMode,
+        apart: S.apart, together: S.together, opt: S.opt, result: S.result,
+        pick: { count: S.pick.count, noRepeat: S.pick.noRepeat, target: S.pick.target }, tab: S.tab
+      }));
+    } catch (e) { }
+  }
+
+  // ---------- 명단 ----------
+  // 줄바꿈·쉼표·탭으로 나누고 "1 가람", "01. 가람", "3번 가람" 같은 앞 번호는 뺀다
+  function parse(text) {
+    const raw = text.split(/[\n,\t;]+/)
+      .map((s) => s.replace(/^\s*\d+\s*(번)?\s*[.)\]:-]?\s*/, '').trim())
+      .filter((s) => s && !/^\d+$/.test(s));
+    const seen = new Map(); raw.forEach((n) => seen.set(n, (seen.get(n) || 0) + 1));
+    return { names: [...seen.keys()], dups: [...seen].filter(([, c]) => c > 1).map(([n]) => n), total: raw.length };
+  }
+  const present = () => roster.names.filter((n) => !S.absent.has(n));
+  const tagOf = (n, f) => (S.tags[n] && S.tags[n][f]) || '';
+  const hasTag = (f) => present().some((n) => tagOf(n, f));
+
+  function renderRoster() {
+    roster = parse($('#names').value);
+    const all = roster.names.length, abs = roster.names.filter((n) => S.absent.has(n)).length;
+    $('#count').innerHTML = all ? `<b>${all}명</b> · 출석 ${all - abs}명${abs ? ` · 결석 ${abs}명` : ''}` : '명단이 비어 있어요';
+    $('#rmsg').textContent = roster.dups.length ? `같은 이름이 있어요: ${roster.dups.join(', ')}. 한 명으로 셀게요. 다른 학생이면 이름을 구분해 주세요(예: 가람A).` : '';
+    const dup = new Set(roster.dups);
+    $('#chips').innerHTML = all ? roster.names.map((n) => {
+      const off = S.absent.has(n), g = tagOf(n, 'g'), l = tagOf(n, 'l');
+      const badge = !S.tagMode && (g || l) ? `<small>${esc([g, l].filter(Boolean).join('·'))}</small>` : '';
+      const tags = S.tagMode ? `<button type="button" class="ct${g ? ' set' : ''}" data-act="g" data-n="${esc(n)}" aria-label="${esc(n)} 성별: ${g || '없음'}">${g || '·'}</button><button type="button" class="ct${l ? ' set' : ''}" data-act="l" data-n="${esc(n)}" aria-label="${esc(n)} 수준: ${l || '없음'}">${l || '·'}</button>` : '';
+      return `<span class="chip${off ? ' off' : ''}${dup.has(n) ? ' dup' : ''}"><button type="button" class="cn" data-act="abs" data-n="${esc(n)}" aria-pressed="${off}" aria-label="${esc(n)}${off ? ' 결석' : ' 출석'}">${esc(n)}${off ? '<small>결석</small>' : badge}</button>${tags}</span>`;
+    }).join('') : '<p class="empty-s">명단을 넣으면 여기에 이름이 나와요.</p>';
+    renderPreview(); renderPairs(); renderOptHints(); renderLeft();
+    if (!$('#pp').hidden) renderPP();
+  }
+
+  $('#names').addEventListener('input', () => { clearTimeout(renderRoster.t); renderRoster.t = setTimeout(() => { renderRoster(); save(); }, 120); });
+  $('#chips').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const n = b.dataset.n, act = b.dataset.act;
+    if (act === 'abs') { S.absent.has(n) ? S.absent.delete(n) : S.absent.add(n); }
+    else {
+      const cyc = act === 'g' ? ['', '남', '여'] : ['', '상', '중', '하'];
+      const t = S.tags[n] || (S.tags[n] = {});
+      t[act] = cyc[(cyc.indexOf(t[act] || '') + 1) % cyc.length];
+      if (!t.g && !t.l) delete S.tags[n];
+    }
+    renderRoster(); save();
+    const again = $$('#chips button[data-act]').find((x) => x.dataset.n === n && x.dataset.act === act); if (again) again.focus();
+  });
+  $('#allIn').onclick = () => { S.absent.clear(); renderRoster(); save(); };
+  $('#tagMode').onchange = (e) => { S.tagMode = e.target.checked; renderRoster(); save(); };
+  $('#sample').onclick = () => {
+    $('#names').value = SAMPLE.slice(0, 24).join('\n');
+    // 예시용 성별·수준 표시
+    S.tags = {}; SAMPLE.slice(0, 24).forEach((n, i) => { S.tags[n] = { g: i % 2 ? '여' : '남', l: ['상', '중', '중', '하'][i % 4] }; });
+    S.absent.clear(); renderRoster(); save();
+    rmsgOk('예시 명단 24명을 넣었어요. 이름은 모두 가상이에요.');
+  };
+  let cleared = null;
+  $('#clear').onclick = () => {
+    if (!$('#names').value.trim()) return;
+    cleared = $('#names').value; $('#names').value = ''; renderRoster(); save();
+    const m = $('#rmsg'); m.className = 'msg'; m.innerHTML = '명단을 비웠어요.<button type="button" id="restore">되살리기</button>';
+    $('#restore').onclick = () => { $('#names').value = cleared || ''; cleared = null; renderRoster(); save(); m.textContent = ''; m.className = 'msg warn'; };
+  };
+  function rmsgOk(t) { const m = $('#rmsg'); m.className = 'msg ok'; m.textContent = t; setTimeout(() => { if (m.textContent === t) { m.textContent = ''; m.className = 'msg warn'; } }, 3500); }
+
+  $('#remember').onchange = (e) => {
+    S.remember = e.target.checked;
+    if (S.remember) { saveNow(); $('#smsg').textContent = '이 기기에 기억해 둘게요.'; }
+    else { try { localStorage.removeItem(KEY); localStorage.removeItem(RKEY); } catch (er) { } $('#smsg').textContent = '이 기기에 기억한 내용을 지웠어요.'; }
+  };
+
+  // ---------- 모둠 설정 ----------
+  function plan(P) {
+    if (!P) return null;
+    const n = S.opt.n;
+    const k = Math.max(1, S.opt.mode === 'count' ? Math.min(n, P) : Math.ceil(P / n));
+    return { k, base: Math.floor(P / k), extra: P % k };
+  }
+  function renderPreview() {
+    $$('[data-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === S.opt.mode)));
+    $('#n').value = S.opt.n;
+    const P = present().length, p = plan(P);
+    if (!p) { $('#preview').textContent = '명단을 넣으면 모둠 크기를 보여 드려요'; return; }
+    const parts = [];
+    if (p.extra) parts.push(`${p.base + 1}명×${p.extra}`);
+    if (p.k - p.extra && p.base) parts.push(`${p.base}명×${p.k - p.extra}`);
+    let t = `출석 ${P}명 → <b>${p.k}모둠</b>: ${parts.join(', ')}`;
+    if (S.opt.mode === 'count' && S.opt.n > P) t += ' (학생 수만큼만 만들어요)';
+    $('#preview').innerHTML = t;
+  }
+  $$('[data-mode]').forEach((b) => b.onclick = () => { S.opt.mode = b.dataset.mode; if (S.opt.mode === 'size' && S.opt.n > 8) S.opt.n = 4; renderPreview(); save(); });
+  const setN = (v) => { S.opt.n = clamp(Math.round(+v) || 1, 1, 20); renderPreview(); save(); };
+  $('#nMinus').onclick = () => setN(S.opt.n - 1);
+  $('#nPlus').onclick = () => setN(S.opt.n + 1);
+  $('#n').addEventListener('change', (e) => setN(e.target.value));
+
+  function renderOptHints() {
+    ['bg', 'bl', 'prev', 'rolesOn'].forEach((k) => { $('#' + k).checked = S.opt[k]; });
+    const g = hasTag('g'), l = hasTag('l');
+    $('#bgWrap').classList.toggle('dim', !g); $('#blWrap').classList.toggle('dim', !l);
+    $('#bgHint').textContent = g ? '남·여가 모둠마다 고르게 들어가요' : '명단에서 성별을 표시하면 써요';
+    $('#blHint').textContent = l ? '상·중·하가 모둠마다 고르게 들어가요' : '명단에서 수준을 표시하면 써요';
+    const on = [S.opt.bg && '성별', S.opt.bl && '수준', S.opt.prev && '지난 모둠', S.apart.length && `떨어뜨릴 쌍 ${S.apart.length}`, S.together.length && `함께할 쌍 ${S.together.length}`].filter(Boolean);
+    $('#optSum').textContent = on.length ? '· ' + on.join(', ') : '· 없음';
+    $('#rolesRow').hidden = !S.opt.rolesOn;
+  }
+  ['bg', 'bl', 'prev'].forEach((k) => { $('#' + k).onchange = (e) => { S.opt[k] = e.target.checked; renderOptHints(); save(); }; });
+
+  // 쌍 고르기: 이름 칩을 두 번 눌러 쌍을 만든다
+  const PP = { kind: null, first: null };
+  function renderPairs() {
+    const inR = new Set(roster.names);
+    [['apart', '#apartList', 'i-apart'], ['together', '#togetherList', 'i-link']].forEach(([k, sel, ic]) => {
+      $(sel).innerHTML = S[k].map(([a, b], i) => `<li class="pair${inR.has(a) && inR.has(b) ? '' : ' gone'}">${esc(a)}<svg><use href="#${ic}"/></svg>${esc(b)}<button type="button" data-del="${k}" data-i="${i}" aria-label="${esc(a)}, ${esc(b)} 쌍 지우기"><svg><use href="#i-x"/></svg></button></li>`).join('');
+    });
+    renderOptHints();
+  }
+  function renderPP() {
+    const k = PP.kind === 'apart' ? '떨어뜨릴' : '함께할';
+    $('#ppHint').innerHTML = PP.first ? `<b>${esc(wa(PP.first))}</b> ${k} 학생을 눌러 주세요.` : `${k} 두 학생을 차례로 눌러 주세요.`;
+    $('#ppNames').innerHTML = roster.names.length ? roster.names.map((n) => `<button type="button" class="ppn" data-n="${esc(n)}" aria-pressed="${PP.first === n}">${esc(n)}</button>`).join('') : '<p class="empty-s">먼저 명단을 넣어 주세요.</p>';
+  }
+  function openPP(kind) { PP.kind = kind; PP.first = null; $('#pp').hidden = false; renderPP(); const f = $('#ppNames .ppn'); if (f) f.focus(); }
+  $('#addApart').onclick = () => openPP('apart');
+  $('#addTogether').onclick = () => openPP('together');
+  $('#ppDone').onclick = () => { $('#pp').hidden = true; PP.kind = null; };
+  $('#ppNames').addEventListener('click', (e) => {
+    const b = e.target.closest('.ppn'); if (!b) return;
+    const n = b.dataset.n;
+    if (!PP.first) PP.first = n;
+    else if (PP.first === n) PP.first = null;
+    else {
+      const a = PP.first, key = pk(a, n), other = PP.kind === 'apart' ? 'together' : 'apart';
+      S[other] = S[other].filter(([x, y]) => pk(x, y) !== key);
+      if (!S[PP.kind].some(([x, y]) => pk(x, y) === key)) S[PP.kind].push([a, n]);
+      PP.first = null; renderPairs(); renderPP(); save();
+      $('#ppHint').innerHTML = `<b>${esc(a)}·${esc(n)}</b> 쌍을 넣었어요. 더 고르거나 '다 골랐어요'를 눌러 주세요.`;
+      return;
+    }
+    renderPP();
+    const again = $$('#ppNames .ppn').find((x) => x.dataset.n === n); if (again) again.focus();
+  });
+  $('.pairbox').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-del]'); if (!b) return;
+    S[b.dataset.del].splice(+b.dataset.i, 1); renderPairs(); save();
+  });
+
+  // 역할
+  const roleList = () => S.opt.roles.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+  function assignRoles() {
+    if (!S.result) return;
+    const rl = roleList();
+    if (!S.opt.rolesOn || !rl.length) { S.result.roles = null; return; }
+    const roles = {};
+    S.result.groups.forEach((g) => { g.members = shuffle(g.members); g.members.forEach((n, i) => { roles[n] = rl[i % rl.length]; }); });
+    S.result.roles = roles;
+  }
+  $('#roles').value = S.opt.roles;
+  $('#rolesOn').onchange = (e) => { S.opt.rolesOn = e.target.checked; renderOptHints(); if (S.result) { assignRoles(); renderResult(false); } save(); };
+  $('#roles').addEventListener('change', (e) => { S.opt.roles = e.target.value.trim() || DEF_ROLES; e.target.value = S.opt.roles; if (S.result && S.opt.rolesOn) { assignRoles(); renderResult(false); } save(); });
+  $('#reRoles').onclick = () => { if (!S.result) { gmsg('먼저 모둠을 만들어 주세요.', 'warn'); return; } assignRoles(); renderResult(false); save(); gmsg('역할을 다시 나눴어요.', 'ok'); };
+
+  // ---------- 모둠 편성 ----------
+  // 함께할 쌍은 한 묶음으로 넣고, 떨어뜨릴 쌍·지난 모둠·성별·수준은 점수로 따진다.
+  // 여러 번 무작위로 만든 뒤 맞바꾸기로 다듬어 가장 점수가 좋은 결과를 고른다.
+  function solve(people, k, o) {
+    const P = people.length, base = Math.floor(P / k), extra = P % k;
+    const caps = Array.from({ length: k }, (_, i) => base + (i < extra ? 1 : 0));
+    const id = new Map(people.map((n, i) => [n, i]));
+    const ok2 = ([a, b]) => id.has(a) && id.has(b) && a !== b;
+    const apart = o.apart.filter(ok2), together = o.together.filter(ok2);
+    // 학생을 번호로 바꿔 쌍 비용표를 미리 만든다: 떨어뜨릴 쌍 1e6, 지난 모둠원 100
+    const W = new Float64Array(P * P), AF = new Uint8Array(P * P), PF = new Uint8Array(P * P);
+    const prevSet = o.prevSet;
+    if (prevSet && prevSet.size) for (let i = 0; i < P; i++) for (let j = i + 1; j < P; j++) if (prevSet.has(pk(people[i], people[j]))) { PF[i * P + j] = PF[j * P + i] = 1; W[i * P + j] += 100; W[j * P + i] += 100; }
+    apart.forEach(([a, b]) => { const i = id.get(a), j = id.get(b); if (AF[i * P + j]) return; AF[i * P + j] = AF[j * P + i] = 1; W[i * P + j] += 1e6; W[j * P + i] += 1e6; });
+    const tgIdx = together.map(([a, b]) => [id.get(a), id.get(b)]);
+    // 성별·수준: 값마다 번호(-1은 표시 없음)
+    const attrs = [o.bg && 'g', o.bl && 'l'].filter(Boolean);
+    const T = [], tot = [];
+    attrs.forEach((f) => {
+      const vals = [], code = new Int8Array(P).fill(-1), t = [];
+      people.forEach((n, i) => { const v = (o.tags[n] && o.tags[n][f]) || ''; if (!v) return; let c = vals.indexOf(v); if (c < 0) { c = vals.push(v) - 1; t.push(0); } code[i] = c; t[c]++; });
+      T.push(code); tot.push(t);
+    });
+    const F = attrs.length;
+    // 함께할 쌍 → 묶음
+    const parent = Array.from({ length: P }, (_, i) => i);
+    const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+    tgIdx.forEach(([a, b]) => { parent[find(a)] = find(b); });
+    const byRoot = new Map();
+    for (let i = 0; i < P; i++) { const r = find(i); if (!byRoot.has(r)) byRoot.set(r, []); byRoot.get(r).push(i); }
+    const notes = [];
+    const nm = (u) => u.map((i) => people[i]).join('·');
+    let units = [];
+    byRoot.forEach((u) => {
+      if (u.length <= caps[0]) { units.push(u); return; }
+      notes.push(`함께할 학생 묶음(${nm(u)})이 모둠 인원보다 커서 나눴어요.`);
+      for (let i = 0; i < u.length; i += caps[0]) units.push(u.slice(i, i + caps[0]));
+    });
+    const lvF = attrs.indexOf('l'), lvVals = [], RANK = { '상': 0, '중': 1, '하': 2 };
+    if (lvF >= 0) people.forEach((n, i) => { const c = T[lvF][i]; if (c >= 0) lvVals[c] = o.tags[n].l; });
+    const lvRank = (c) => (c < 0 || RANK[lvVals[c]] === undefined ? 3 : RANK[lvVals[c]]);
+    const lv = (u) => (lvF < 0 ? 3 : Math.min(...u.map((m) => lvRank(T[lvF][m]))));
+    const newCnt = () => caps.map(() => tot.map((t) => new Array(t.length).fill(0)));
+
+    // 큰 묶음 먼저, 수준 고르게면 상→중→하 순서로 차례차례 (뱀 모양 배분과 같은 효과)
+    function build() {
+      const order = shuffle(units).sort((a, b) => (b.length - a.length) || (lvF >= 0 ? lv(a) - lv(b) : 0));
+      const gs = caps.map(() => []), left = caps.slice(), cnt = newCnt();
+      for (const u of order) {
+        let best = -1, bestC = Infinity;
+        for (const i of shuffle([...Array(k).keys()])) {
+          if (left[i] < u.length) continue;
+          let c = Math.random() * 0.5;
+          for (const m of u) { const row = m * P; for (const x of gs[i]) c += W[row + x]; }
+          for (let f = 0; f < F; f++) for (const m of u) { const v = T[f][m]; if (v >= 0) c += (10 * (cnt[i][f][v] + 1)) / caps[i]; }
+          if (u.length > 1) c += (left[i] - u.length) * 0.3;
+          if (c < bestC) { bestC = c; best = i; }
+        }
+        if (best < 0) return null;
+        for (const m of u) { gs[best].push(m); for (let f = 0; f < F; f++) { const v = T[f][m]; if (v >= 0) cnt[best][f][v]++; } }
+        left[best] -= u.length;
+      }
+      return gs;
+    }
+    function score(gs) {
+      let ap = 0, pv = 0, tgv = 0, bal = 0; const where = new Int32Array(P);
+      gs.forEach((g, i) => {
+        for (let a = 0; a < g.length; a++) { where[g[a]] = i; for (let b = a + 1; b < g.length; b++) { const x = g[a] * P + g[b]; ap += AF[x]; pv += PF[x]; } }
+      });
+      tgIdx.forEach(([a, b]) => { if (where[a] !== where[b]) tgv++; });
+      for (let f = 0; f < F; f++) gs.forEach((g) => {
+        const c = new Array(tot[f].length).fill(0); g.forEach((m) => { if (T[f][m] >= 0) c[T[f][m]]++; });
+        c.forEach((cv, v) => { const d = cv - (tot[f][v] * g.length) / P; bal += d * d; });
+      });
+      return { ap, pv, tg: tgv, bal, s: ap * 1e6 + tgv * 1e5 + pv * 100 + bal * 10 };
+    }
+    // 묶음이 아닌 학생끼리 맞바꿔 점수를 낮춘다 (바뀌는 부분만 계산)
+    const inTg = new Set(tgIdx.flat());
+    function improve(gs) {
+      const singles = []; units.forEach((u) => { if (u.length === 1 && !inTg.has(u[0])) singles.push(u[0]); });
+      if (singles.length < 2 || k < 2) return;
+      const gi = new Int32Array(P); gs.forEach((g, i) => g.forEach((m) => { gi[m] = i; }));
+      const size = gs.map((g) => g.length);
+      const cnt = newCnt(); gs.forEach((g, i) => g.forEach((m) => { for (let f = 0; f < F; f++) { const v = T[f][m]; if (v >= 0) cnt[i][f][v]++; } }));
+      const pc = (n, i, skip) => { let c = 0; const row = n * P; for (const x of gs[i]) if (x !== n && x !== skip) c += W[row + x]; return c; };
+      const bt = (i, f, v, c) => { const d = c - (tot[f][v] * size[i]) / P; return 10 * d * d; };
+      const S1 = singles.length;
+      let stale = 0;
+      for (let it = 0; it < 3000 && stale < 900; it++) {
+        const a = singles[(Math.random() * S1) | 0], b = singles[(Math.random() * S1) | 0], A = gi[a], B = gi[b];
+        if (A === B) continue;
+        let delta = pc(a, B, b) + pc(b, A, a) - pc(a, A, -1) - pc(b, B, -1);
+        for (let f = 0; f < F; f++) {
+          const va = T[f][a], vb = T[f][b]; if (va === vb) continue;
+          if (va >= 0) { delta += bt(A, f, va, cnt[A][f][va] - 1) - bt(A, f, va, cnt[A][f][va]) + bt(B, f, va, cnt[B][f][va] + 1) - bt(B, f, va, cnt[B][f][va]); }
+          if (vb >= 0) { delta += bt(B, f, vb, cnt[B][f][vb] - 1) - bt(B, f, vb, cnt[B][f][vb]) + bt(A, f, vb, cnt[A][f][vb] + 1) - bt(A, f, vb, cnt[A][f][vb]); }
+        }
+        stale = delta < -1e-9 ? 0 : stale + 1;
+        if (delta > 1e-9) continue;
+        gs[A][gs[A].indexOf(a)] = b; gs[B][gs[B].indexOf(b)] = a; gi[a] = B; gi[b] = A;
+        for (let f = 0; f < F; f++) {
+          const va = T[f][a], vb = T[f][b]; if (va === vb) continue;
+          if (va >= 0) { cnt[A][f][va]--; cnt[B][f][va]++; }
+          if (vb >= 0) { cnt[B][f][vb]--; cnt[A][f][vb]++; }
+        }
+      }
+    }
+    let best = null, bestS = null, fails = 0;
+    for (let t = 0; t < 600 && (t < 18 || !best); t++) {
+      const gs = build();
+      if (!gs) {
+        // 묶음이 자리에 안 맞으면 가장 큰 묶음을 나눈다
+        if (++fails >= 20) {
+          fails = 0; units.sort((a, b) => b.length - a.length);
+          const u = units.shift(); if (u.length > 1) { const h = Math.ceil(u.length / 2); units.push(u.slice(0, h), u.slice(h)); notes.push(`함께할 학생 묶음(${nm(u)})을 자리에 맞추느라 나눴어요.`); } else units.push(u);
+        }
+        continue;
+      }
+      improve(gs);
+      const sc = score(gs);
+      if (!best || sc.s < bestS.s) { best = gs.map((g) => g.slice()); bestS = sc; }
+      if (bestS.ap === 0 && bestS.tg === 0 && bestS.pv === 0 && t >= 4) break;
+    }
+    const groups = best.map((g) => g.map((i) => people[i]));
+    const gi = new Map(); groups.forEach((g, i) => g.forEach((n) => gi.set(n, i)));
+    return {
+      groups, notes, pv: bestS.pv,
+      badApart: apart.filter(([a, b]) => gi.get(a) === gi.get(b)),
+      badTogether: together.filter(([a, b]) => gi.get(a) !== gi.get(b)),
+      skipped: o.apart.concat(o.together).filter(([a, b]) => roster.names.includes(a) && roster.names.includes(b) && !(id.has(a) && id.has(b))).length
+    };
+  }
+
+  function prevPairs() {
+    const s = new Set();
+    if (S.result) S.result.groups.forEach((g) => { for (let a = 0; a < g.members.length; a++) for (let b = a + 1; b < g.members.length; b++) s.add(pk(g.members[a], g.members[b])); });
+    return s;
+  }
+  function pushUndo() { if (!S.result) return; S.undo.push(JSON.stringify(S.result)); if (S.undo.length > 5) S.undo.shift(); }
+
+  let flashName = null;
+  function make() {
+    const ppl = present();
+    if (!ppl.length) { gmsg('출석한 학생이 없어요. 왼쪽에 명단을 넣어 주세요.', 'warn'); $('#names').focus(); return; }
+    const p = plan(ppl.length);
+    const r = solve(shuffle(ppl), p.k, {
+      apart: S.apart, together: S.together, tags: S.tags,
+      bg: S.opt.bg && hasTag('g'), bl: S.opt.bl && hasTag('l'),
+      prevSet: S.opt.prev ? prevPairs() : null
+    });
+    const oldNames = S.result && S.result.groups.length === p.k ? S.result.groups.map((g) => g.name) : null;
+    pushUndo();
+    S.result = { groups: r.groups.map((m, i) => ({ name: (oldNames && oldNames[i]) || (i + 1) + '모둠', members: shuffle(m) })), roles: null, at: Date.now() };
+    assignRoles();
+    clearSel(); flashName = null;
+    renderResult(true); renderLeft(); save();
+    // 지키지 못한 조건 알려 주기
+    const warn = r.notes.slice();
+    if (r.badApart.length) warn.push(`떨어뜨릴 쌍을 다 지키지 못했어요: ${r.badApart.map((x) => x.join('·')).join(', ')}`);
+    if (r.badTogether.length) warn.push(`함께할 쌍을 다 지키지 못했어요: ${r.badTogether.map((x) => x.join('·')).join(', ')}`);
+    if (S.opt.prev && r.pv) warn.push(`지난 모둠원과 다시 만난 쌍이 ${r.pv}개 있어요.`);
+    const info = [];
+    if (S.opt.bg && !hasTag('g')) info.push('성별 표시가 없어 성별 고르게는 빼고 섞었어요.');
+    if (S.opt.bl && !hasTag('l')) info.push('수준 표시가 없어 수준 고르게는 빼고 섞었어요.');
+    if (r.skipped) info.push(`결석한 학생이 있는 쌍 ${r.skipped}개는 빼고 섞었어요.`);
+    const anyCond = S.opt.bg || S.opt.bl || S.opt.prev || S.apart.length || S.together.length;
+    if (warn.length) gmsg([...warn, ...info].join(' '), 'warn');
+    else gmsg([`${p.k}모둠을 만들었어요.`, anyCond ? '조건을 모두 지켰어요.' : '', ...info, '이름을 끌거나 눌러서 옮길 수 있어요.'].filter(Boolean).join(' '), 'ok');
+  }
+  function gmsg(t, cls) { const m = $('#gmsg'); m.className = 'msg' + (cls ? ' ' + cls : ''); m.textContent = t; }
+  $('#make').onclick = make;
+  $('#again').onclick = make;
+  $('#undo').onclick = () => {
+    if (!S.undo.length) return;
+    try { S.result = JSON.parse(S.undo.pop()); } catch (e) { return; }
+    clearSel(); flashName = null; renderResult(false); renderLeft(); save();
+    gmsg('바로 전 결과로 되돌렸어요.', 'ok');
+  };
+
+  // ---------- 결과 그리기 ----------
+  function renderResult(reveal) {
+    const out = $('#out'), r = S.result;
+    $('#gtool').hidden = !r;
+    $('#undo').disabled = !S.undo.length;
+    $('#undoN').textContent = S.undo.length ? S.undo.length : '';
+    const d = new Date(); $('#pdate').textContent = `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}.`;
+    if (!r) {
+      out.innerHTML = '<div class="emptyb"><svg><use href="#i-group"/></svg><p><b>모둠 만들기</b>를 누르면 여기에 모둠이 나와요.</p><p class="help">만든 뒤에는 이름을 끌거나 눌러서 다른 모둠으로 옮길 수 있어요.</p></div>';
+      return;
+    }
+    const anim = reveal && !reduce();
+    out.innerHTML = r.groups.map((g, i) => {
+      const c = (i % 10) + 1;
+      return `<article class="gcard${anim ? ' rv' : ''}" data-i="${i}" style="--c:var(--g${c});--cs:var(--g${c}s);--d:${i * 70}ms">
+<div class="gh"><input class="gname" value="${esc(g.name)}" maxlength="20" aria-label="${i + 1}번째 모둠 이름"><span class="gc">${g.members.length}명</span></div>
+<ul class="mems">${g.members.map((n, j) => `<li><button type="button" class="mem${flashName === n ? ' flash' : ''}" data-name="${esc(n)}" style="--m:${j * 50}ms">${esc(n)}${r.roles && r.roles[n] ? `<span class="role">${esc(r.roles[n])}</span>` : ''}</button></li>`).join('')}${g.members.length ? '' : '<li class="none">비어 있어요</li>'}</ul>
+<button type="button" class="here">여기로 옮기기</button></article>`;
+    }).join('');
+    applySel();
+  }
+
+  // 고르기 → 다른 모둠 누르기(옮기기) 또는 다른 학생 누르기(맞바꾸기)
+  let sel = null;
+  const groupOf = (n) => S.result.groups.findIndex((g) => g.members.includes(n));
+  function clearSel() { sel = null; applySel(); }
+  function applySel() {
+    const out = $('#out');
+    out.classList.toggle('selecting', !!sel);
+    $$('.gcard', out).forEach((c) => c.classList.toggle('src', !!sel && +c.dataset.i === groupOf(sel)));
+    $$('.mem', out).forEach((m) => { const on = m.dataset.name === sel; m.classList.toggle('sel', on); m.setAttribute('aria-pressed', String(on)); });
+  }
+  function moveTo(name, to) {
+    const gs = S.result.groups, from = groupOf(name);
+    if (from < 0 || from === to) return;
+    pushUndo();
+    gs[from].members = gs[from].members.filter((n) => n !== name);
+    gs[to].members.push(name);
+    if (S.result.roles) {
+      const rl = roleList(), used = new Set(gs[to].members.filter((n) => n !== name).map((n) => S.result.roles[n]));
+      S.result.roles[name] = rl.find((x) => !used.has(x)) || rl[(gs[to].members.length - 1) % rl.length];
+    }
+    afterEdit(name, `${eul(name)} ${ro(gs[to].name)} 옮겼어요.`);
+  }
+  function swap(a, b) {
+    const gs = S.result.groups, ia = groupOf(a), ib = groupOf(b);
+    if (ia < 0 || ib < 0 || ia === ib) return;
+    pushUndo();
+    gs[ia].members[gs[ia].members.indexOf(a)] = b;
+    gs[ib].members[gs[ib].members.indexOf(b)] = a;
+    if (S.result.roles) { const t = S.result.roles[a]; S.result.roles[a] = S.result.roles[b]; S.result.roles[b] = t; }
+    afterEdit(a, `${wa(a)} ${b}의 모둠을 맞바꿨어요.`);
+  }
+  function afterEdit(name, text) {
+    sel = null; flashName = name; renderResult(false); flashName = null; renderLeft(); save(); gmsg(text, 'ok');
+    const m = $$('#out .mem').find((x) => x.dataset.name === name); if (m) m.focus({ preventScroll: true });
+  }
+  let skipClick = false;
+  $('#out').addEventListener('click', (e) => {
+    if (skipClick) { skipClick = false; return; }
+    if (!S.result || e.target.closest('.gname')) return;
+    const m = e.target.closest('.mem'), card = e.target.closest('.gcard');
+    if (m) {
+      const n = m.dataset.name;
+      if (!sel || sel === n) { sel = sel === n ? null : n; applySel(); if (sel) gmsg(`${eul(n)} 골랐어요. 옮길 모둠이나 바꿀 학생을 눌러 주세요. (Esc: 취소)`); else gmsg(''); return; }
+      if (groupOf(sel) === groupOf(n)) { sel = n; applySel(); gmsg(`${eul(n)} 골랐어요. 옮길 모둠이나 바꿀 학생을 눌러 주세요. (Esc: 취소)`); return; }
+      swap(sel, n); return;
+    }
+    if (card && sel && +card.dataset.i !== groupOf(sel)) moveTo(sel, +card.dataset.i);
+  });
+  $('#out').addEventListener('input', (e) => {
+    if (!e.target.classList.contains('gname') || !S.result) return;
+    const i = +e.target.closest('.gcard').dataset.i; S.result.groups[i].name = e.target.value; save();
+  });
+  $('#out').addEventListener('change', (e) => {
+    if (!e.target.classList.contains('gname') || !S.result) return;
+    const i = +e.target.closest('.gcard').dataset.i, v = e.target.value.trim() || (i + 1) + '모둠';
+    S.result.groups[i].name = v; e.target.value = v; save(); renderLeft();
+  });
+
+  // 끌어서 옮기기 (마우스·터치 모두 pointer 이벤트로)
+  let drag = null;
+  $('#out').addEventListener('pointerdown', (e) => {
+    const m = e.target.closest('.mem'); if (!m || e.button > 0 || !S.result) return;
+    drag = { el: m, name: m.dataset.name, x: e.clientX, y: e.clientY, id: e.pointerId, moved: false, ghost: null, over: null };
+  });
+  document.addEventListener('pointermove', (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) {
+      if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
+      drag.moved = true;
+      const r = drag.el.getBoundingClientRect();
+      const g = drag.el.cloneNode(true); g.classList.add('drag-ghost'); g.classList.remove('sel', 'flash');
+      g.style.width = r.width + 'px'; drag.w = r.width; drag.h = r.height;
+      const card = drag.el.closest('.gcard'); g.style.setProperty('--c', card.style.getPropertyValue('--c'));
+      document.body.appendChild(g); drag.ghost = g; drag.el.classList.add('dragging');
+    }
+    e.preventDefault();
+    drag.ghost.style.transform = `translate(${e.clientX - drag.w / 2}px,${e.clientY - drag.h / 2}px) rotate(-2deg)`;
+    const t = document.elementFromPoint(e.clientX, e.clientY);
+    const card = t && t.closest ? t.closest('#out .gcard') : null;
+    if (drag.over && drag.over !== card) drag.over.classList.remove('over');
+    if (card) card.classList.add('over');
+    drag.over = card;
+  }, { passive: false });
+  function endDrag(e, cancel) {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    const d = drag; drag = null;
+    if (!d.moved) return;
+    skipClick = true; setTimeout(() => { skipClick = false; }, 0);
+    if (d.ghost) d.ghost.remove();
+    d.el.classList.remove('dragging');
+    if (d.over) d.over.classList.remove('over');
+    if (!cancel && d.over) moveTo(d.name, +d.over.dataset.i);
+  }
+  document.addEventListener('pointerup', (e) => endDrag(e, false));
+  document.addEventListener('pointercancel', (e) => endDrag(e, true));
+
+  // 인쇄·복사
+  $('#print').onclick = () => { try { window.print(); } catch (e) { } };
+  $('#copy').onclick = () => {
+    if (!S.result) return;
+    const gs = S.result.groups, rows = [gs.map((g) => g.name).join('\t')];
+    const max = Math.max(...gs.map((g) => g.members.length));
+    for (let i = 0; i < max; i++) rows.push(gs.map((g) => { const n = g.members[i]; if (!n) return ''; const ro = S.result.roles && S.result.roles[n]; return ro ? `${n} (${ro})` : n; }).join('\t'));
+    copyText(rows.join('\n')).then((ok) => gmsg(ok ? '표로 복사했어요. 엑셀이나 한글 표에 붙여 넣어 주세요.' : '복사하지 못했어요. 브라우저에서 클립보드를 허용해 주세요.', ok ? 'ok' : 'warn'));
+  };
+  function copyText(t) {
+    const fallback = () => {
+      try { const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand && document.execCommand('copy'); ta.remove(); return !!ok; } catch (e) { return false; }
+    };
+    try { if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).then(() => true, () => fallback()); } catch (e) { }
+    return Promise.resolve(fallback());
+  }
+
+  // ---------- 크게 보기 ----------
+  let fsOn = false;
+  function enterShow() {
+    document.body.classList.add('show'); clearSel();
+    try { const el = document.documentElement; if (el.requestFullscreen) { const p = el.requestFullscreen(); fsOn = true; if (p && p.catch) p.catch(() => { fsOn = false; }); } } catch (e) { fsOn = false; }
+    $('#exitShow').focus();
+  }
+  function exitShow() {
+    document.body.classList.remove('show');
+    try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen(); } catch (e) { }
+    fsOn = false;
+  }
+  $('#showG').onclick = enterShow;
+  $('#showP').onclick = enterShow;
+  $('#exitShow').onclick = exitShow;
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && fsOn) { fsOn = false; document.body.classList.remove('show'); } });
+
+  // ---------- 탭 ----------
+  function setTab(t, focus) {
+    S.tab = t;
+    $$('[data-tab]').forEach((b) => { const on = b.dataset.tab === t; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
+    $('#tabGroups').hidden = t !== 'g'; $('#tabPick').hidden = t !== 'p';
+    if (t === 'p') renderLeft();
+    save();
+  }
+  $$('[data-tab]').forEach((b) => {
+    b.onclick = () => setTab(b.dataset.tab);
+    b.onkeydown = (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); setTab(S.tab === 'g' ? 'p' : 'g', true); } };
+  });
+
+  // ---------- 발표 뽑기 ----------
+  const PK = { round: { s: new Set(), g: new Set() }, hist: [], rolling: false, timers: [] };
+  function pool() {
+    if (S.pick.target === 'g') return S.result ? S.result.groups.map((g, i) => ({ key: 'g' + i, label: g.name, sub: g.members.join(', ') })) : [];
+    return present().map((n) => ({ key: n, label: n, sub: '' }));
+  }
+  function renderLeft() {
+    $$('[data-target]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.target === S.pick.target)));
+    $('#cnt').value = S.pick.count; $('#noRep').checked = S.pick.noRepeat;
+    const items = pool(), round = PK.round[S.pick.target], unit = S.pick.target === 'g' ? '모둠' : '학생';
+    if (!items.length) { $('#left').textContent = S.pick.target === 'g' ? '모둠 만들기 탭에서 모둠을 먼저 만들어 주세요.' : '왼쪽에 명단을 넣어 주세요.'; }
+    else if (S.pick.noRepeat) { const l = items.filter((it) => !round.has(it.key)).length; $('#left').innerHTML = `아직 안 뽑힌 ${unit} <b>${l}</b> / ${items.length}`; }
+    else $('#left').innerHTML = `${unit} <b>${items.length}</b> 중에서 뽑아요 (중복 가능)`;
+    if (!PK.rolling && !$('#slots').children.length) idleSlots();
+  }
+  function idleSlots() { $('#slots').className = 'slots'; $('#slots').innerHTML = '<div class="slot wait"><span class="sn">?</span><span class="ss">뽑기를 누르거나 스페이스 키를 눌러 주세요</span></div>'; }
+  function renderHist() {
+    $('#hist').innerHTML = PK.hist.map((h, i) => `<li${i === PK.hist.length - 1 ? ' class="new"' : ''}><span class="hn">${i + 1}</span>${esc(h.join(', '))}</li>`).join('');
+    $('#histEmpty').hidden = PK.hist.length > 0;
+  }
+  function pmsg(t) { $('#pmsg').textContent = t; }
+
+  function draw() {
+    if (PK.rolling) return;
+    const items = pool(); pmsg('');
+    if (!items.length) { pmsg(S.pick.target === 'g' ? '먼저 모둠 만들기 탭에서 모둠을 만들어 주세요.' : '출석한 학생이 없어요. 왼쪽에 명단을 넣어 주세요.'); return; }
+    const want = Math.min(S.pick.count, items.length), round = PK.round[S.pick.target];
+    let chosen;
+    let wrapped = false;
+    if (S.pick.noRepeat) {
+      chosen = shuffle(items.filter((it) => !round.has(it.key))).slice(0, want);
+      chosen.forEach((c) => round.add(c.key));
+      if (chosen.length < want || items.every((it) => round.has(it.key))) {
+        // 한 바퀴 끝: 새 바퀴를 시작하고 모자란 만큼 채운다
+        wrapped = true; round.clear();
+        if (chosen.length < want) {
+          const extra = shuffle(items.filter((it) => !chosen.some((c) => c.key === it.key))).slice(0, want - chosen.length);
+          extra.forEach((c) => round.add(c.key)); chosen = chosen.concat(extra);
+        }
+      }
+    } else chosen = shuffle(items).slice(0, want);
+    roll(chosen, items, () => {
+      PK.hist.push(chosen.map((c) => c.label)); renderHist(); renderLeft();
+      $('#live').textContent = chosen.map((c) => c.label).join(', ');
+      if (wrapped) pmsg(`모두 한 번씩 뽑혔어요. 다음부터 새로 한 바퀴 돌아요.`);
+      beep();
+    });
+  }
+  // 슬롯처럼 이름이 빠르게 바뀌다가 점점 느려지며 멈춘다(약 1.5초). 움직임 줄이기 설정이면 바로 보여 준다.
+  function roll(chosen, items, done) {
+    const box = $('#slots');
+    box.className = 'slots' + (chosen.length > 1 ? ' many' : '');
+    box.innerHTML = chosen.map(() => '<div class="slot rolling"><span class="sn">&nbsp;</span><span class="ss"></span></div>').join('');
+    const slots = $$('.slot', box);
+    const land = (el, c) => { el.classList.remove('rolling'); el.classList.add('land'); el.querySelector('.sn').textContent = c.label; el.querySelector('.ss').textContent = c.sub || ''; };
+    if (reduce()) { slots.forEach((el, i) => land(el, chosen[i])); done(); return; }
+    PK.rolling = true; $('#draw').disabled = true;
+    let doneN = 0;
+    slots.forEach((el, i) => {
+      const sn = el.querySelector('.sn'), end = 1350 + i * 220;
+      let t = 0, delay = 45, last = '';
+      const tick = () => {
+        let it = pick1(items); if (items.length > 1) while (it.label === last) it = pick1(items);
+        last = it.label; sn.textContent = it.label;
+        t += delay; delay = Math.min(delay * 1.14, 280);
+        if (t < end) PK.timers.push(setTimeout(tick, delay));
+        else PK.timers.push(setTimeout(() => {
+          land(el, chosen[i]);
+          if (++doneN === slots.length) { PK.rolling = false; $('#draw').disabled = false; done(); }
+        }, delay));
+      };
+      tick();
+    });
+  }
+  function restart() {
+    PK.timers.forEach(clearTimeout); PK.timers = []; PK.rolling = false; $('#draw').disabled = false;
+    PK.round.s.clear(); PK.round.g.clear(); PK.hist = []; renderHist(); idleSlots(); pmsg(''); renderLeft();
+  }
+  $('#draw').onclick = draw;
+  $('#restart').onclick = restart;
+  $$('[data-target]').forEach((b) => b.onclick = () => { S.pick.target = b.dataset.target; idleSlots(); pmsg(''); renderLeft(); save(); });
+  const setCnt = (v) => { S.pick.count = clamp(Math.round(+v) || 1, 1, 5); renderLeft(); save(); };
+  $('#cMinus').onclick = () => setCnt(S.pick.count - 1);
+  $('#cPlus').onclick = () => setCnt(S.pick.count + 1);
+  $('#cnt').addEventListener('change', (e) => setCnt(e.target.value));
+  $('#noRep').onchange = (e) => { S.pick.noRepeat = e.target.checked; renderLeft(); save(); };
+
+  // 소리: 기본은 꺼짐, 버튼을 누른 뒤에만 오디오를 만든다
+  let actx = null, sound = false;
+  $('#sound').onclick = () => {
+    sound = !sound;
+    if (sound && !actx) { try { const AC = window.AudioContext || window.webkitAudioContext; actx = AC ? new AC() : null; } catch (e) { actx = null; } }
+    if (sound && !actx) { sound = false; pmsg('이 브라우저에서는 소리를 낼 수 없어요.'); }
+    $('#sound').setAttribute('aria-pressed', String(sound));
+    $('#sound').innerHTML = `<svg><use href="#i-${sound ? 'vol' : 'mute'}"/></svg><span>${sound ? '소리 켜짐' : '소리 꺼짐'}</span>`;
+  };
+  function beep() {
+    if (!sound || !actx) return;
+    try {
+      if (actx.state === 'suspended') actx.resume();
+      const t = actx.currentTime;
+      [[660, 0], [990, 0.09]].forEach(([f, dt]) => {
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t + dt); g.gain.exponentialRampToValueAtTime(0.14, t + dt + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.22);
+        o.connect(g); g.connect(actx.destination); o.start(t + dt); o.stop(t + dt + 0.25);
+      });
+    } catch (e) { }
+  }
+
+  // ---------- 키보드 ----------
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (document.body.classList.contains('show')) { exitShow(); return; }
+      if (sel) { clearSel(); gmsg(''); return; }
+      if (!$('#pp').hidden) { $('#pp').hidden = true; return; }
+    }
+    if (S.tab !== 'p' || (e.key !== ' ' && e.key !== 'Enter') || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target;
+    if (t && (t.closest('input,textarea,select,button,a,[contenteditable="true"]'))) return;
+    e.preventDefault(); draw();
+  });
+
+  // ---------- 시작 ----------
+  load();
+  $('#remember').checked = S.remember;
+  $('#tagMode').checked = S.tagMode;
+  $('#roles').value = S.opt.roles;
+  renderRoster(); renderResult(false); renderHist(); setTab(S.tab);
+})();
+</script>
+</body>
+</html>

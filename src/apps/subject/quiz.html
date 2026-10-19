@@ -1,0 +1,165 @@
+<!doctype html>
+<!-- quiz.html: 낱말·개념 퀴즈. '문제 - 답' 목록을 넣으면 낱말 카드와 4지선다 퀴즈가 된다. 국어 맞춤법·과학 원소 기호·영어 단어 예시 세트가 들어 있다. ?set=spelling|elements|vocab -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>낱말·개념 퀴즈</title>
+<style>
+:root{--bg:#f4f6f5;--card:#fcfdfc;--text:#17201c;--muted:#56625c;--line:#dde3df;--accent:#14684e;--soft:#e1efe8;--on:#f6fbf8;--ok:#1d7a50;--no:#b3261e;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#101412;--card:#171c19;--text:#e6ece8;--muted:#a3aea8;--line:#29312d;--accent:#4fb48d;--soft:#1a2e25;--on:#0b1510;--ok:#6fcf9f;--no:#f08a80;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.55;word-break:keep-all}
+main{max-width:980px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:26px;letter-spacing:-.03em;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 16px}
+.sets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+button{font:inherit;font-weight:650;min-height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
+button.p{background:var(--accent);border-color:var(--accent);color:var(--on)}
+button[aria-pressed=true]{background:var(--soft);border-color:var(--accent);color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:14.5px;background:var(--bg);color:var(--text)}
+.help{color:var(--muted);font-size:13px}
+.modes{display:flex;gap:6px;margin:14px 0}
+.flash{min-height:220px;display:grid;place-items:center;text-align:center;border-radius:14px;background:var(--soft);cursor:pointer;padding:20px;user-select:none}
+.flash .q{font-size:clamp(28px,6vw,52px);font-weight:800;letter-spacing:-.02em}.flash .a{font-size:22px;color:var(--accent);margin-top:10px;font-weight:700}
+.nav{display:flex;gap:8px;justify-content:center;margin-top:12px;align-items:center}
+.qz .q{font-size:clamp(22px,4.5vw,34px);font-weight:800;margin:6px 0 16px;text-align:center}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}.opts button{min-height:58px;font-size:17px;text-align:center}
+.opts button.ok{background:var(--ok);border-color:var(--ok);color:#fff}.opts button.no{background:var(--no);border-color:var(--no);color:#fff}
+.score{text-align:center;color:var(--muted);margin-top:12px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+  <h1>낱말·개념 퀴즈</h1>
+  <p class="sub">'문제 - 답'을 한 줄에 하나씩 넣으면 낱말 카드와 4지선다 퀴즈가 돼요. 어느 교과든 쓸 수 있어요.</p>
+  <div class="sets" id="sets">
+    <button data-set="spelling">국어 · 헷갈리는 맞춤법</button>
+    <button data-set="elements">과학 · 원소 기호</button>
+    <button data-set="vocab">영어 · 단어</button>
+    <button data-set="custom">직접 만들기</button>
+  </div>
+  <div class="card" id="edit" hidden>
+    <label for="src"><b>문제 - 답</b> <span class="help">한 줄에 하나, 가운데에 ' - ' (예: photosynthesis - 광합성)</span></label>
+    <textarea id="src"></textarea>
+    <div class="nav" style="justify-content:flex-start"><button class="p" id="use">이 목록으로 하기</button></div>
+  </div>
+  <div class="modes"><button id="mFlash" aria-pressed="true">낱말 카드</button><button id="mQuiz" aria-pressed="false">퀴즈</button><span style="flex:1"></span><span class="help" id="count"></span></div>
+  <section class="card" id="flashBox">
+    <div class="flash" id="flash" role="button" tabindex="0" aria-label="카드 뒤집기"><div><div class="q" id="fq"></div><div class="a" id="fa" hidden></div><div class="help" id="fhint">눌러서 답 보기</div></div></div>
+    <div class="nav"><button id="fPrev">‹ 이전</button><span id="fNo"></span><button id="fNext">다음 ›</button><button id="fShuf">섞기</button></div>
+  </section>
+  <section class="card qz" id="quizBox" hidden>
+    <div class="q" id="qq"></div><div class="opts" id="opts"></div>
+    <div class="score" id="score"></div>
+    <div class="nav"><button class="p" id="qNext">다음 문제</button><button id="qReset">처음부터</button></div>
+  </section>
+</main>
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const SETS = {
+    // 맞춤법: 문제(잘못 쓰기 쉬운 두 표기) - 답(바른 표기)
+    spelling: `안 돼요 / 안되요 - 안 돼요
+왠지 / 웬지 - 왠지
+웬일 / 왠일 - 웬일
+금세 / 금새 - 금세
+며칠 / 몇일 - 며칠
+어떡해 / 어떻해 - 어떡해
+역할 / 역활 - 역할
+설거지 / 설겆이 - 설거지
+오랜만 / 오랫만 - 오랜만
+굳이 / 구지 - 굳이
+희한하다 / 희안하다 - 희한하다
+일부러 / 일부로 - 일부러
+내로라하는 / 내노라하는 - 내로라하는
+떼려야 / 뗄래야 - 떼려야
+어이없다 / 어의없다 - 어이없다
+할게요 / 할께요 - 할게요
+베개 / 배게 - 베개
+깨끗이 / 깨끗히 - 깨끗이
+곰곰이 / 곰곰히 - 곰곰이
+가게에 들러 / 가게에 들려 - 가게에 들러`,
+    elements: `수소 - H
+헬륨 - He
+리튬 - Li
+베릴륨 - Be
+붕소 - B
+탄소 - C
+질소 - N
+산소 - O
+플루오린 - F
+네온 - Ne
+나트륨 - Na
+마그네슘 - Mg
+알루미늄 - Al
+규소 - Si
+인 - P
+황 - S
+염소 - Cl
+아르곤 - Ar
+칼륨 - K
+칼슘 - Ca`,
+    vocab: `environment - 환경
+experiment - 실험
+community - 공동체
+responsibility - 책임
+opportunity - 기회
+volunteer - 자원봉사자
+improve - 향상시키다
+compare - 비교하다
+recognize - 알아보다
+necessary - 필요한
+consider - 고려하다
+contribute - 기여하다`
+  };
+  let items = [], i = 0, mode = 'flash', qi = 0, right = 0, total = 0, order = [];
+  const parse = (t) => t.split('\n').map((l) => { const k = l.lastIndexOf(' - '); return k > 0 ? { q: l.slice(0, k).trim(), a: l.slice(k + 3).trim() } : null; }).filter((x) => x && x.q && x.a);
+  const shuffle = (a) => { a = a.slice(); for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; };
+  function load(name) {
+    document.querySelectorAll('[data-set]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.set === name)));
+    $('#edit').hidden = name !== 'custom';
+    if (name === 'custom') { if (!$('#src').value) $('#src').value = 'photosynthesis - 광합성\nfriction - 마찰력'; items = parse($('#src').value); }
+    else items = parse(SETS[name]);
+    i = 0; order = shuffle(items.map((_, k) => k)); qi = 0; right = 0; total = 0;
+    $('#count').textContent = `${items.length}개`;
+    drawFlash(); drawQuiz();
+  }
+  function drawFlash() {
+    if (!items.length) { $('#fq').textContent = '목록을 넣어 주세요'; return; }
+    const it = items[i]; $('#fq').textContent = it.q; $('#fa').textContent = it.a; $('#fa').hidden = true; $('#fhint').hidden = false; $('#fNo').textContent = `${i + 1} / ${items.length}`;
+  }
+  function drawQuiz() {
+    if (items.length < 2) { $('#qq').textContent = '문제가 2개 이상 있어야 해요'; $('#opts').innerHTML = ''; return; }
+    if (qi >= order.length) { $('#qq').textContent = `끝! ${total}문제 중 ${right}개 맞혔어요`; $('#opts').innerHTML = ''; return; }
+    const it = items[order[qi]];
+    const others = shuffle(items.filter((x) => x.a !== it.a).map((x) => x.a)).filter((v, k, s) => s.indexOf(v) === k).slice(0, 3);
+    const opts = shuffle([it.a, ...others]);
+    $('#qq').textContent = it.q;
+    $('#opts').innerHTML = opts.map((o) => `<button type="button" data-o="${esc(o)}">${esc(o)}</button>`).join('');
+    $('#score').textContent = `${qi + 1} / ${order.length} · 맞힌 개수 ${right}`;
+    let answered = false;
+    $('#opts').querySelectorAll('button').forEach((b) => b.onclick = () => {
+      if (answered) return; answered = true; total++;
+      if (b.dataset.o === it.a) { b.classList.add('ok'); right++; } else { b.classList.add('no'); $('#opts').querySelector(`[data-o="${CSS.escape(it.a)}"]`).classList.add('ok'); }
+      $('#score').textContent = `${qi + 1} / ${order.length} · 맞힌 개수 ${right}`;
+    });
+  }
+  $('#sets').addEventListener('click', (e) => { const b = e.target.closest('[data-set]'); if (b) load(b.dataset.set); });
+  $('#use').onclick = () => load('custom');
+  $('#flash').onclick = () => { $('#fa').hidden = !$('#fa').hidden; $('#fhint').hidden = !$('#fa').hidden; };
+  $('#flash').onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#flash').click(); } };
+  $('#fPrev').onclick = () => { if (items.length) { i = (i - 1 + items.length) % items.length; drawFlash(); } };
+  $('#fNext').onclick = () => { if (items.length) { i = (i + 1) % items.length; drawFlash(); } };
+  $('#fShuf').onclick = () => { items = shuffle(items); i = 0; drawFlash(); };
+  $('#qNext').onclick = () => { qi++; drawQuiz(); };
+  $('#qReset').onclick = () => { order = shuffle(items.map((_, k) => k)); qi = 0; right = 0; total = 0; drawQuiz(); };
+  const setMode = (m) => { mode = m; $('#mFlash').setAttribute('aria-pressed', String(m === 'flash')); $('#mQuiz').setAttribute('aria-pressed', String(m === 'quiz')); $('#flashBox').hidden = m !== 'flash'; $('#quizBox').hidden = m !== 'quiz'; };
+  $('#mFlash').onclick = () => setMode('flash'); $('#mQuiz').onclick = () => setMode('quiz');
+  let start = 'spelling'; try { start = new URLSearchParams(location.search).get('set') || 'spelling'; } catch (e) { }
+  load(SETS[start] || start === 'custom' ? start : 'spelling');
+})();
+</script>
+</body>
+</html>

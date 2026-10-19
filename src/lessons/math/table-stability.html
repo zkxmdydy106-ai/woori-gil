@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>흔들리지 않는 탁자는? · 기하 Ⅱ-01 생각 열기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFAF0; --card:#F5F0E0; --strong:#EBE6D6; --hair:#E0DAC6;
+  --ink:#0A0A0A; --body:#3A3A3A; --muted:#6A6A6A;
+  --ok:#2E6B60; --no:#C7573F; --blue:#5B8DEF; --wood:#C08B4E;
+  --head:"Jua","Malgun Gothic",sans-serif; --text:"Gowun Dodum","Malgun Gothic",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--body);font-family:var(--text);
+  font-size:17px;line-height:1.7;-webkit-text-size-adjust:100%}
+.wrap{max-width:1280px;margin:0 auto;padding:28px 22px 60px}
+header{display:flex;justify-content:space-between;align-items:flex-end;
+  border-bottom:4px solid var(--ink);padding-bottom:14px;margin-bottom:22px;gap:16px;flex-wrap:wrap}
+header h1{font-family:var(--head);font-size:38px;margin:0;color:var(--ink);font-weight:400;line-height:1.2}
+header .sub{font-size:16px;color:var(--muted);margin-top:4px}
+header .pg{font-family:var(--head);font-size:16px;color:#fff;background:var(--ink);
+  padding:8px 16px;border-radius:999px;white-space:nowrap}
+
+.ask{background:var(--card);border-radius:24px;padding:22px 26px;margin-bottom:22px}
+.ask b{color:var(--ink)}
+.ask .q{font-family:var(--head);font-size:23px;color:var(--ink);margin-bottom:6px}
+
+.grid{display:grid;grid-template-columns:1.45fr 1fr;gap:22px}
+@media(max-width:960px){.grid{grid-template-columns:1fr}}
+
+.stage{background:#fff;border:3px solid var(--hair);border-radius:24px;overflow:hidden;
+  position:relative;touch-action:none}
+.stage svg{display:block;width:100%;height:auto;cursor:grab}
+.stage svg.grabbing{cursor:grabbing}
+.stage .hint{position:absolute;left:16px;bottom:12px;font-family:var(--head);
+  font-size:15px;color:#b5b5b5;pointer-events:none}
+
+.tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.tab{font-family:var(--head);font-size:18px;border:3px solid var(--hair);background:#fff;
+  color:var(--muted);border-radius:999px;padding:12px 22px;cursor:pointer;min-height:52px}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tab .n{opacity:.6;margin-right:6px}
+
+.verdict{border-radius:24px;padding:22px 24px;border:3px solid var(--hair);background:var(--card)}
+.verdict .lab{font-family:var(--head);font-size:15px;color:var(--muted)}
+.verdict .big{font-family:var(--head);font-size:32px;margin:6px 0 10px;line-height:1.2}
+.verdict .why{font-size:16.5px;line-height:1.85}
+.verdict.ok{background:#EEF6F3;border-color:var(--ok)} .verdict.ok .big{color:var(--ok)}
+.verdict.no{background:#FBF0EC;border-color:var(--no)} .verdict.no .big{color:var(--no)}
+.rule{margin-top:14px;padding-top:14px;border-top:2px dashed var(--hair);font-size:15.5px;color:var(--muted)}
+.rule b{color:var(--ink)}
+
+.panel{margin-top:18px;background:var(--card);border-radius:24px;padding:20px 22px}
+.panel h3{font-family:var(--head);font-size:19px;margin:0 0 12px;color:var(--ink);font-weight:400}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{font-family:var(--head);font-size:17px;border:3px solid var(--hair);background:#fff;
+  color:var(--body);border-radius:16px;padding:13px 20px;cursor:pointer;min-height:52px}
+.btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.go{background:var(--no);color:#fff;border-color:var(--no);font-size:19px;padding:14px 26px}
+label{display:block;font-family:var(--head);font-size:16px;color:var(--muted);margin:14px 0 6px}
+label span{color:var(--ink)}
+input[type=range]{width:100%;height:40px;accent-color:var(--ink)}
+
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--head);font-size:15px;
+  color:var(--muted);margin-top:14px}
+.legend i{display:inline-block;width:16px;height:16px;border-radius:4px;margin-right:6px;vertical-align:-3px}
+
+.answer{margin-top:24px;background:var(--strong);border-radius:24px;padding:22px 26px}
+.answer h3{font-family:var(--head);font-size:22px;margin:0 0 10px;color:var(--ink);font-weight:400}
+.answer ol{margin:0;padding-left:22px}
+.answer li{margin-bottom:8px}
+.answer b{color:var(--ink)}
+.reveal{font-family:var(--head);font-size:17px;border:3px solid var(--ink);background:#fff;
+  color:var(--ink);border-radius:16px;padding:12px 20px;cursor:pointer;min-height:52px}
+.hid{display:none}
+footer{margin-top:36px;text-align:center;color:#9a9a9a;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <h1>흔들리지 않는 탁자는 어떤 것일까?</h1>
+    <div class="sub">막대 다리와 판자 다리의 길이가 모두 같을 때, 상판이 흔들리지 않는 탁자를 모두 찾아봅시다.</div>
+  </div>
+  <div class="pg">기하 Ⅱ-01 · 교과서 56쪽</div>
+</header>
+
+<div class="ask">
+  <div class="q">직접 흔들어 보세요</div>
+  탁자를 하나 고르고 <b>«흔들어 보기»</b> 를 누르면 실제로 흔들리는지 알 수 있습니다.
+  화면을 손가락으로 <b>끌면 돌아갑니다</b>. 여러 방향에서 보세요.
+</div>
+
+<div class="tabs">
+  <div class="tab on"><span class="n">(1)</span>막대 다리 2개</div>
+  <div class="tab"><span class="n">(2)</span>막대 다리 3개</div>
+  <div class="tab"><span class="n">＋</span>막대 다리 4개</div>
+  <div class="tab"><span class="n">(3)</span>막대 1개 + 판자 1개</div>
+</div>
+
+<div class="grid">
+  <div class="stage">
+    <svg id="sv" viewBox="0 0 820 600" role="img" aria-label="탁자 3차원 화면"></svg>
+    <div class="hint">끌어서 돌리기</div>
+  </div>
+  <div>
+    <div id="vd" class="verdict"></div>
+    <div class="panel">
+      <h3>조작</h3>
+      <div class="btns"><button class="btn go" id="shake">흔들어 보기</button>
+        <button class="btn" id="reset">바로 세우기</button></div>
+      <div id="extra"></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:#5B8DEF"></i>상판</span>
+      <span><i style="background:#C08B4E"></i>다리</span>
+      <span><i style="background:#C7573F"></i>흔들리는 축</span>
+      <span><i style="background:#2E6B60"></i>바닥에 닿은 점 · 정해진 평면</span>
+    </div>
+  </div>
+</div>
+
+<div class="answer">
+  <h3>정리해 봅시다</h3>
+  <button class="reveal" id="rv">답 확인하기</button>
+  <div id="ans" class="hid" style="margin-top:14px">
+    <ol>
+      <li><b>(1) 막대 다리 2개</b> — 흔들립니다. 두 점은 <b>직선 하나</b>만 정할 뿐,
+        그 직선을 축으로 상판이 무수히 많이 기울어질 수 있습니다.</li>
+      <li><b>(2) 막대 다리 3개</b> — <b>흔들리지 않습니다.</b>
+        한 직선 위에 있지 않은 <b>세 점</b>은 평면을 하나로 정합니다.
+        다만 세 다리를 <b>한 줄로 세우면</b> 다시 흔들립니다.</li>
+      <li><b>(3) 막대 1개 + 판자 1개</b> — <b>흔들리지 않습니다.</b>
+        판자의 밑변이 <b>직선</b>이고 막대 다리 끝이 <b>그 직선 위에 있지 않은 점</b>이므로
+        평면이 하나로 정해집니다.</li>
+      <li><b>(＋) 막대 다리 4개</b> — 바닥이 조금만 고르지 않아도 <b>덜컹거립니다.</b>
+        네 점이 한 평면 위에 있다는 보장이 없기 때문입니다.</li>
+    </ol>
+    <p style="margin:14px 0 0"><b>그래서 평면을 하나로 정하려면?</b><br>
+      ① 한 직선 위에 있지 않은 <b>세 점</b> &nbsp;/&nbsp;
+      ② <b>한 직선</b>과 그 위에 있지 않은 <b>한 점</b></p>
+  </div>
+</div>
+
+<footer>기하 Ⅱ-01 직선과 평면의 위치 관계 · 지학사 2022 개정 · OO고등학교</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var NS="http://www.w3.org/2000/svg", sv=document.getElementById("sv");
+var W=820,H=600;
+
+/* ── 벡터 ── */
+function V(x,y,z){return{x:x,y:y,z:z};}
+function ad(a,b){return V(a.x+b.x,a.y+b.y,a.z+b.z);}
+function sb(a,b){return V(a.x-b.x,a.y-b.y,a.z-b.z);}
+function sc(a,k){return V(a.x*k,a.y*k,a.z*k);}
+function dt(a,b){return a.x*b.x+a.y*b.y+a.z*b.z;}
+function cr(a,b){return V(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);}
+function nz(a){var L=Math.sqrt(dt(a,a))||1;return sc(a,1/L);}
+function lerp(a,b,t){return ad(a,sc(sb(b,a),t));}
+/* 축 P0,u 를 중심으로 th 만큼 회전 */
+function rot(v,P0,u,th){
+  var d=sb(v,P0),c=Math.cos(th),s=Math.sin(th);
+  return ad(P0, ad(ad(sc(d,c), sc(cr(u,d),s)), sc(u,dt(u,d)*(1-c))));
+}
+
+/* ── 카메라 ── */
+var CAM={az:-0.86,el:0.40,d:16};
+function basis(){
+  var ce=Math.cos(CAM.el),se=Math.sin(CAM.el),ca=Math.cos(CAM.az),sa=Math.sin(CAM.az);
+  var dir=V(ce*ca,ce*sa,se), eye=ad(sc(dir,CAM.d),V(0,0,1.1));
+  var f=nz(sc(dir,-1)), r=nz(cr(f,V(0,0,1)));
+  return {eye:eye,f:f,r:r,u:cr(r,f)};
+}
+var B=basis(), FOV=780;
+function pr(p){
+  var d=sb(p,B.eye), z=dt(d,B.f); if(z<0.4)z=0.4;
+  var k=FOV/z;
+  return {x:W/2+dt(d,B.r)*k, y:H/2+70-dt(d,B.u)*k, z:z};
+}
+
+/* ── 그리기 ── */
+var prims=[];
+function poly(pts,fill,op,stroke,sw){
+  prims.push({t:"p",pts:pts,fill:fill,op:op,stroke:stroke||null,sw:sw||1.6});
+}
+function seg(a,b,c,w,n,dash){
+  n=n||14;
+  for(var i=0;i<n;i++) prims.push({t:"s",a:lerp(a,b,i/n),b:lerp(a,b,(i+1)/n),c:c,w:w||4,d:dash||null});
+}
+function segf(a,b,c,w,n){ n=n||14;
+  for(var i=0;i<n;i++) prims.push({t:"s",a:lerp(a,b,i/n),b:lerp(a,b,(i+1)/n),c:c,w:w||4,d:null,pri:1});
+}
+function dot(p,c,r){prims.push({t:"d",p:p,c:c,r:r||6,pri:1});}
+function ring(p,c,r){prims.push({t:"r",p:p,c:c,r:r||13,pri:1});}
+function txt(p,s,c,off,size){prims.push({t:"t",p:p,s:s,c:c||"#666",o:off||[0,0],fs:size||17,pri:2});}
+
+function render(){
+  while(sv.firstChild) sv.removeChild(sv.firstChild);
+  var bg=document.createElementNS(NS,"rect");
+  bg.setAttribute("width",W);bg.setAttribute("height",H);bg.setAttribute("fill","#fff");
+  sv.appendChild(bg);
+  var it=[];
+  prims.forEach(function(q){
+    var P,dep;
+    if(q.t==="p"){P=q.pts.map(pr);dep=0;P.forEach(function(p){dep+=p.z;});dep/=P.length;}
+    else if(q.t==="s"){var a=pr(q.a),b=pr(q.b);P=[a,b];dep=(a.z+b.z)/2;}
+    else {P=[pr(q.p)];dep=P[0].z;}
+    if(q.pri) dep-=1000*q.pri;
+    it.push({q:q,P:P,dep:dep});
+  });
+  it.sort(function(a,b){return b.dep-a.dep;});
+  it.forEach(function(o){
+    var q=o.q,P=o.P,e;
+    if(q.t==="p"){
+      e=document.createElementNS(NS,"polygon");
+      e.setAttribute("points",P.map(function(p){return p.x.toFixed(1)+","+p.y.toFixed(1);}).join(" "));
+      e.setAttribute("fill",q.fill);e.setAttribute("fill-opacity",q.op);
+      if(q.stroke){e.setAttribute("stroke",q.stroke);e.setAttribute("stroke-width",q.sw);
+        e.setAttribute("stroke-linejoin","round");}
+    }else if(q.t==="s"){
+      e=document.createElementNS(NS,"line");
+      e.setAttribute("x1",P[0].x.toFixed(1));e.setAttribute("y1",P[0].y.toFixed(1));
+      e.setAttribute("x2",P[1].x.toFixed(1));e.setAttribute("y2",P[1].y.toFixed(1));
+      e.setAttribute("stroke",q.c);e.setAttribute("stroke-width",q.w);
+      e.setAttribute("stroke-linecap","round");
+      if(q.d)e.setAttribute("stroke-dasharray",q.d);
+    }else if(q.t==="d"){
+      e=document.createElementNS(NS,"circle");
+      e.setAttribute("cx",P[0].x.toFixed(1));e.setAttribute("cy",P[0].y.toFixed(1));
+      e.setAttribute("r",q.r);e.setAttribute("fill",q.c);
+      e.setAttribute("stroke","#fff");e.setAttribute("stroke-width",2.5);
+    }else if(q.t==="r"){
+      e=document.createElementNS(NS,"circle");
+      e.setAttribute("cx",P[0].x.toFixed(1));e.setAttribute("cy",P[0].y.toFixed(1));
+      e.setAttribute("r",q.r);e.setAttribute("fill","none");
+      e.setAttribute("stroke",q.c);e.setAttribute("stroke-width",2.4);
+      e.setAttribute("stroke-dasharray","5 4");e.setAttribute("opacity",".8");
+    }else{
+      e=document.createElementNS(NS,"text");
+      e.setAttribute("x",(P[0].x+q.o[0]).toFixed(1));e.setAttribute("y",(P[0].y+q.o[1]).toFixed(1));
+      e.setAttribute("font-family","Jua, Malgun Gothic, sans-serif");
+      e.setAttribute("font-size",q.fs);e.setAttribute("fill",q.c);
+      e.setAttribute("text-anchor","middle");
+      e.textContent=q.s;
+    }
+    sv.appendChild(e);
+  });
+}
+
+/* ── 회전 조작 ── */
+var drag=false,px=0,py=0;
+function dn(e){drag=true;px=e.clientX;py=e.clientY;sv.classList.add("grabbing");if(e.cancelable)e.preventDefault();}
+function mv(e){if(!drag)return;
+  CAM.az-=(e.clientX-px)*0.009;
+  CAM.el=Math.max(-0.15,Math.min(1.2,CAM.el+(e.clientY-py)*0.008));
+  px=e.clientX;py=e.clientY;B=basis();build();if(e.cancelable)e.preventDefault();}
+function up(){drag=false;sv.classList.remove("grabbing");}
+if(window.PointerEvent){
+  sv.addEventListener("pointerdown",dn,{passive:false});
+  sv.addEventListener("pointermove",mv,{passive:false});
+  sv.addEventListener("pointerup",up);sv.addEventListener("pointercancel",up);
+}
+sv.addEventListener("touchstart",function(e){if(e.touches[0]){dn(e.touches[0]);if(e.cancelable)e.preventDefault();}},{passive:false});
+sv.addEventListener("touchmove",function(e){if(e.touches[0]){mv(e.touches[0]);if(e.cancelable)e.preventDefault();}},{passive:false});
+sv.addEventListener("touchend",up);
+if(!window.PointerEvent){
+  sv.addEventListener("mousedown",dn);sv.addEventListener("mousemove",mv);
+  window.addEventListener("mouseup",up);
+}
+
+/* ── 탁자 정의 ── */
+var TOP_H=2.4, RX=3.1, RY=1.9;
+var TYPE=0, SPREAD=1, UNEVEN=false, TH=0, ANIM=null;
+
+function feet(){
+  if(TYPE===0) return [{p:V(-1.5,0,0),len:TOP_H},{p:V(1.5,0,0),len:TOP_H}];
+  if(TYPE===1) return [{p:V(-1.7,-0.5,0),len:TOP_H},{p:V(1.7,-0.5,0),len:TOP_H},
+                       {p:V(0,-0.5+2.0*SPREAD,0),len:TOP_H}];
+  if(TYPE===2) return [{p:V(-1.7,-1.0,0),len:TOP_H},{p:V(1.7,-1.0,0),len:TOP_H},
+                       {p:V(1.7,1.0,0),len:TOP_H},{p:V(-1.7,1.0,0),len:TOP_H-(UNEVEN?0.28:0)}];
+  return [{p:V(-1.9,0,0),len:TOP_H}];      /* 판자형은 막대 1개 + 판자 */
+}
+var BOARD={x:1.2,y0:-1.35,y1:1.35,th:0.13};
+
+/* 안정성 판정 */
+function judge(){
+  if(TYPE===0) return {ok:false,axis:{P0:V(0,0,0),u:V(1,0,0)},
+    big:"흔들립니다",
+    why:"바닥에 닿은 점이 <b>두 개</b>뿐입니다. 두 점은 <b>직선 하나</b>만 정할 수 있고, "+
+        "그 직선을 축으로 상판이 <b>얼마든지 기울어집니다</b>.",
+    rule:"두 점으로는 평면이 정해지지 않습니다. 이 직선을 지나는 평면이 <b>무수히 많습니다</b>."};
+  if(TYPE===1){
+    var f=feet(), col=Math.abs(f[2].p.y-f[0].p.y)<0.18;
+    if(col) return {ok:false,axis:{P0:f[0].p,u:nz(sb(f[1].p,f[0].p))},
+      big:"흔들립니다",
+      why:"세 다리가 <b>한 직선 위</b>에 놓였습니다. 점이 셋이어도 한 줄에 있으면 "+
+          "그 직선을 축으로 상판이 돌아갑니다.",
+      rule:"그래서 조건에 <b>«한 직선 위에 있지 않은»</b> 이라는 말이 꼭 붙습니다."};
+    return {ok:true,axis:null,
+      big:"흔들리지 않습니다",
+      why:"바닥에 닿은 <b>세 점</b>이 한 직선 위에 있지 않습니다. 세 점은 평면을 <b>하나로</b> 정하므로 "+
+          "상판이 놓일 자리가 딱 하나뿐입니다.",
+      rule:"<b>평면의 결정 조건 ①</b> — 한 직선 위에 있지 않은 세 점"};
+  }
+  if(TYPE===2){
+    if(!UNEVEN) return {ok:true,axis:null,
+      big:"흔들리지 않습니다",
+      why:"네 다리의 길이가 모두 같고 바닥도 평평해서 네 점이 <b>우연히</b> 한 평면 위에 있습니다.",
+      rule:"하지만 이건 <b>운이 좋은 경우</b>입니다. 아래 «바닥을 고르지 않게» 를 눌러 보세요."};
+    return {ok:false,axis:{P0:V(-1.7,-1.0,0),u:nz(V(3.4,2.0,0))},
+      big:"덜컹거립니다",
+      why:"다리 하나가 바닥에 <b>닿지 않습니다</b>. 네 점이 한 평면 위에 있다는 보장이 없기 때문입니다. "+
+          "탁자는 대각선을 축으로 <b>번갈아 기웁니다</b>.",
+      rule:"식당에서 흔들리는 탁자 밑에 <b>종이를 접어 괴는</b> 이유가 바로 이것입니다."};
+  }
+  return {ok:true,axis:null,
+    big:"흔들리지 않습니다",
+    why:"판자의 <b>밑변</b>이 바닥에 닿아 <b>직선</b>을 이루고, 막대 다리 끝이 "+
+        "<b>그 직선 위에 있지 않은 한 점</b>입니다.",
+    rule:"<b>평면의 결정 조건 ②</b> — 한 직선과 그 직선 위에 있지 않은 한 점"};
+}
+
+/* ── 조립 ── */
+function topPoly(){
+  var pts=[];
+  for(var i=0;i<20;i++){
+    var a=i/20*Math.PI*2;
+    pts.push(V(RX*Math.cos(a),RY*Math.sin(a),TOP_H));
+  }
+  return pts;
+}
+function build(){
+  prims=[];
+  var J=judge(), ax=J.axis;
+  function mv(p){ return (ax&&TH) ? rot(p,ax.P0,ax.u,TH) : p; }
+
+  /* 바닥 */
+  var s=5.2;
+  poly([V(-s,-s,0),V(s,-s,0),V(s,s,0),V(-s,s,0)],"#EFE7D2",0.55,"#DED5BC",1.4);
+  for(var g=-5;g<=5;g++){
+    seg(V(g,-s,0),V(g,s,0),"#E6DCC4",1,2);
+    seg(V(-s,g,0),V(s,g,0),"#E6DCC4",1,2);
+  }
+
+  /* 흔들리는 축 */
+  if(ax){
+    var A0=ad(ax.P0,sc(ax.u,-3.6)), A1=ad(ax.P0,sc(ax.u,3.6));
+    seg(A0,A1,"#C7573F",3.4,20,"9 7");
+    txt(A1,"흔들리는 축","#C7573F",[0,-18],16);
+  }
+
+  /* 다리 */
+  var F=feet();
+  F.forEach(function(f){
+    var top=mv(V(f.p.x,f.p.y,TOP_H-0.16));
+    var bot=ad(top,V(0,0,-f.len+0.16));
+    seg(bot,top,"#C08B4E",12,10);
+    seg(ad(bot,V(-0.05,0,0)),ad(top,V(-0.05,0,0)),"#DCAE74",4,10);   /* 하이라이트 */
+    var touch=bot.z<=0.035;
+    var C=touch?"#2E6B60":"#C7573F";
+    ring(V(bot.x,bot.y,0.01),C,15);
+    dot(V(bot.x,bot.y,Math.max(bot.z,0.01)),C,8.5);
+    if(!touch){
+      seg(V(bot.x,bot.y,0.01),bot,"#C7573F",2.5,6,"4 4");
+      txt(V(bot.x,bot.y,0),"바닥에서 떴다","#C7573F",[0,34],15);
+    }
+  });
+
+  /* 판자 다리 */
+  if(TYPE===3){
+    var x=BOARD.x,t=BOARD.th;
+    var q=[V(x-t,BOARD.y0,0),V(x+t,BOARD.y0,0),V(x+t,BOARD.y1,0),V(x-t,BOARD.y1,0)];
+    var up4=q.map(function(p){return mv(V(p.x,p.y,TOP_H-0.16));});
+    poly([q[0],q[1],up4[1],up4[0]],"#C08B4E",0.95,"#8E6231",1.6);
+    poly([q[3],q[2],up4[2],up4[3]],"#B07C42",0.95,"#8E6231",1.6);
+    poly([q[1],q[2],up4[2],up4[1]],"#D6A369",0.95,"#8E6231",1.6);
+    poly(up4,"#C08B4E",0.95,"#8E6231",1.6);
+    segf(V(x,BOARD.y0,0.02),V(x,BOARD.y1,0.02),"#2E6B60",7,12);
+    dot(V(x,BOARD.y0,0.02),"#2E6B60",6); dot(V(x,BOARD.y1,0.02),"#2E6B60",6);
+    txt(V(x,BOARD.y1,0),"판자가 닿는 직선","#2E6B60",[0,30],15);
+  }
+
+  /* 안정 — 바닥에 닿은 점들이 정하는 도형 */
+  if(J.ok){
+    var base=null;
+    if(TYPE===1) base=F.map(function(f){return V(f.p.x,f.p.y,0.02);});
+    else if(TYPE===2) base=F.map(function(f){return V(f.p.x,f.p.y,0.02);});
+    else if(TYPE===3) base=[V(BOARD.x,BOARD.y0,0.02),V(BOARD.x,BOARD.y1,0.02),
+                            V(F[0].p.x,F[0].p.y,0.02)];
+    if(base){
+      poly(base,"#2E6B60",0.14,"#2E6B60",2.2);
+      for(var k=0;k<base.length;k++)
+        segf(base[k],base[(k+1)%base.length],"#2E6B60",2.6,10);
+    }
+  }
+
+  /* 상판 */
+  var tp=topPoly().map(mv);
+  poly(tp,"#5B8DEF",0.30,"#3A6BC4",2.6);
+  var low=tp.map(function(p){return ad(p,V(0,0,-0.14));});
+  poly(low,"#5B8DEF",0.18,null,0);
+  for(var i=0;i<tp.length;i++){
+    var j=(i+1)%tp.length;
+    poly([tp[i],tp[j],low[j],low[i]],"#7FA6F0",0.55,null,0);
+  }
+
+  render();
+  var v=document.getElementById("vd");
+  v.className="verdict "+(J.ok?"ok":"no");
+  v.innerHTML='<div class="lab">이 탁자는</div><div class="big">'+J.big+'</div>'+
+    '<div class="why">'+J.why+'</div><div class="rule">'+J.rule+'</div>';
+}
+
+/* ── 흔들기 ── */
+function shake(){
+  var J=judge();
+  if(ANIM){cancelAnimationFrame(ANIM);ANIM=null;}
+  if(!J.axis){                      /* 안정 — 살짝 눌렸다 그대로 */
+    var t0=performance.now();
+    (function step(now){
+      var e=(now-t0)/620;
+      if(e>=1){TH=0;build();return;}
+      TH=0.012*Math.sin(e*Math.PI*3)*(1-e);
+      build(); ANIM=requestAnimationFrame(step);
+    })(t0);
+    return;
+  }
+  var t1=performance.now();
+  (function step(now){
+    var e=(now-t1)/2600;
+    if(e>=1){TH=0;build();return;}
+    TH=0.16*Math.sin(e*Math.PI*5)*(1-e*0.55);
+    build(); ANIM=requestAnimationFrame(step);
+  })(t1);
+}
+
+/* ── UI ── */
+function extra(){
+  var box=document.getElementById("extra");
+  if(TYPE===1){
+    box.innerHTML='<label>세 번째 다리의 자리 <span id="vs">떨어져 있음</span></label>'+
+      '<input type="range" id="sp" min="0" max="1" step="0.02" value="'+SPREAD+'">'+
+      '<div class="btns" style="margin-top:10px">'+
+      '<button class="btn" id="mkline">세 다리를 한 줄로</button>'+
+      '<button class="btn" id="mktri">삼각형으로</button></div>';
+    document.getElementById("sp").addEventListener("input",function(e){
+      SPREAD=parseFloat(e.target.value);sync();build();});
+    document.getElementById("mkline").addEventListener("click",function(){
+      SPREAD=0;document.getElementById("sp").value=0;sync();build();});
+    document.getElementById("mktri").addEventListener("click",function(){
+      SPREAD=1;document.getElementById("sp").value=1;sync();build();});
+  }else if(TYPE===2){
+    box.innerHTML='<div class="btns" style="margin-top:12px">'+
+      '<button class="btn'+(UNEVEN?"":" on")+'" id="flat">바닥이 평평하다</button>'+
+      '<button class="btn'+(UNEVEN?" on":"")+'" id="bump">바닥이 고르지 않다</button></div>';
+    document.getElementById("flat").addEventListener("click",function(){UNEVEN=false;extra();build();});
+    document.getElementById("bump").addEventListener("click",function(){UNEVEN=true;extra();build();});
+  }else box.innerHTML="";
+}
+function sync(){
+  var e=document.getElementById("vs"); if(!e)return;
+  e.textContent = SPREAD<0.09 ? "거의 한 줄" : (SPREAD<0.5 ? "조금 떨어짐" : "떨어져 있음");
+}
+var tabs=[].slice.call(document.querySelectorAll(".tab"));
+tabs.forEach(function(t,i){
+  t.addEventListener("click",function(){
+    TYPE=i;TH=0;if(ANIM){cancelAnimationFrame(ANIM);ANIM=null;}
+    tabs.forEach(function(x,k){x.classList.toggle("on",k===i);});
+    extra();sync();build();
+  });
+});
+document.getElementById("shake").addEventListener("click",shake);
+document.getElementById("reset").addEventListener("click",function(){
+  if(ANIM){cancelAnimationFrame(ANIM);ANIM=null;} TH=0;build();});
+document.getElementById("rv").addEventListener("click",function(){
+  var a=document.getElementById("ans");
+  var on=a.classList.toggle("hid");
+  this.textContent=on?"답 확인하기":"답 접기";
+});
+extra();sync();build();
+window.__TB={setType:function(i){tabs[i].click();},shake:shake,
+  get type(){return TYPE;}, get spread(){return SPREAD;},
+  set spread(v){SPREAD=v;build();},
+  get uneven(){return UNEVEN;}, set uneven(v){UNEVEN=v;build();},
+  judge:judge, CAM:CAM};
+})();
+</script>
+</body>
+</html>

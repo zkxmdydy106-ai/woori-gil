@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>확률분포표 만들기 — 일상 속 확률 찾기</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --bg1:#fdfbf7; --bg2:#eef4ee;
+    --ink:#33413f; --soft:#7d8a86; --line:#e7e3da;
+    --card:#ffffff; --cream:#fbf7ef;
+    --green:#5fb383; --green-d:#3f9166; --green-bg:#eaf6ef;
+    --blue:#6d9de0; --blue-bg:#eaf1fb;
+    --coral:#ef8f7e; --coral-bg:#fdeeea;
+    --amber:#e8b866; --amber-bg:#fbf3e2;
+    --shadow:0 8px 26px rgba(80,90,85,.10);
+    --shadow-sm:0 3px 12px rgba(80,90,85,.08);
+    --r:22px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; font-family:'Pretendard',system-ui,'Malgun Gothic',sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--ink);
+    line-height:1.65; padding:0 0 70px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:820px; margin:0 auto; padding:0 18px}
+  header{text-align:center; padding:38px 20px 8px}
+  header .badge{
+    display:inline-block; background:var(--green-bg); color:var(--green-d);
+    font-size:.8rem; font-weight:600; padding:6px 14px; border-radius:999px; margin-bottom:12px;
+  }
+  header h1{margin:0 0 8px; font-size:1.7rem; font-weight:800; letter-spacing:-.02em}
+  header p{margin:0; color:var(--soft); font-size:1rem}
+
+  .goal{
+    background:var(--cream); border:1px solid var(--line); border-radius:var(--r);
+    padding:18px 22px; margin:22px 0 8px; font-size:.98rem; box-shadow:var(--shadow-sm);
+  }
+  .goal .lbl{color:var(--green-d); font-weight:700}
+
+  .levels{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin:26px 0 6px}
+  .levels button{
+    background:var(--card); color:var(--soft); border:1.5px solid var(--line);
+    padding:10px 20px; border-radius:999px; cursor:pointer; font-size:.95rem; font-weight:600;
+    transition:all .18s ease; box-shadow:var(--shadow-sm);
+  }
+  .levels button:hover{transform:translateY(-1px)}
+  .levels button.active{background:var(--green); color:#fff; border-color:var(--green)}
+  .lvhint{text-align:center; color:var(--soft); font-size:.86rem; margin:4px 0 18px}
+
+  .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; margin:8px 0 6px}
+  .card{
+    background:var(--card); border:1.5px solid var(--line); border-radius:var(--r);
+    padding:22px 20px; cursor:pointer; transition:all .2s ease; position:relative;
+    box-shadow:var(--shadow-sm);
+  }
+  .card:hover{transform:translateY(-3px); box-shadow:var(--shadow); border-color:#d9e6dd}
+  .card.sel{border-color:var(--green); box-shadow:0 0 0 3px var(--green-bg), var(--shadow)}
+  .card .emoji{font-size:2rem; display:block; margin-bottom:8px}
+  .card h3{margin:0 0 5px; font-size:1.08rem; font-weight:700}
+  .card p{margin:0; font-size:.86rem; color:var(--soft)}
+  .card .tag{
+    position:absolute; top:16px; right:16px; font-size:.72rem; font-weight:700;
+    padding:3px 11px; border-radius:999px;
+  }
+  .tag.basic{background:var(--blue-bg); color:#4f7cc4}
+  .tag.std{background:var(--amber-bg); color:#c48f3c}
+  .tag.adv{background:var(--coral-bg); color:#d5654f}
+
+  .stage{
+    background:var(--card); border:1.5px solid var(--line); border-radius:26px;
+    padding:26px 26px 30px; margin:24px 0; box-shadow:var(--shadow);
+  }
+  .stage h2{margin:0 0 6px; font-size:1.3rem; font-weight:800}
+  .stage .sit{color:#54615e; font-size:1rem; margin-bottom:16px}
+  .xdef{
+    background:var(--green-bg); border-radius:16px; padding:14px 18px; margin:14px 0;
+    font-size:.98rem; color:#38614c;
+  }
+  .xdef b{color:var(--green-d)}
+
+  .steplabel{font-weight:700; color:var(--ink); margin:20px 0 8px; font-size:1.02rem; display:flex; align-items:center; gap:8px}
+  .steplabel .n{
+    background:var(--green); color:#fff; width:26px; height:26px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center; font-size:.85rem; flex:0 0 auto;
+  }
+
+  .note{color:var(--soft); font-size:.9rem; margin:2px 0 10px}
+
+  table{width:100%; border-collapse:separate; border-spacing:0; margin:12px 0; font-size:1rem; overflow:hidden; border-radius:16px; box-shadow:var(--shadow-sm)}
+  th,td{border-bottom:1px solid var(--line); border-right:1px solid var(--line); padding:14px 8px; text-align:center; background:#fff}
+  tr:last-child td{border-bottom:none}
+  th:first-child,td:first-child{border-left:1px solid var(--line)}
+  tr:first-child th{border-top:1px solid var(--line)}
+  th:first-child{border-top-left-radius:16px}
+  th:last-child{border-top-right-radius:16px}
+  th{background:var(--cream); color:var(--green-d); font-weight:700}
+  th:first-child,td:first-child{background:var(--cream); font-weight:700; color:var(--soft); width:96px}
+  td.xval{font-weight:800; color:var(--ink); font-size:1.1rem}
+  input.prob{
+    width:82px; background:#fff; border:1.5px solid var(--line); color:var(--ink);
+    text-align:center; padding:9px 6px; border-radius:12px; font-size:1rem; font-family:inherit;
+    transition:border-color .15s;
+  }
+  input.prob:focus{outline:none; border-color:var(--green); box-shadow:0 0 0 3px var(--green-bg)}
+  input.prob.ok{border-color:var(--green); background:var(--green-bg)}
+  input.prob.no{border-color:var(--coral); background:var(--coral-bg)}
+
+  /* 교과서식 분수 */
+  .frac{display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; margin:0 2px; line-height:1.05}
+  .frac .num{display:block; padding:0 5px; border-bottom:1.6px solid currentColor}
+  .frac .den{display:block; padding:2px 5px 0}
+  .frac.sm{font-size:.92em}
+
+  .sumline{font-size:.95rem; color:var(--soft); margin-top:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .sumline .chip{background:var(--cream); border:1px solid var(--line); border-radius:999px; padding:4px 14px; font-weight:700; color:var(--ink)}
+  .sumline .chip.good{background:var(--green-bg); color:var(--green-d); border-color:#cfe9d8}
+  .sumline .chip.warn{background:var(--amber-bg); color:#c48f3c; border-color:#f0e0bd}
+
+  .btnrow{display:flex; gap:12px; flex-wrap:wrap; margin-top:20px}
+  .btn{border:none; border-radius:999px; padding:12px 24px; cursor:pointer; font-size:.96rem; font-weight:700; font-family:inherit; transition:all .16s ease; box-shadow:var(--shadow-sm)}
+  .btn:hover{transform:translateY(-1px)}
+  .btn.primary{background:var(--green); color:#fff}
+  .btn.soft{background:var(--card); color:var(--soft); border:1.5px solid var(--line)}
+  .btn.amber{background:var(--amber-bg); color:#b9832f; border:1.5px solid #f0e0bd}
+
+  .feedback{margin-top:18px; padding:16px 20px; border-radius:18px; font-size:.98rem; display:none}
+  .feedback.show{display:block}
+  .feedback.pass{background:var(--green-bg); border:1.5px solid #cfe9d8; color:#33734e}
+  .feedback.fail{background:var(--coral-bg); border:1.5px solid #f6d5cc; color:#b95744}
+
+  .hint{
+    background:var(--amber-bg); border:1.5px solid #f0e0bd; border-radius:18px;
+    padding:16px 20px; margin:14px 0; font-size:.94rem; color:#8a6a2c;
+  }
+  .hint b{color:#a9762a}
+  .hint .cases{
+    font-family:'Pretendard',monospace; color:#5b4a2a; white-space:pre-wrap; font-size:.9rem;
+    margin-top:10px; background:#fff; border-radius:12px; padding:12px 14px; border:1px solid #f0e6cf; line-height:1.9;
+  }
+
+  .bars-wrap{margin-top:26px}
+  .bars{display:flex; align-items:flex-end; gap:14px; height:170px; padding:26px 8px 0}
+  .bar{flex:1; background:linear-gradient(180deg,#7ec79c,#5fb383); border-radius:12px 12px 0 0; position:relative; min-height:3px; transition:height .5s cubic-bezier(.2,.8,.2,1)}
+  .bar span{position:absolute; top:-26px; left:0; right:0; text-align:center; font-size:.82rem; color:var(--soft)}
+  .bar em{position:absolute; bottom:-30px; left:0; right:0; text-align:center; font-size:.9rem; color:var(--ink); font-style:normal; font-weight:700}
+  .baraxis{border-top:2px solid var(--line); margin:0 8px 34px}
+  .barscaption{text-align:center; font-size:.86rem; color:var(--soft)}
+
+  details{margin-top:20px; background:var(--cream); border-radius:16px; padding:4px 18px; border:1px solid var(--line)}
+  summary{cursor:pointer; color:var(--green-d); font-size:.95rem; font-weight:700; padding:12px 0}
+  details p{font-size:.94rem; color:#54615e; margin:0 0 14px}
+
+  .adv-extra{background:var(--coral-bg); border:1.5px solid #f6d5cc; border-radius:18px; padding:18px 20px; margin-top:20px; font-size:.95rem; display:none}
+  .adv-extra.show{display:block}
+  .adv-extra h4{margin:0 0 8px; color:#c9563f; font-size:1.02rem}
+  .adv-extra p{margin:0 0 8px; color:#7a4c40}
+
+  footer{text-align:center; color:var(--soft); font-size:.85rem; margin-top:40px; line-height:1.9}
+  .kbd{background:#fff; border:1px solid var(--line); border-radius:7px; padding:2px 8px; font-size:.85rem; color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="badge">확률과 통계 · 확률분포</span>
+    <h1>일상 속 확률로 확률분포표 만들기</h1>
+    <p>상황을 고르고 → 경우를 적어보고 → 확률을 채워 표를 완성해요</p>
+  </header>
+
+  <div class="goal">
+    <span class="lbl">🎯 오늘의 목표</span> &nbsp;일상 상황에서 <b>확률변수 X</b>를 정하고,
+    X가 될 수 있는 모든 값의 확률을 찾아 <b>확률분포표</b>를 완성한다.
+    <br/><span style="color:var(--soft)">＊ 어려운 공식은 필요 없어요. “모든 경우를 적어서 세기”만 하면 됩니다.</span>
+  </div>
+
+  <div class="levels" id="levels">
+    <button data-lv="basic" class="active">🌱 기초</button>
+    <button data-lv="std">🌤️ 표준</button>
+    <button data-lv="adv">🚀 도전</button>
+  </div>
+  <div class="lvhint" id="lvhint">먼저 아래에서 상황을 하나 골라 보세요</div>
+
+  <div class="cards" id="cards"></div>
+  <div id="stageArea"></div>
+</div>
+
+<footer>
+  경우를 <b>빠짐없이</b> 적으면 확률의 합은 언제나 <b>1</b>이 돼요<br/>
+  칸 이동은 <span class="kbd">Tab</span>, 답은 분수( <span class="kbd">1/4</span> ) 또는 소수( <span class="kbd">0.25</span> ) 모두 가능
+</footer>
+
+<script>
+/* ===== 데이터 (공식 없이 '경우 세기'만) ===== */
+const SITU = {
+  coin2:{ lv:'basic', emoji:'🪙', title:'동전 2개 던지기',
+    sit:'동전 2개를 동시에 던진다. 앞면이 나온 개수를 확률변수 X라 하자.',
+    xdef:'X = 앞면의 개수 → X는 <b>0, 1, 2</b> 중 하나예요.',
+    rows:[{x:0,n:1,d:4},{x:1,n:2,d:4},{x:2,n:1,d:4}],
+    cases:'나올 수 있는 경우는 똑같이 4가지\n  뒤·뒤 → 앞 0개\n  앞·뒤 → 앞 1개\n  뒤·앞 → 앞 1개\n  앞·앞 → 앞 2개\n\n확률 = (그 경우의 수) ÷ 4' },
+  dice1:{ lv:'basic', emoji:'🎲', title:'주사위 1개 굴리기',
+    sit:'주사위 한 개를 굴린다. 나온 눈의 수를 확률변수 X라 하자.',
+    xdef:'X = 나온 눈 → X는 <b>1, 2, 3, 4, 5, 6</b> 중 하나예요.',
+    rows:[1,2,3,4,5,6].map(x=>({x,n:1,d:6})),
+    cases:'눈은 똑같이 6가지 (1,2,3,4,5,6)\n각 눈이 나올 확률 = 1 ÷ 6' },
+  pk2:{ lv:'std', emoji:'⚽', title:'승부차기 2번 (성공·실패 반반)',
+    sit:'승부차기를 2번 찬다. 한 번 찰 때 성공·실패가 반반이라고 하자. 성공한 횟수를 X라 하자.',
+    xdef:'X = 성공한 횟수 → X는 <b>0, 1, 2</b> 중 하나. (성공=O, 실패=X)',
+    rows:[{x:0,n:1,d:4},{x:1,n:2,d:4},{x:2,n:1,d:4}],
+    cases:'똑같이 나오는 경우 4가지 (1번째 · 2번째)\n  X · X → 성공 0번\n  O · X → 성공 1번\n  X · O → 성공 1번\n  O · O → 성공 2번\n\n확률 = (그 경우의 수) ÷ 4' },
+  rps2:{ lv:'std', emoji:'✌️', title:'가위바위보 2판 (이김·짐 반반)',
+    sit:'친구와 가위바위보를 2판 한다. 비기면 다시 하기로 하면 이김·짐이 반반. 내가 이긴 횟수를 X라 하자.',
+    xdef:'X = 이긴 횟수 → X는 <b>0, 1, 2</b> 중 하나. (이김=승, 짐=패)',
+    rows:[{x:0,n:1,d:4},{x:1,n:2,d:4},{x:2,n:1,d:4}],
+    cases:'똑같이 나오는 경우 4가지\n  패 · 패 → 0승\n  승 · 패 → 1승\n  패 · 승 → 1승\n  승 · 승 → 2승\n\n확률 = (그 경우의 수) ÷ 4' },
+  pk3:{ lv:'adv', emoji:'🥅', title:'승부차기 3번 (성공·실패 반반)',
+    sit:'승부차기를 3번 찬다. 한 번 찰 때 성공·실패가 반반. 성공한 횟수를 X라 하자.',
+    xdef:'X = 성공한 횟수 → X는 <b>0, 1, 2, 3</b> 중 하나. 경우를 빠짐없이 적는 게 핵심!',
+    rows:[{x:0,n:1,d:8},{x:1,n:3,d:8},{x:2,n:3,d:8},{x:3,n:1,d:8}],
+    cases:'똑같이 나오는 경우는 8가지 (O=성공, X=실패)\n  XXX → 0번            (1가지)\n  OXX, XOX, XXO → 1번   (3가지)\n  OOX, OXO, XOO → 2번   (3가지)\n  OOO → 3번            (1가지)\n\n확률 = (그 경우의 수) ÷ 8', adv:true },
+  match:{ lv:'adv', emoji:'📊', title:'우리 팀 득점 기록 (실제 데이터)',
+    sit:'어느 팀의 최근 20경기 득점: 0골 4경기, 1골 7경기, 2골 5경기, 3골 3경기, 4골 1경기. 한 경기 득점 수를 X라 하자.',
+    xdef:'X = 한 경기 득점 → 실제 나온 비율을 확률로 써요. 확률 = (그 골 수가 나온 경기 수) ÷ 20',
+    rows:[{x:0,n:4,d:20},{x:1,n:7,d:20},{x:2,n:5,d:20},{x:3,n:3,d:20},{x:4,n:1,d:20}],
+    cases:'확률 = (그 골 수가 나온 경기 수) ÷ 20\n  0골: 4경기 → 4 중 …\n  1골: 7경기\n  2골: 5경기\n  3골: 3경기\n  4골: 1경기\n합이 20 중 20, 즉 1이 되는지 확인!', adv:true }
+};
+
+/* 기약분수 + 값 */
+function g(a,b){return b?g(b,a%b):a}
+function red(n,d){const k=g(n,d)||1;return {n:n/k,d:d/k}}
+function val(r){return r.n/r.d}
+/* 교과서식 분수 HTML */
+function fracHTML(n,d,sm){
+  const r=red(n,d);
+  if(r.d===1) return `${r.n}`;
+  return `<span class="frac${sm?' sm':''}"><span class="num">${r.n}</span><span class="den">${r.d}</span></span>`;
+}
+
+let curLv='basic', curKey=null;
+const cardsEl=document.getElementById('cards');
+const stageEl=document.getElementById('stageArea');
+const lvhint=document.getElementById('lvhint');
+const LVTXT={basic:'쉬운 상황이에요. 경우를 눈으로 세어 확률을 채워보세요.',
+  std:'축구·게임 상황! 성공/실패를 O·X로 적어 경우를 세어보세요.',
+  adv:'경우가 조금 많아요. 빠짐없이 적는 연습이에요. 다 하면 기댓값까지 도전!'};
+
+document.getElementById('levels').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('#levels button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active'); curLv=e.target.dataset.lv; curKey=null;
+  stageEl.innerHTML=''; lvhint.textContent=LVTXT[curLv]; renderCards();
+});
+
+function renderCards(){
+  cardsEl.innerHTML='';
+  Object.entries(SITU).filter(([,s])=>s.lv===curLv).forEach(([key,s])=>{
+    const div=document.createElement('div');
+    div.className='card'+(key===curKey?' sel':'');
+    const tc=s.lv==='basic'?'basic':s.lv==='std'?'std':'adv';
+    const tt=s.lv==='basic'?'기초':s.lv==='std'?'표준':'도전';
+    div.innerHTML=`<span class="tag ${tc}">${tt}</span><span class="emoji">${s.emoji}</span>
+      <h3>${s.title}</h3><p>${s.sit.slice(0,40)}…</p>`;
+    div.onclick=()=>{curKey=key; renderCards(); renderStage(key);};
+    cardsEl.appendChild(div);
+  });
+}
+
+function parseVal(str){str=(str||'').trim(); if(!str)return NaN;
+  if(str.includes('/')){const[a,b]=str.split('/').map(Number); return a/b;} return Number(str);}
+
+function renderStage(key){
+  const s=SITU[key], rows=s.rows;
+  let head='', body='';
+  rows.forEach((r,i)=>{ head+=`<td class="xval">${r.x}</td>`;
+    body+=`<td><input class="prob" data-i="${i}" placeholder="?" inputmode="text" /></td>`; });
+
+  stageEl.innerHTML=`
+    <div class="stage">
+      <h2>${s.emoji} ${s.title}</h2>
+      <div class="sit">${s.sit}</div>
+      <div class="xdef">📌 ${s.xdef}</div>
+
+      <div class="steplabel"><span class="n">1</span> 경우를 빠짐없이 적어보기</div>
+      <div class="note">아래 힌트처럼 나올 수 있는 경우를 모두 적고, 각각 X가 몇인지 세어봐요.</div>
+      <div class="hint" id="hint">💡 <b>경우를 세는 방법</b><div class="cases">${s.cases}</div></div>
+
+      <div class="steplabel"><span class="n">2</span> 확률분포표 채우기</div>
+      <div class="note">각 칸에 <b>P(X=값)</b>을 분수( 예: 1/4 )나 소수( 예: 0.25 )로 적어요.</div>
+      <table>
+        <tr><th>X</th>${head}</tr>
+        <tr><th>P(X=x)</th>${body}</tr>
+      </table>
+      <div class="sumline" id="sumline">확률의 합 <span class="chip" id="sumchip">—</span></div>
+
+      <div class="btnrow">
+        <button class="btn primary" id="checkBtn">채점하기</button>
+        <button class="btn amber" id="hintBtn">힌트 접기 / 펴기</button>
+        <button class="btn soft" id="fillBtn">정답 보기</button>
+        <button class="btn soft" id="clearBtn">다시 하기</button>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+
+      <div class="bars-wrap">
+        <div class="steplabel"><span class="n">3</span> 확률분포 그래프로 보기</div>
+        <div class="baraxis"></div>
+        <div class="bars" id="bars"></div>
+        <div class="barscaption">막대가 높을수록 그 값이 나올 확률이 커요 (채점하면 그려져요)</div>
+      </div>
+
+      <div class="adv-extra" id="advExtra">
+        <h4>🚀 더 도전: 기댓값 E(X) 구하기</h4>
+        <div id="advBody"></div>
+      </div>
+
+      <details>
+        <summary>정리 — 확률분포표가 뭐예요?</summary>
+        <p>확률변수 <b>X</b>는 “어떤 상황의 결과를 수로 바꾼 것”이에요.
+        확률분포표는 X가 될 수 있는 <b>모든 값</b>과 그 <b>확률</b>을 나란히 적은 표예요.
+        경우를 빠짐없이 세면 확률을 다 더했을 때 항상 <b>1</b>이 됩니다.
+        공식을 외우기보다 <b>상황 → 경우 세기 → 확률</b> 순서로 생각하는 게 핵심!</p>
+      </details>
+    </div>`;
+
+  const inputs=[...stageEl.querySelectorAll('.prob')];
+  const feedback=stageEl.querySelector('#feedback');
+  const sumchip=stageEl.querySelector('#sumchip');
+
+  function updateSum(){
+    let sum=0,any=false;
+    inputs.forEach(inp=>{const v=parseVal(inp.value); if(!isNaN(v)){sum+=v;any=true;}});
+    if(!any){sumchip.textContent='—'; sumchip.className='chip'; return;}
+    const ok=Math.abs(sum-1)<1e-9;
+    sumchip.innerHTML=(+sum.toFixed(4))+(ok?' = 1 ✓':' (1이 되어야 해요)');
+    sumchip.className='chip '+(ok?'good':'warn');
+  }
+  inputs.forEach(inp=>inp.addEventListener('input',updateSum));
+
+  stageEl.querySelector('#hintBtn').onclick=()=>stageEl.querySelector('#hint').classList.toggle('hide2');
+  stageEl.querySelector('#clearBtn').onclick=()=>{
+    inputs.forEach(i=>{i.value='';i.classList.remove('ok','no');});
+    feedback.classList.remove('show'); updateSum(); drawBars(null);};
+  stageEl.querySelector('#fillBtn').onclick=()=>{
+    inputs.forEach((inp,i)=>{const r=red(rows[i].n,rows[i].d);
+      inp.value=r.d===1?`${r.n}`:`${r.n}/${r.d}`; inp.classList.remove('ok','no');});
+    updateSum(); drawBars(rows);
+    feedback.className='feedback show pass';
+    feedback.innerHTML='정답 분포표예요. 각 확률을 교과서식으로 쓰면 → '+
+      rows.map(r=>`P(X=${r.x})=${fracHTML(r.n,r.d,true)}`).join(', &nbsp;')+'.';
+  };
+
+  stageEl.querySelector('#checkBtn').onclick=()=>{
+    let correct=0,sum=0;
+    inputs.forEach((inp,i)=>{const v=parseVal(inp.value); sum+=isNaN(v)?0:v;
+      const ok=Math.abs(v-val(rows[i]))<1e-6;
+      inp.classList.toggle('ok',ok); inp.classList.toggle('no',!ok); if(ok)correct++;});
+    const sumOk=Math.abs(sum-1)<1e-6;
+    if(correct===rows.length && sumOk){
+      feedback.className='feedback show pass';
+      feedback.innerHTML='🎉 <b>잘했어요!</b> 확률분포표를 정확히 완성했고 확률의 합도 1이에요. 오늘 목표 달성! '+
+        '정답을 교과서식으로 쓰면 → '+rows.map(r=>`P(X=${r.x})=${fracHTML(r.n,r.d,true)}`).join(', &nbsp;')+'.';
+      drawBars(rows);
+    }else{
+      feedback.className='feedback show fail';
+      feedback.innerHTML=`✍️ ${rows.length}칸 중 <b>${correct}칸</b> 맞았어요. `+
+        (sumOk?'':'확률을 다 더하면 1이 되어야 해요 — 빠뜨린 경우가 없는지 확인해봐요. ')+
+        '빨간 칸을 다시 세어볼까요? 위의 “경우를 세는 방법” 힌트를 참고하세요.';
+      drawBars(rows);
+    }
+  };
+
+  function drawBars(data){
+    const bars=stageEl.querySelector('#bars');
+    if(!data){bars.innerHTML=''; return;}
+    const max=Math.max(...data.map(d=>val(d)));
+    bars.innerHTML=data.map(d=>{const h=Math.round((val(d)/max)*120)+3;
+      return `<div class="bar" style="height:${h}px"><span>${fracHTML(d.n,d.d,true)}</span><em>${d.x}</em></div>`;
+    }).join('');
+  }
+
+  const adv=stageEl.querySelector('#advExtra');
+  if(s.adv){
+    adv.classList.add('show');
+    const E=rows.reduce((a,r)=>a+r.x*val(r),0);
+    stageEl.querySelector('#advBody').innerHTML=
+      `<p>표를 다 채웠다면, 각 값에 그 확률을 곱해서 모두 더해 봐요. 이게 <b>기댓값 E(X)</b>예요.</p>`+
+      `<p>E(X) = ${rows.map(r=>`${r.x}×${fracHTML(r.n,r.d,true)}`).join(' + ')} `+
+      `= <b>${(+E.toFixed(3))}</b></p>`+
+      `<p style="color:#9a6a5a">👉 이 값이 상황에서 “평균적으로 ${(+E.toFixed(2))}” 라는 뜻을 문장으로 설명해 보세요.</p>`;
+  }
+  if(s.lv==='basic' || s.lv==='std'){ /* 힌트 기본 펼침 */ }
+
+  // 힌트 접기용 스타일
+  const st=document.createElement('style');
+  st.textContent='.hint.hide2 .cases{display:none}';
+  if(!document.getElementById('hidecss')){st.id='hidecss'; document.head.appendChild(st);}
+
+  updateSum(); drawBars(null);
+  stageEl.querySelector('.stage').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+renderCards();
+</script>
+</body>
+</html>

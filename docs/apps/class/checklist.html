@@ -1,0 +1,922 @@
+<!doctype html>
+<!-- checklist.html: 제출 확인표. 동의서·과제 등을 누가 냈는지 이름 칸을 눌러 표시하고, 안 낸 학생을 모아 복사·인쇄·크게 보기 한다. 명단과 기록은 이 기기 브라우저에만 둔다(기억하기 선택 시). 네트워크를 쓰지 않는다. -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>제출 확인표</title>
+<style>
+:root{--bg:#f4f6f5;--card:#fcfdfc;--text:#17201c;--muted:#56625c;--line:#dde3df;--accent:#14684e;--soft:#e1efe8;--on:#f6fbf8;--warn:#8a5300;--late-bg:#fbf0dc;--miss-bg:#fcf1ee;--danger:#a3261c;--danger-bg:#fbe8e5;--ex-bg:#eef1ef;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#101412;--card:#171c19;--text:#e6ece8;--muted:#a3aea8;--line:#29312d;--accent:#4fb48d;--soft:#1a2e25;--on:#0b1510;--warn:#f0b45c;--late-bg:#2e2512;--miss-bg:#281a18;--danger:#f2a097;--danger-bg:#3a1c19;--ex-bg:#1c211e;color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.55;word-break:keep-all;overflow-wrap:anywhere}
+main{max-width:1180px;margin:0 auto;padding:24px 16px 72px}
+h1{font-size:26px;letter-spacing:-.03em;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 18px}
+.h2{font-size:17px;margin:0;letter-spacing:-.02em}
+.layout{display:grid;grid-template-columns:310px minmax(0,1fr);gap:18px;align-items:start}
+.side{display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.between{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lbl{display:block;font-weight:600;font-size:14.5px;margin:12px 0 5px}
+.help{font-weight:400;color:var(--muted);font-size:13px}
+textarea,input[type=text],input[type=date],input:not([type]),select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;background:var(--bg);color:var(--text);min-height:42px}
+textarea{min-height:140px;resize:vertical;font-size:14.5px}
+select{width:auto}
+button{font:inherit;font-weight:650;min-height:42px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+button:hover{border-color:var(--muted)}
+button:disabled{opacity:.45;cursor:default}
+button.p{background:var(--accent);border-color:var(--accent);color:var(--on)}
+button.sm{min-height:36px;padding:0 11px;font-size:14px}
+button.danger{background:var(--danger);border-color:var(--danger);color:var(--card)}
+.danger-t{color:var(--danger)}
+button svg{width:18px;height:18px;flex:none}
+button.sm svg{width:16px;height:16px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.chk{display:flex;gap:8px;align-items:center;font-weight:500;font-size:14px;margin-top:10px;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+.chk.m0{margin:0}
+.msg{font-size:13.5px;color:var(--warn);margin:6px 0 0;min-height:1em}
+.note{font-size:13px;color:var(--muted);margin:4px 0 0 26px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.pill{font-size:13px;font-weight:700;color:var(--accent);background:var(--soft);border-radius:999px;padding:1px 9px}
+/* 명단 */
+#rosterBox summary{display:flex;justify-content:space-between;align-items:center;font-weight:700;cursor:pointer;list-style:none;min-height:30px}
+#rosterBox summary::-webkit-details-marker{display:none}
+#rosterBox summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:0 4px 4px 10px}
+#rosterBox[open] summary::after{transform:rotate(-135deg);margin-bottom:-4px}
+#rosterBox summary .pill{margin-left:auto}
+.confirm{border:1px solid var(--danger);background:var(--danger-bg);border-radius:12px;padding:12px;margin-top:10px}
+.confirm p{margin:0 0 8px;font-size:14px}
+#wipeArea{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
+button.ghost{border-color:transparent;background:transparent;padding:0 8px}
+/* 확인 항목 목록 */
+.lists{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.lists .empty{color:var(--muted);font-size:14px;padding:6px 2px}
+.item{white-space:normal;width:100%;display:grid;grid-template-columns:1fr auto;gap:4px 8px;text-align:left;padding:10px 12px;min-height:58px;align-items:center;font-weight:600}
+.item.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--soft)}
+.iname{font-size:15px;line-height:1.35}
+.imeta{display:flex;gap:6px;align-items:center;justify-self:end}
+.prog{font-size:13.5px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.mbar{grid-column:1/-1;height:5px;border-radius:9px;background:var(--line);overflow:hidden}
+.mbar i{display:block;height:100%;background:var(--accent);border-radius:9px}
+.badge{font-size:12px;font-weight:700;border-radius:999px;padding:1px 8px;white-space:nowrap;background:var(--ex-bg);color:var(--muted)}
+.badge.soon{background:var(--late-bg);color:var(--warn)}
+.badge.over{background:var(--danger-bg);color:var(--danger)}
+.badge.ok{background:var(--soft);color:var(--accent)}
+.arch{margin-top:14px;border-top:1px dashed var(--line);padding-top:10px}
+.arch summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:14px;min-height:30px}
+.arow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.arow .aname{flex:1 1 120px;font-size:14px;font-weight:600}
+.newf{margin-top:8px;border-top:1px dashed var(--line);padding-top:4px}
+/* 탭 */
+.tabs{display:flex;gap:6px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;border-bottom:3px solid transparent;border-radius:10px 10px 0 0;background:transparent;color:var(--muted);min-height:44px}
+.tabs button[aria-selected=true]{color:var(--accent);border-bottom-color:var(--accent)}
+/* 확인 화면 */
+.emptyc{text-align:center;padding:36px 16px}
+.emptyc h2{font-size:19px;margin:0 0 6px}
+.emptyc p{color:var(--muted);margin:0 0 14px}
+.quick{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.headc .top{align-items:flex-start}
+.tt{min-width:0;flex:1 1 220px}
+.ckt{font-size:21px;margin:0;letter-spacing:-.02em;line-height:1.3}
+.meta{margin:4px 0 0;color:var(--muted);font-size:14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.sumrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:14px}
+.summary{margin:0;font-size:15px}
+.summary b{font-size:18px;font-variant-numeric:tabular-nums}
+.summary .sep{color:var(--line);margin:0 6px}
+.pct{font-size:20px;color:var(--accent);font-variant-numeric:tabular-nums}
+.bar{height:12px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .3s ease}
+.editf{display:grid;grid-template-columns:1fr 170px;gap:8px;margin-top:12px;align-items:end}
+.editf .acts{grid-column:1/-1;margin-top:0}
+.editf .lbl{margin-top:0}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:11px;padding:3px;background:var(--card);gap:2px;flex-wrap:wrap}
+.seg button{border:0;min-height:36px;border-radius:8px;background:transparent;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--soft);color:var(--accent)}
+.numf{display:flex;gap:6px;flex:1 1 180px;max-width:260px}
+.numf input{min-width:0;flex:1 1 auto;min-height:40px;font-variant-numeric:tabular-nums}
+.miss{margin-top:12px;border-color:var(--warn)}
+.miss h3{margin:0;font-size:16px}
+.miss textarea{min-height:76px;margin-top:10px;font-size:14.5px}
+.mchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding:0;list-style:none}
+.mchips li{background:var(--miss-bg);border-radius:8px;padding:3px 9px;font-size:14px}
+.mchips small{color:var(--muted)}
+.notee{margin-top:12px}
+.notee form{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.notee label{flex:1 0 100%;font-size:14px}
+.notee input{flex:1 1 180px;width:auto}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin-top:14px}
+.tile{position:relative}
+.tbtn{white-space:normal;width:100%;min-height:88px;flex-direction:column;gap:1px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);padding:16px 8px 8px;font-weight:650;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.tbtn .no{position:absolute;top:6px;left:9px;font-size:13px;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
+.tbtn .nm{font-size:18px;line-height:1.25}
+.tbtn .st{font-size:12.5px;font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:3px}
+.tbtn .st svg{width:14px;height:14px}
+.tbtn .tn{font-size:11.5px;color:var(--warn);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.tile.s-y .tbtn{background:var(--soft);border-color:var(--accent)}
+.tile.s-y .st{color:var(--accent)}
+.tile.s-l .tbtn{background:var(--late-bg);border-color:var(--warn)}
+.tile.s-l .st{color:var(--warn)}
+.tile.s-x .tbtn{background:var(--ex-bg);border-style:dashed}
+.tile.s-x .nm{color:var(--muted)}
+.tile.s-o .tbtn{border-color:var(--line)}
+.nbtn{position:absolute;top:3px;right:3px;width:34px;min-height:34px;height:34px;padding:0;border:0;background:transparent;color:var(--muted);opacity:.75}
+.nbtn:hover{opacity:1;background:var(--bg)}
+.nbtn svg{width:15px;height:15px}
+.tile.hit .tbtn{animation:pop .32s cubic-bezier(.16,1,.3,1)}
+@keyframes pop{0%{transform:scale(.93)}100%{transform:scale(1)}}
+.hint{color:var(--muted);font-size:13.5px;margin:14px 2px 0}
+.nores{grid-column:1/-1;color:var(--muted);text-align:center;padding:24px 0}
+/* 전체 표 */
+.legend{color:var(--muted);font-size:13.5px;margin:8px 0 0}
+.chronic{font-size:14px;margin:6px 0 0;color:var(--warn)}
+.chronic:empty{display:none}
+.mwrap{overflow-x:auto;margin-top:12px;border:1px solid var(--line);border-radius:10px;max-width:100%}
+.mtab{border-collapse:separate;border-spacing:0;font-size:14px;min-width:100%}
+.mtab th,.mtab td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:7px 10px;text-align:center;white-space:nowrap}
+.mtab thead th{background:var(--bg);font-size:13px;vertical-align:bottom;position:sticky;top:0}
+.mtab .stk{position:sticky;left:0;z-index:2;background:var(--card);text-align:left;min-width:108px;box-shadow:1px 0 0 var(--line)}
+.mtab thead .stk{z-index:3;background:var(--bg)}
+.mtab .stk .no{display:inline-block;min-width:22px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mtab td{font-size:17px;font-weight:700;min-width:64px}
+.mtab td.c-y{color:var(--accent)}
+.mtab td.c-l{color:var(--warn)}
+.mtab td.c-x{color:var(--muted)}
+.mtab td.c-o{background:var(--miss-bg)}
+.mtab td.mc{font-size:15px;font-variant-numeric:tabular-nums}
+.mtab tr.chronic-r td.mc{color:var(--danger)}
+.mtab tfoot th,.mtab tfoot td{font-size:13px;font-weight:600;color:var(--muted);background:var(--bg)}
+.colbtn{min-height:30px;border:0;background:transparent;padding:0 2px;font-size:13px;color:var(--text);max-width:150px;white-space:normal;line-height:1.3;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.tag{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.emptym{color:var(--muted);text-align:center;padding:28px 10px;margin:0}
+/* 알림 */
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14.5px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .2s;z-index:60}
+.toast.show{opacity:1}
+/* 크게 보기 */
+.big{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;padding:24px clamp(16px,4vw,48px)}
+.bigTop{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.big h2{font-size:clamp(26px,4vw,48px);margin:0;letter-spacing:-.03em}
+.bigSub{font-size:clamp(18px,2.4vw,30px);color:var(--muted);margin:6px 0 24px}
+.bigSub b{color:var(--warn)}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(104px,13vw,190px),1fr));gap:clamp(10px,1.6vw,20px)}
+.bchip{border:3px solid var(--warn);border-radius:18px;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(12px,2vw,26px) 8px}
+.bchip b{font-size:clamp(46px,7vw,112px);line-height:1;font-variant-numeric:tabular-nums}
+.bchip span{font-size:clamp(18px,2.2vw,30px);margin-top:6px;font-weight:650}
+.alldone{font-size:clamp(30px,5vw,64px);font-weight:800;color:var(--accent);text-align:center;margin-top:10vh}
+.print-only{display:none}
+@media (max-width:860px){.layout{grid-template-columns:1fr}.numf{max-width:none}}
+@media (max-width:480px){h1{font-size:23px}.tiles{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}.tbtn{min-height:80px}.tbtn .nm{font-size:17px}.editf{grid-template-columns:1fr}.seg{width:100%}.seg button{flex:1}.toolbar>button{flex:1 1 auto}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@page{size:A4;margin:14mm}
+@media print{
+  body{background:#fff;color:#000}
+  main,.big,.toast{display:none!important}
+  .print-only{display:block}
+  .pa h1{font-size:20px;margin:0 0 4px;text-align:left}
+  .pa .pm{font-size:12px;margin:0 0 10px;color:#333}
+  .pa .cols{display:flex;gap:6mm;align-items:flex-start}
+  .pa table{border-collapse:collapse;width:100%;font-size:12px}
+  .pa th,.pa td{border:1px solid #444;padding:4px 6px;text-align:center}
+  .pa thead th{background:#eee}
+  .pa td.nm,.pa th.nm{text-align:left}
+  .pa td.memo{text-align:left;width:34%}
+  .pa tr{break-inside:avoid}
+  .pa .mx{font-size:10.5px}
+  .pa .mx th,.pa .mx td{padding:3px 4px}
+  .pa .foot{font-size:12px;margin-top:10px}
+}
+</style>
+</head>
+<body>
+<main id="app">
+  <h1>제출 확인표</h1>
+  <p class="sub">이름을 누르면 바로 '냄'으로 바뀌어요. 번호를 치고 Enter를 눌러도 돼요. 명단과 기록은 이 기기 브라우저에만 있어요.</p>
+  <div class="layout">
+    <aside class="side">
+      <details class="card" id="rosterBox">
+        <summary><span>학생 명단</span><span class="pill" id="rosterCount">0명</span></summary>
+        <label for="roster" class="lbl">한 줄에 한 명 <span class="help">쉼표·탭으로 나눠도 돼요. 앞에 번호를 붙이면 그 번호를 써요 (예: 1 가람)</span></label>
+        <textarea id="roster" rows="8" placeholder="예) 1 가람&#10;2 나래&#10;3 다온" spellcheck="false" autocomplete="off"></textarea>
+        <p class="msg" id="rosterMsg" role="status"></p>
+        <div class="acts"><button type="button" class="sm" data-act="sample">예시 넣기</button></div>
+        <label class="chk"><input type="checkbox" id="remember" checked> 이 기기에 기억하기</label>
+        <p class="note" id="saveNote">이 기기 브라우저에만 저장돼요. 다른 기기와는 공유되지 않아요.</p>
+        <div id="wipeArea"></div>
+      </details>
+      <section class="card" aria-labelledby="listsTitle">
+        <div class="between"><h2 class="h2" id="listsTitle">확인 항목</h2><button type="button" class="p sm" data-act="newOpen" id="newBtn" data-ic="plus" aria-expanded="false" aria-controls="newForm">새 항목</button></div>
+        <form id="newForm" class="newf" hidden autocomplete="off">
+          <label for="newName" class="lbl">이름</label>
+          <input id="newName" type="text" list="presets" maxlength="60" placeholder="예) 체험학습 동의서 회신">
+          <datalist id="presets"></datalist>
+          <label for="newDue" class="lbl">마감일 <span class="help">없어도 돼요</span></label>
+          <input id="newDue" type="date">
+          <label class="chk"><input type="checkbox" id="new3"> 늦게 냄·면제도 나눠 표시하기</label>
+          <p class="msg" id="newMsg" role="status"></p>
+          <div class="acts"><button type="submit" class="p">만들기</button><button type="button" data-act="newClose">취소</button></div>
+        </form>
+        <ul class="lists" id="lists"></ul>
+        <details id="archBox" class="arch" hidden><summary>보관한 항목 <span id="archCount"></span></summary><ul class="lists" id="archList"></ul></details>
+      </section>
+    </aside>
+
+    <section class="mainc" aria-label="확인 화면">
+      <div class="tabs" role="tablist" aria-label="보기 방식">
+        <button type="button" role="tab" id="tabCheck" data-act="tab" data-tab="check" aria-selected="true" aria-controls="checkView" data-ic="check">항목별 확인</button>
+        <button type="button" role="tab" id="tabMatrix" data-act="tab" data-tab="matrix" aria-selected="false" aria-controls="matrixView" data-ic="table">전체 표</button>
+      </div>
+
+      <div id="checkView" role="tabpanel" aria-labelledby="tabCheck">
+        <div id="emptyBox" class="card emptyc" hidden></div>
+        <div id="checkBody" hidden>
+          <div class="card headc">
+            <div class="between top">
+              <div class="tt"><h2 id="ckTitle" class="ckt"></h2><p id="ckMeta" class="meta"></p></div>
+              <div class="row" id="ckActs">
+                <button type="button" class="sm" data-act="edit" data-ic="pen">수정</button>
+                <button type="button" class="sm" data-act="arch" data-ic="archive">보관</button>
+                <button type="button" class="sm danger-t" data-act="askDelCur" data-ic="trash">삭제</button>
+              </div>
+            </div>
+            <div id="ckPanel"></div>
+            <div class="sumrow"><p id="summary" class="summary"></p><b id="pct" class="pct"></b></div>
+            <div class="bar" role="progressbar" id="bar" aria-valuemin="0" aria-valuemax="100" aria-label="제출 진행률"><i id="barFill"></i></div>
+          </div>
+          <div class="toolbar">
+            <div class="seg" role="group" aria-label="보기 거르기">
+              <button type="button" data-act="filter" data-f="all">전체</button>
+              <button type="button" data-act="filter" data-f="miss">안 낸 학생만</button>
+              <button type="button" data-act="filter" data-f="done">낸 학생만</button>
+            </div>
+            <form id="numForm" class="numf" autocomplete="off">
+              <label for="numIn" class="sr">번호로 표시하기</label>
+              <input id="numIn" type="text" inputmode="numeric" placeholder="번호 + Enter" maxlength="40">
+              <button type="submit" class="sm">표시</button>
+            </form>
+            <button type="button" class="sm" id="undoBtn" data-act="undo" data-ic="undo" disabled>되돌리기</button>
+          </div>
+          <div class="toolbar">
+            <button type="button" class="p" data-act="missToggle" id="missBtn" aria-expanded="false" aria-controls="missPanel" data-ic="list">안 낸 학생 모아 보기</button>
+            <button type="button" data-act="tsv" data-ic="copy">표로 복사</button>
+            <button type="button" data-act="print" data-ic="print">인쇄</button>
+            <button type="button" data-act="bigOpen" id="bigBtn" data-ic="expand">크게 보기</button>
+          </div>
+          <div id="missPanel" class="card miss" hidden></div>
+          <div id="noteEditor" class="card notee" hidden></div>
+          <div id="tiles" class="tiles" aria-label="학생 이름 칸"></div>
+          <p class="hint" id="hint"></p>
+        </div>
+      </div>
+
+      <div id="matrixView" role="tabpanel" aria-labelledby="tabMatrix" hidden>
+        <div class="card">
+          <div class="between">
+            <h2 class="h2">전체 표 <span class="help">학생 × 확인 항목</span></h2>
+            <div class="row">
+              <label class="chk m0"><input type="checkbox" id="mArch"> 보관한 항목도</label>
+              <select id="mSort" aria-label="정렬"><option value="num">번호순</option><option value="miss">안 낸 수 많은 순</option></select>
+              <button type="button" class="sm" data-act="mtsv" data-ic="copy">표로 복사</button>
+              <button type="button" class="sm" data-act="mprint" data-ic="print">인쇄</button>
+            </div>
+          </div>
+          <p class="legend">○ 냄 · △ 늦게 냄 · – 면제 · 빈칸 안 냄 · 항목 이름을 누르면 그 항목으로 가요.</p>
+          <p id="chronic" class="chronic"></p>
+          <div class="mwrap" id="mwrap" tabindex="0" role="region" aria-label="학생별 제출 표. 옆으로 밀어 볼 수 있어요."></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</main>
+
+<div id="big" class="big" role="dialog" aria-modal="true" aria-labelledby="bigTitle" hidden>
+  <div class="bigTop">
+    <h2 id="bigTitle"></h2>
+    <div class="row">
+      <label class="chk m0"><input type="checkbox" id="bigNames"> 이름도 보이기</label>
+      <button type="button" data-act="bigClose" id="bigClose" data-ic="close">닫기</button>
+    </div>
+  </div>
+  <p class="bigSub" id="bigSub"></p>
+  <div id="bigGrid"></div>
+</div>
+
+<div id="printArea" class="print-only pa"></div>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const KEY = 'gil.check.v2';
+  const RKEY = 'gil.class.roster.v1';
+  const SAMPLE = ['가람', '나래', '다온', '라온', '마루', '바다', '사랑', '아름', '자람', '하늘', '한결', '소담', '이든', '도담', '새봄', '여름', '윤슬', '보람', '슬기', '미르', '누리', '단비', '별하', '초롱', '해솔', '온유'];
+  const PRESETS = ['체험학습 동의서 회신', '수행평가 보고서', '가정통신문 회신', '방과후 신청서', '상담 신청서', '독서 기록장'];
+  const LABEL = { '': '안 냄', y: '냄', l: '늦게 냄', x: '면제' };
+  const SYM = { '': '', y: '○', l: '△', x: '–' };
+  const IC = {
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    table: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
+    undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+    copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    print: '<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+    expand: '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>',
+    pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+    trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+    archive: '<rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    close: '<path d="M18 6 6 18M6 6l12 12"/>',
+    restore: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>'
+  };
+  const svg = (k) => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + IC[k] + '</svg>';
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /* ---------- 저장소 (모두 try/catch, 없어도 동작) ---------- */
+  function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { window.localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+  function lsDel(k) { try { window.localStorage.removeItem(k); } catch (e) { /* 무시 */ } }
+  function canStore() { try { const k = '__gil_check_t'; window.localStorage.setItem(k, '1'); window.localStorage.removeItem(k); return true; } catch (e) { return false; } }
+
+  let S = { remember: true, lists: [], cur: null };
+  let rosterText = '';
+  let students = [];
+  let storageOk = canStore();
+  const ui = { tab: 'check', filter: 'all', miss: false, missNum: false, noteKey: null, confirm: null, edit: false, big: false, bigNames: false, mArch: false, mSort: 'num' };
+  const undoStack = [];
+
+  function dict(src, ok) { const o = Object.create(null); if (src && typeof src === 'object') Object.keys(src).forEach((k) => { if (ok(src[k])) o[k] = src[k]; }); return o; }
+  function norm(l) {
+    if (!l || typeof l !== 'object' || typeof l.id !== 'string' || typeof l.name !== 'string') return null;
+    return {
+      id: l.id, name: l.name.slice(0, 60) || '이름 없는 항목',
+      due: /^\d{4}-\d{2}-\d{2}$/.test(l.due || '') ? l.due : '',
+      mode: l.mode === 3 ? 3 : 2, archived: !!l.archived, created: +l.created || 0,
+      marks: dict(l.marks, (v) => v === 'y' || v === 'l' || v === 'x'),
+      notes: dict(l.notes, (v) => typeof v === 'string' && v.length > 0)
+    };
+  }
+  function load() {
+    try {
+      const d = JSON.parse(lsGet(KEY) || 'null');
+      if (d && typeof d === 'object') {
+        if (d.remember === false) S.remember = false;
+        if (Array.isArray(d.lists)) S.lists = d.lists.map(norm).filter(Boolean);
+        if (typeof d.cur === 'string') S.cur = d.cur;
+      }
+    } catch (e) { /* 깨진 값은 무시 */ }
+    try {
+      const r = JSON.parse(lsGet(RKEY) || 'null');
+      if (r && typeof r.names === 'string') rosterText = r.names;
+    } catch (e) { /* 무시 */ }
+    if (!storageOk) S.remember = false;
+  }
+  function save() {
+    if (!S.remember || !storageOk) return;
+    const a = lsSet(KEY, JSON.stringify({ v: 2, remember: true, cur: S.cur, lists: S.lists }));
+    const b = lsSet(RKEY, JSON.stringify({ names: rosterText }));
+    if (!(a && b)) { storageOk = false; renderSaveNote(); }
+  }
+
+  /* ---------- 명단 ---------- */
+  function parseRoster(text) {
+    const toks = [];
+    String(text).replace(/\r/g, '').split('\n').forEach((line) => {
+      const parts = line.split(/[,\t]/).map((s) => s.trim()).filter(Boolean);
+      for (let i = 0; i < parts.length; i++) {
+        let p = parts[i];
+        // "1<탭>가람" 처럼 번호와 이름이 나뉘어 있으면 붙인다
+        if (/^\d{1,3}\s*(번)?[.)\]:-]?$/.test(p) && i + 1 < parts.length && !/^\d/.test(parts[i + 1])) p = p + ' ' + parts[++i];
+        toks.push(p);
+      }
+    });
+    const out = []; let prev = 0;
+    toks.forEach((t) => {
+      if (/^\d+$/.test(t)) return;
+      const m = t.match(/^(\d{1,3})\s*(?:번)?\s*[.)\]:-]?\s*(.+)$/);
+      let num, name;
+      if (m) { num = +m[1]; name = m[2]; } else { num = prev + 1; name = t; }
+      name = name.replace(/\s+/g, ' ').trim().slice(0, 30);
+      if (!name) return;
+      prev = num; out.push({ num, name });
+    });
+    const seen = Object.create(null);
+    out.forEach((s) => { seen[s.name] = (seen[s.name] || 0) + 1; s.key = seen[s.name] > 1 ? s.name + '#' + seen[s.name] : s.name; });
+    return out;
+  }
+  const who = (s) => s.num + '번 ' + s.name;
+
+  /* ---------- 계산 ---------- */
+  const curList = () => S.lists.find((l) => l.id === S.cur && !l.archived) || null;
+  const stOf = (L, key) => L.marks[key] || '';
+  function counts(L) {
+    const c = { y: 0, l: 0, x: 0, o: 0, n: students.length };
+    students.forEach((s) => { const st = stOf(L, s.key); if (st) c[st]++; else c.o++; });
+    c.done = c.y + c.l; c.need = c.n - c.x;
+    c.pct = c.need ? Math.round(c.done / c.need * 100) : 0;
+    return c;
+  }
+  const missingOf = (L) => students.filter((s) => stOf(L, s.key) === '');
+  function dday(due) {
+    if (!due) return null;
+    const p = due.split('-').map(Number); const t = new Date();
+    return Math.round((Date.UTC(p[0], p[1] - 1, p[2]) - Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())) / 864e5);
+  }
+  function dueText(due) {
+    if (!due) return '';
+    const p = due.split('-').map(Number); const w = '일월화수목금토'[new Date(p[0], p[1] - 1, p[2]).getDay()];
+    return p[1] + '월 ' + p[2] + '일(' + w + ') 마감';
+  }
+  function badge(L, c) {
+    if (c.n && c.o === 0) return '<span class="badge ok">다 냈어요</span>';
+    const d = dday(L.due); if (d === null) return '';
+    if (d > 0) return '<span class="badge' + (d <= 1 ? ' soon' : '') + '">D-' + d + '</span>';
+    if (d === 0) return '<span class="badge soon">D-day</span>';
+    return '<span class="badge over">마감 지남</span>';
+  }
+  function missText(L, numOnly) {
+    const m = missingOf(L);
+    if (!m.length) return L.name + ' 모두 냈어요.';
+    return L.name + ' 아직 안 낸 학생(' + m.length + '명): ' + m.map((s) => numOnly ? s.num + '번' : who(s)).join(', ');
+  }
+
+  /* ---------- 알림·복사 ---------- */
+  let toastT = 0;
+  function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2600); }
+  function copyText(t, ok) {
+    const fallback = () => {
+      const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); let done = false;
+      try { done = document.execCommand('copy'); } catch (e) { done = false; }
+      ta.remove();
+      toast(done ? ok : '복사가 막혀 있어요. 글을 직접 선택해서 복사해 주세요.');
+    };
+    try {
+      if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(() => toast(ok), fallback);
+      else fallback();
+    } catch (e) { fallback(); }
+  }
+
+  /* ---------- 그리기 ---------- */
+  function renderSaveNote() {
+    const n = $('#saveNote'); const r = $('#remember');
+    r.checked = S.remember && storageOk; r.disabled = !storageOk;
+    if (!storageOk) n.textContent = '이 브라우저에서는 저장이 막혀 있어요. 창을 닫으면 기록이 사라져요.';
+    else if (S.remember) n.textContent = '이 기기 브라우저에만 저장돼요. 다른 기기와는 공유되지 않아요.';
+    else n.textContent = '저장하지 않아요. 창을 닫으면 명단과 기록이 사라져요.';
+  }
+  function renderRosterInfo() {
+    $('#rosterCount').textContent = students.length + '명';
+    const msgs = [];
+    const nameCnt = Object.create(null), numCnt = Object.create(null);
+    students.forEach((s) => { nameCnt[s.name] = (nameCnt[s.name] || 0) + 1; numCnt[s.num] = (numCnt[s.num] || 0) + 1; });
+    const dn = Object.keys(nameCnt).filter((k) => nameCnt[k] > 1);
+    const dnum = Object.keys(numCnt).filter((k) => numCnt[k] > 1);
+    if (dn.length) msgs.push('같은 이름이 있어요: ' + dn.map((k) => k + '(' + nameCnt[k] + '명)').join(', ') + '. 성을 붙이면 헷갈리지 않아요.');
+    if (dnum.length) msgs.push('번호가 겹쳐요: ' + dnum.map((k) => k + '번').join(', ') + '. 번호로 표시할 때는 앞 학생이 바뀌어요.');
+    $('#rosterMsg').textContent = msgs.join(' ');
+    const w = $('#wipeArea');
+    if (ui.confirm && ui.confirm.type === 'wipe') {
+      w.innerHTML = '<div class="confirm" role="group" aria-label="모두 지우기 확인"><p>이 기기에 저장된 명단과 모든 확인 항목을 지울까요? 다른 학급 도구가 함께 쓰는 명단도 지워져요. 되돌릴 수 없어요.</p><div class="row"><button type="button" class="danger sm" data-act="wipe">모두 지우기</button><button type="button" class="sm" data-act="cancel">취소</button></div></div>';
+    } else {
+      w.innerHTML = '<button type="button" class="ghost sm danger-t" data-act="wipeAsk">' + svg('trash') + '모두 지우기</button>';
+    }
+  }
+  function renderLists() {
+    const act = S.lists.filter((l) => !l.archived), arc = S.lists.filter((l) => l.archived);
+    $('#lists').innerHTML = act.length ? act.map((l) => {
+      const c = counts(l); const on = l.id === S.cur;
+      return '<li><button type="button" class="item' + (on ? ' on' : '') + '" data-act="sel" data-id="' + esc(l.id) + '"' + (on ? ' aria-current="true"' : '') +
+        ' aria-label="' + esc(l.name) + ', ' + c.done + '명 냄, 전체 ' + c.need + '명">' +
+        '<span class="iname">' + esc(l.name) + '</span><span class="imeta"><span class="prog">' + c.done + '/' + c.need + '</span>' + badge(l, c) + '</span>' +
+        '<span class="mbar"><i style="width:' + c.pct + '%"></i></span></button></li>';
+    }).join('') : '<li class="empty">아직 확인 항목이 없어요. 새 항목을 만들어 보세요.</li>';
+    const box = $('#archBox');
+    box.hidden = !arc.length;
+    $('#archCount').textContent = arc.length ? '(' + arc.length + ')' : '';
+    $('#archList').innerHTML = arc.map((l) => {
+      const c = counts(l);
+      const asking = ui.confirm && ui.confirm.type === 'del' && ui.confirm.id === l.id;
+      return '<li><div class="arow"><span class="aname">' + esc(l.name) + ' <span class="prog">' + c.done + '/' + c.need + '</span></span>' +
+        (asking
+          ? '<span class="confirm" style="margin:0;flex:1 1 100%"><p>‘' + esc(l.name) + '’ 항목을 지울까요? 되돌릴 수 없어요.</p><span class="row"><button type="button" class="danger sm" data-act="del" data-id="' + esc(l.id) + '">지우기</button><button type="button" class="sm" data-act="cancel">취소</button></span></span>'
+          : '<button type="button" class="sm" data-act="restore" data-id="' + esc(l.id) + '">' + svg('restore') + '되돌리기</button><button type="button" class="sm danger-t" data-act="askDel" data-id="' + esc(l.id) + '" aria-label="' + esc(l.name) + ' 지우기">' + svg('trash') + '지우기</button>') +
+        '</div></li>';
+    }).join('');
+  }
+  function tileInner(s, st, note) {
+    return '<span class="no">' + s.num + '</span><span class="nm">' + esc(s.name) + '</span><span class="st">' + (st === 'y' ? svg('check') : '') + LABEL[st] + '</span>' + (note ? '<span class="tn">' + esc(note) + '</span>' : '');
+  }
+  const tileLabel = (s, st, note) => who(s) + ', ' + LABEL[st] + (note ? ', 메모 ' + note : '') + '. 누르면 바뀌어요.';
+  function passFilter(st) { return ui.filter === 'all' || (ui.filter === 'miss' ? st === '' : (st === 'y' || st === 'l')); }
+  function renderTiles(L) {
+    const shown = students.filter((s) => passFilter(stOf(L, s.key)));
+    const box = $('#tiles');
+    if (!shown.length) {
+      box.innerHTML = '<p class="nores">' + (ui.filter === 'miss' ? '안 낸 학생이 없어요. 모두 냈어요!' : '아직 낸 학생이 없어요.') + '</p>';
+      return;
+    }
+    box.innerHTML = shown.map((s) => {
+      const st = stOf(L, s.key), note = L.notes[s.key] || '';
+      return '<div class="tile s-' + (st || 'o') + '" data-key="' + esc(s.key) + '"><button type="button" class="tbtn" data-act="tog" data-key="' + esc(s.key) + '" aria-label="' + esc(tileLabel(s, st, note)) + '">' + tileInner(s, st, note) + '</button>' +
+        '<button type="button" class="nbtn" data-act="note" data-key="' + esc(s.key) + '" aria-label="' + esc(who(s)) + ' 메모 쓰기" title="메모">' + svg('pen') + '</button></div>';
+    }).join('');
+  }
+  function findTile(key) { const all = document.querySelectorAll('#tiles .tile'); for (const t of all) if (t.getAttribute('data-key') === key) return t; return null; }
+  function patchTile(L, key, flash) {
+    const t = findTile(key); const s = students.find((x) => x.key === key);
+    if (!t || !s) return false;
+    const st = stOf(L, key), note = L.notes[key] || '';
+    t.className = 'tile s-' + (st || 'o');
+    const b = t.querySelector('.tbtn'); b.innerHTML = tileInner(s, st, note); b.setAttribute('aria-label', tileLabel(s, st, note));
+    if (flash) { void t.offsetWidth; t.classList.add('hit'); setTimeout(() => t.classList.remove('hit'), 400); }
+    return true;
+  }
+  function renderSummary(L) {
+    const c = counts(L);
+    let h = '<b>' + c.done + '</b>명 냈어요<span class="sep">|</span>안 냄 <b>' + c.o + '</b>명';
+    if (L.mode === 3) h += '<span class="sep">|</span>늦게 ' + c.l + '명 · 면제 ' + c.x + '명';
+    $('#summary').innerHTML = h;
+    $('#pct').textContent = c.pct + '%';
+    $('#barFill').style.width = c.pct + '%';
+    const bar = $('#bar'); bar.setAttribute('aria-valuenow', String(c.pct)); bar.setAttribute('aria-valuetext', c.need + '명 중 ' + c.done + '명 냄');
+    $('#ckMeta').innerHTML = '<span>' + (L.mode === 3 ? '냄 · 늦게 냄 · 면제' : '냄 · 안 냄') + '</span>' + (L.due ? '<span>· ' + esc(dueText(L.due)) + '</span>' : '') + badge(L, c);
+  }
+  function renderMiss(L) {
+    const p = $('#missPanel'); const btn = $('#missBtn');
+    btn.setAttribute('aria-expanded', String(ui.miss));
+    if (!ui.miss || !L) { p.hidden = true; p.innerHTML = ''; return; }
+    const m = missingOf(L); const text = missText(L, ui.missNum);
+    const ta = p.querySelector('#missText');
+    if (ta && p.getAttribute('data-for') === L.id) {
+      // 열려 있는 패널은 글과 목록만 바꾼다(체크 상태 유지)
+      ta.value = text;
+      p.querySelector('h3').textContent = '아직 안 낸 학생 ' + m.length + '명';
+      p.querySelector('.mchips').innerHTML = missChips(L, m);
+      return;
+    }
+    p.hidden = false; p.setAttribute('data-for', L.id);
+    p.innerHTML = '<div class="between"><h3>아직 안 낸 학생 ' + m.length + '명</h3><button type="button" class="sm ghost" data-act="missToggle" aria-label="모아 보기 닫기">' + svg('close') + '닫기</button></div>' +
+      '<ul class="mchips">' + missChips(L, m) + '</ul>' +
+      '<label for="missText" class="sr">알림장·메신저에 붙여 넣을 글</label><textarea id="missText" readonly>' + esc(text) + '</textarea>' +
+      '<div class="row" style="margin-top:8px"><button type="button" class="p sm" data-act="copyMiss">' + svg('copy') + '복사하기</button>' +
+      '<label class="chk m0"><input type="checkbox" id="missNum"' + (ui.missNum ? ' checked' : '') + '> 번호만 (이름 빼기)</label></div>';
+  }
+  function missChips(L, m) {
+    return m.length ? m.map((s) => { const n = L.notes[s.key]; return '<li>' + esc(who(s)) + (n ? ' <small>(' + esc(n) + ')</small>' : '') + '</li>'; }).join('') : '<li style="background:var(--soft)">모두 냈어요!</li>';
+  }
+  function renderNote(L) {
+    const box = $('#noteEditor');
+    const s = L && ui.noteKey !== null ? students.find((x) => x.key === ui.noteKey) : null;
+    if (!s) { ui.noteKey = null; box.hidden = true; box.innerHTML = ''; return false; }
+    box.hidden = false;
+    box.innerHTML = '<form id="noteForm" autocomplete="off"><label for="noteIn"><b>' + esc(who(s)) + '</b> 메모 <span class="help">짧게, 개인정보는 빼고요</span></label>' +
+      '<input id="noteIn" type="text" maxlength="40" placeholder="예) 내일 가져옴" value="' + esc(L.notes[s.key] || '') + '">' +
+      '<button type="submit" class="p sm">저장</button><button type="button" class="sm" data-act="noteDel">지우기</button><button type="button" class="sm" data-act="noteClose">닫기</button></form>';
+    return true;
+  }
+  function renderCkPanel(L) {
+    const p = $('#ckPanel');
+    if (ui.confirm && ui.confirm.type === 'del' && ui.confirm.id === L.id) {
+      p.innerHTML = '<div class="confirm" role="group" aria-label="지우기 확인"><p>‘' + esc(L.name) + '’ 항목과 표시한 기록을 지울까요? 되돌릴 수 없어요. 나중에 다시 볼 수도 있다면 <b>보관</b>을 눌러 주세요.</p><div class="row"><button type="button" class="danger sm" data-act="del" data-id="' + esc(L.id) + '">지우기</button><button type="button" class="sm" data-act="cancel">취소</button></div></div>';
+    } else if (ui.edit) {
+      p.innerHTML = '<form id="editForm" class="editf" autocomplete="off"><div><label for="edName" class="lbl">이름</label><input id="edName" type="text" maxlength="60" value="' + esc(L.name) + '"></div>' +
+        '<div><label for="edDue" class="lbl">마감일</label><input id="edDue" type="date" value="' + esc(L.due) + '"></div>' +
+        '<div class="acts"><button type="submit" class="p sm">저장</button><button type="button" class="sm" data-act="editClose">취소</button></div></form>';
+    } else p.innerHTML = '';
+  }
+  function renderCheck() {
+    const L = curList(); const empty = $('#emptyBox'), body = $('#checkBody');
+    if (!students.length) {
+      empty.hidden = false; body.hidden = true;
+      empty.innerHTML = '<h2>먼저 학생 명단을 넣어 주세요</h2><p>왼쪽 명단 칸에 이름을 한 줄에 한 명씩 넣으면 돼요.</p><div class="quick"><button type="button" class="p" data-act="sample">예시 명단 넣기</button><button type="button" data-act="focusRoster">명단 칸으로 가기</button></div>';
+      return;
+    }
+    if (!L) {
+      empty.hidden = false; body.hidden = true;
+      empty.innerHTML = '<h2>확인할 항목을 만들어 보세요</h2><p>동의서, 과제, 가정통신문처럼 걷을 것 하나가 항목 하나예요.</p><div class="quick">' +
+        PRESETS.slice(0, 4).map((n) => '<button type="button" data-act="quick" data-name="' + esc(n) + '">' + svg('plus') + esc(n) + '</button>').join('') + '</div>';
+      return;
+    }
+    empty.hidden = true; body.hidden = false;
+    $('#ckTitle').textContent = L.name;
+    renderCkPanel(L);
+    renderSummary(L);
+    document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.getAttribute('data-f') === ui.filter)));
+    $('#undoBtn').disabled = !undoStack.length;
+    renderMiss(L);
+    renderNote(L);
+    renderTiles(L);
+    $('#hint').textContent = L.mode === 3
+      ? '이름을 누를 때마다 안 냄 → 냄 → 늦게 냄 → 면제 순서로 바뀌어요. 번호를 치고 Enter(여러 명은 "3 7 12"), 되돌리기는 Ctrl+Z예요.'
+      : '이름을 누르면 냄 ↔ 안 냄이 바뀌어요. 번호를 치고 Enter(여러 명은 "3 7 12"), 되돌리기는 Ctrl+Z예요.';
+  }
+  function matrixLists() { return S.lists.filter((l) => ui.mArch || !l.archived); }
+  function matrixRows(ls) {
+    const rows = students.map((s) => { const sts = ls.map((l) => stOf(l, s.key)); return { s, sts, miss: sts.filter((x) => x === '').length }; });
+    if (ui.mSort === 'miss') rows.sort((a, b) => b.miss - a.miss || a.s.num - b.s.num);
+    return rows;
+  }
+  function renderMatrix() {
+    const ls = matrixLists(); const wrap = $('#mwrap'); const ch = $('#chronic');
+    if (!students.length || !ls.length) {
+      wrap.innerHTML = '<p class="emptym">' + (!students.length ? '학생 명단을 먼저 넣어 주세요.' : '확인 항목을 만들면 여기에 학생별로 모아 보여 줘요.') + '</p>';
+      ch.textContent = ''; return;
+    }
+    const rows = matrixRows(ls);
+    const chronic = ls.length >= 2 ? rows.filter((r) => r.miss >= 2).sort((a, b) => b.miss - a.miss || a.s.num - b.s.num) : [];
+    ch.textContent = chronic.length ? '두 항목 이상 안 낸 학생 ' + chronic.length + '명: ' + chronic.map((r) => who(r.s) + '(' + r.miss + ')').join(', ') : '';
+    let h = '<table class="mtab"><thead><tr><th scope="col" class="stk">학생</th>' +
+      ls.map((l) => '<th scope="col"><button type="button" class="colbtn" data-act="mcol" data-id="' + esc(l.id) + '" title="' + esc(l.name) + ' 확인하러 가기">' + esc(l.name) + '</button>' + (l.archived ? '<span class="tag">보관</span>' : '') + '</th>').join('') +
+      '<th scope="col">안 낸 수</th></tr></thead><tbody>';
+    rows.forEach((r) => {
+      h += '<tr' + (r.miss >= 2 && ls.length >= 2 ? ' class="chronic-r"' : '') + '><th scope="row" class="stk"><span class="no">' + r.s.num + '</span> ' + esc(r.s.name) + '</th>' +
+        r.sts.map((x) => '<td class="c-' + (x || 'o') + '">' + (x ? SYM[x] + '<span class="sr">' + LABEL[x] + '</span>' : '<span class="sr">안 냄</span>') + '</td>').join('') +
+        '<td class="mc">' + r.miss + '</td></tr>';
+    });
+    h += '</tbody><tfoot><tr><th scope="row" class="stk">낸 학생</th>' + ls.map((l) => { const c = counts(l); return '<td>' + c.done + '/' + c.need + '</td>'; }).join('') + '<td></td></tr></tfoot></table>';
+    wrap.innerHTML = h;
+  }
+  function renderBig() {
+    if (!ui.big) return;
+    const L = curList(); if (!L) { closeBig(); return; }
+    const m = missingOf(L);
+    $('#bigTitle').textContent = L.name;
+    $('#bigSub').innerHTML = m.length ? '아직 안 낸 학생 <b>' + m.length + '명</b>' + (L.due ? ' · ' + esc(dueText(L.due)) : '') : '';
+    $('#bigGrid').innerHTML = m.length
+      ? '<div class="bgrid">' + m.map((s) => '<div class="bchip"><b>' + s.num + '</b>' + (ui.bigNames ? '<span>' + esc(s.name) + '</span>' : '') + '</div>').join('') + '</div>'
+      : '<p class="alldone">모두 냈어요! 고마워요.</p>';
+  }
+  function renderTabs() {
+    const m = ui.tab === 'matrix';
+    $('#tabCheck').setAttribute('aria-selected', String(!m)); $('#tabMatrix').setAttribute('aria-selected', String(m));
+    $('#tabCheck').tabIndex = m ? -1 : 0; $('#tabMatrix').tabIndex = m ? 0 : -1;
+    $('#checkView').hidden = m; $('#matrixView').hidden = !m;
+  }
+  function renderAll() {
+    if (!curList()) { const f = S.lists.find((l) => !l.archived); S.cur = f ? f.id : null; }
+    renderSaveNote(); renderRosterInfo(); renderLists(); renderTabs(); renderCheck();
+    if (ui.tab === 'matrix') renderMatrix();
+    renderBig();
+  }
+
+  /* ---------- 동작 ---------- */
+  function afterMark(L, key, flash) {
+    if (L.id === S.cur) {
+      if (!patchTile(L, key, flash)) renderTiles(L);
+      renderSummary(L); renderMiss(L);
+    }
+    renderLists();
+    if (ui.tab === 'matrix') renderMatrix();
+    renderBig();
+    $('#undoBtn').disabled = !undoStack.length;
+  }
+  function setSt(L, key, st, record) {
+    const prev = stOf(L, key);
+    if (record) { undoStack.push({ id: L.id, key, prev }); if (undoStack.length > 200) undoStack.shift(); }
+    if (st) L.marks[key] = st; else delete L.marks[key];
+    save();
+  }
+  function cycle(L, key) {
+    const order = L.mode === 3 ? ['', 'y', 'l', 'x'] : ['', 'y'];
+    const nx = order[(order.indexOf(stOf(L, key)) + 1) % order.length];
+    setSt(L, key, nx, true);
+    return nx;
+  }
+  function undo() {
+    const u = undoStack.pop();
+    if (!u) { toast('되돌릴 게 없어요.'); return; }
+    const L = S.lists.find((l) => l.id === u.id);
+    if (!L) { toast('지운 항목이라 되돌릴 수 없어요.'); $('#undoBtn').disabled = !undoStack.length; return; }
+    setSt(L, u.key, u.prev, false);
+    const s = students.find((x) => x.key === u.key);
+    if (L.archived || S.cur !== L.id) { if (!L.archived) { S.cur = L.id; save(); } renderAll(); } else afterMark(L, u.key, true);
+    $('#undoBtn').disabled = !undoStack.length;
+    toast('되돌렸어요: ' + (s ? who(s) : u.key) + ' → ' + LABEL[u.prev]);
+  }
+  function createList(name, due, mode) {
+    const L = norm({ id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, due, mode, archived: false, created: Date.now(), marks: {}, notes: {} });
+    S.lists.push(L); S.cur = L.id; ui.tab = 'check'; ui.filter = 'all'; ui.miss = false; ui.noteKey = null; ui.confirm = null; ui.edit = false;
+    save(); renderAll();
+    return L;
+  }
+  function openNew(name) {
+    const f = $('#newForm'); f.hidden = false; $('#newBtn').setAttribute('aria-expanded', 'true');
+    $('#newMsg').textContent = '';
+    if (name) { $('#newName').value = name; $('#newDue').focus(); } else $('#newName').focus();
+  }
+  function closeNew() { const f = $('#newForm'); f.hidden = true; f.reset(); $('#newBtn').setAttribute('aria-expanded', 'false'); }
+  function tsvCheck(L) {
+    const lines = ['번호\t이름\t' + L.name + '\t메모'];
+    students.forEach((s) => lines.push(s.num + '\t' + s.name + '\t' + LABEL[stOf(L, s.key)] + '\t' + (L.notes[s.key] || '')));
+    return lines.join('\n');
+  }
+  function tsvMatrix() {
+    const ls = matrixLists();
+    const lines = ['번호\t이름\t' + ls.map((l) => l.name).join('\t') + '\t안 낸 수'];
+    matrixRows(ls).forEach((r) => lines.push(r.s.num + '\t' + r.s.name + '\t' + r.sts.map((x) => SYM[x]).join('\t') + '\t' + r.miss));
+    return lines.join('\n');
+  }
+  function today() { const t = new Date(); return t.getFullYear() + '. ' + (t.getMonth() + 1) + '. ' + t.getDate() + '.'; }
+  function buildPrint(kind) {
+    const pa = $('#printArea');
+    if (kind === 'matrix') {
+      const ls = matrixLists();
+      if (!students.length || !ls.length) { pa.innerHTML = ''; return; }
+      let h = '<h1>제출 확인 전체 표</h1><p class="pm">출력 ' + today() + ' · ○ 냄 · △ 늦게 냄 · – 면제 · 빈칸 안 냄</p><table class="mx"><thead><tr><th>번호</th><th class="nm">이름</th>' + ls.map((l) => '<th>' + esc(l.name) + '</th>').join('') + '<th>안 낸 수</th></tr></thead><tbody>';
+      matrixRows(ls).forEach((r) => { h += '<tr><td>' + r.s.num + '</td><td class="nm">' + esc(r.s.name) + '</td>' + r.sts.map((x) => '<td>' + SYM[x] + '</td>').join('') + '<td>' + r.miss + '</td></tr>'; });
+      pa.innerHTML = h + '</tbody></table>';
+      return;
+    }
+    const L = curList();
+    if (!L || !students.length) { pa.innerHTML = ''; return; }
+    const c = counts(L);
+    const table = (arr) => '<table><thead><tr><th>번호</th><th class="nm">이름</th><th>확인</th><th class="nm">메모</th></tr></thead><tbody>' +
+      arr.map((s) => { const st = stOf(L, s.key); return '<tr><td>' + s.num + '</td><td class="nm">' + esc(s.name) + '</td><td>' + (st ? SYM[st] : '') + '</td><td class="memo">' + esc(L.notes[s.key] || '') + '</td></tr>'; }).join('') + '</tbody></table>';
+    const half = Math.ceil(students.length / 2);
+    const body = students.length > 18 ? '<div class="cols">' + table(students.slice(0, half)) + table(students.slice(half)) + '</div>' : table(students);
+    const m = missingOf(L);
+    pa.innerHTML = '<h1>' + esc(L.name) + '</h1><p class="pm">' + (L.due ? esc(dueText(L.due)) + ' · ' : '') + '출력 ' + today() + ' · 낸 학생 ' + c.done + '/' + c.need + '명 · ○ 냄' + (L.mode === 3 ? ' · △ 늦게 냄 · – 면제' : '') + '</p>' + body +
+      '<p class="foot">' + (m.length ? '안 낸 학생(' + m.length + '명): ' + esc(m.map(who).join(', ')) : '모두 냈어요.') + '</p>';
+  }
+  let printKind = null;
+  function doPrint(kind) { printKind = kind; buildPrint(kind); try { window.print(); } catch (e) { toast('인쇄 창을 열 수 없어요. Ctrl+P를 눌러 주세요.'); } }
+  function openBig() {
+    if (!curList()) return;
+    ui.big = true; $('#big').hidden = false; $('#bigNames').checked = ui.bigNames; renderBig();
+    try { const b = $('#big'); if (b.requestFullscreen) { const p = b.requestFullscreen(); if (p && p.catch) p.catch(() => {}); } } catch (e) { /* 전체 화면 없이도 된다 */ }
+    $('#bigClose').focus();
+  }
+  function closeBig() {
+    ui.big = false; $('#big').hidden = true;
+    try { if (document.fullscreenElement && document.exitFullscreen) { const p = document.exitFullscreen(); if (p && p.catch) p.catch(() => {}); } } catch (e) { /* 무시 */ }
+    const b = $('#bigBtn'); if (b && !$('#checkBody').hidden) b.focus();
+  }
+  function focusTileBtn(key, sel) { const t = findTile(key); if (t) { const b = t.querySelector(sel || '.tbtn'); if (b) b.focus({ preventScroll: true }); } }
+
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+    const a = b.getAttribute('data-act'), id = b.getAttribute('data-id'), key = b.getAttribute('data-key');
+    const L = curList();
+    switch (a) {
+      case 'tog': {
+        if (!L) return;
+        const nx = cycle(L, key); afterMark(L, key, true);
+        const s = students.find((x) => x.key === key);
+        if (s && L.mode === 3) toast(who(s) + ' → ' + LABEL[nx]);
+        break;
+      }
+      case 'sel': S.cur = id; ui.confirm = null; ui.edit = false; ui.noteKey = null; ui.filter = 'all'; ui.tab = 'check'; save(); renderAll(); break;
+      case 'mcol': {
+        const t = S.lists.find((l) => l.id === id); if (!t) return;
+        if (t.archived) { t.archived = false; toast('보관에서 꺼냈어요.'); }
+        S.cur = id; ui.tab = 'check'; ui.filter = 'all'; ui.confirm = null; ui.edit = false; save(); renderAll(); $('#tabCheck').focus(); break;
+      }
+      case 'tab': ui.tab = b.getAttribute('data-tab'); renderTabs(); if (ui.tab === 'matrix') renderMatrix(); else renderCheck(); break;
+      case 'filter': ui.filter = b.getAttribute('data-f'); renderCheck(); break;
+      case 'sample':
+        $('#roster').value = SAMPLE.join('\n'); rosterText = $('#roster').value; students = parseRoster(rosterText);
+        ui.confirm = null; save(); renderAll(); toast('예시 명단 ' + students.length + '명을 넣었어요. 실제 학생이 아니에요.'); break;
+      case 'focusRoster': $('#rosterBox').open = true; $('#roster').focus(); break;
+      case 'newOpen': if ($('#newForm').hidden) openNew(); else closeNew(); break;
+      case 'newClose': closeNew(); $('#newBtn').focus(); break;
+      case 'quick': openNew(b.getAttribute('data-name')); break;
+      case 'edit': ui.edit = !ui.edit; ui.confirm = null; if (L) { renderCkPanel(L); if (ui.edit) $('#edName').focus(); } break;
+      case 'editClose': ui.edit = false; if (L) renderCkPanel(L); break;
+      case 'arch':
+        if (!L) return; L.archived = true; ui.confirm = null; ui.edit = false; ui.noteKey = null; ui.miss = false; S.cur = null; save(); renderAll();
+        toast('‘' + L.name + '’을(를) 보관했어요. 아래 ‘보관한 항목’에서 되돌릴 수 있어요.'); break;
+      case 'restore': {
+        const t = S.lists.find((l) => l.id === id); if (!t) return;
+        t.archived = false; S.cur = t.id; ui.tab = 'check'; ui.confirm = null; save(); renderAll(); toast('되돌렸어요.'); break;
+      }
+      case 'askDelCur': if (!L) return; ui.confirm = { type: 'del', id: L.id }; ui.edit = false; renderCkPanel(L); { const c = $('#ckPanel [data-act="cancel"]'); if (c) c.focus(); } break;
+      case 'askDel': ui.confirm = { type: 'del', id }; renderLists(); { const c = $('#archList [data-act="cancel"]'); if (c) c.focus(); } break;
+      case 'del': {
+        const t = S.lists.find((l) => l.id === id); if (!t) return;
+        S.lists = S.lists.filter((l) => l.id !== id);
+        for (let i = undoStack.length - 1; i >= 0; i--) if (undoStack[i].id === id) undoStack.splice(i, 1);
+        if (S.cur === id) S.cur = null;
+        ui.confirm = null; ui.miss = false; ui.noteKey = null; save(); renderAll(); toast('‘' + t.name + '’ 항목을 지웠어요.'); break;
+      }
+      case 'cancel': {
+        const was = ui.confirm; ui.confirm = null; renderAll();
+        if (was && was.type === 'wipe') { const w = $('#wipeArea button'); if (w) w.focus(); }
+        break;
+      }
+      case 'wipeAsk': ui.confirm = { type: 'wipe' }; renderRosterInfo(); { const c = $('#wipeArea [data-act="cancel"]'); if (c) c.focus(); } break;
+      case 'wipe':
+        lsDel(KEY); lsDel(RKEY);
+        S.lists = []; S.cur = null; rosterText = ''; students = []; $('#roster').value = ''; undoStack.length = 0;
+        ui.confirm = null; ui.miss = false; ui.noteKey = null; ui.edit = false;
+        renderAll(); $('#rosterBox').open = true; toast('이 기기에서 모두 지웠어요.'); break;
+      case 'undo': undo(); break;
+      case 'missToggle': ui.miss = !ui.miss; if (L) renderMiss(L); if (ui.miss) { const c = $('#missPanel [data-act="copyMiss"]'); if (c) c.focus(); } else $('#missBtn').focus(); break;
+      case 'copyMiss': if (L) copyText(missText(L, ui.missNum), '복사했어요. 알림장이나 메신저에 붙여 넣어 보세요.'); break;
+      case 'tsv': if (L) copyText(tsvCheck(L), '표로 복사했어요. 엑셀이나 한글 표에 붙여 넣어 보세요.'); break;
+      case 'mtsv': if (matrixLists().length && students.length) copyText(tsvMatrix(), '전체 표를 복사했어요.'); else toast('복사할 표가 없어요.'); break;
+      case 'print': doPrint('check'); break;
+      case 'mprint': doPrint('matrix'); break;
+      case 'bigOpen': openBig(); break;
+      case 'bigClose': closeBig(); break;
+      case 'note': ui.noteKey = key; if (L && renderNote(L)) $('#noteIn').focus(); break;
+      case 'noteClose': { const k = ui.noteKey; ui.noteKey = null; renderNote(L); if (k !== null) focusTileBtn(k, '.nbtn'); break; }
+      case 'noteDel': {
+        const k = ui.noteKey; if (!L || k === null) return;
+        delete L.notes[k]; ui.noteKey = null; save(); renderNote(L); afterMark(L, k, false); focusTileBtn(k, '.nbtn'); toast('메모를 지웠어요.'); break;
+      }
+    }
+  });
+
+  document.addEventListener('submit', (e) => {
+    const f = e.target; e.preventDefault();
+    const L = curList();
+    if (f.id === 'newForm') {
+      const name = $('#newName').value.trim();
+      if (!name) { $('#newMsg').textContent = '항목 이름을 넣어 주세요.'; $('#newName').focus(); return; }
+      const L2 = createList(name, $('#newDue').value, $('#new3').checked ? 3 : 2);
+      closeNew(); toast('‘' + L2.name + '’ 항목을 만들었어요.');
+      const first = document.querySelector('#tiles .tbtn'); if (first) first.focus({ preventScroll: true });
+    } else if (f.id === 'editForm' && L) {
+      const name = $('#edName').value.trim(); if (!name) { $('#edName').focus(); return; }
+      L.name = name.slice(0, 60); const d = $('#edDue').value; L.due = /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : '';
+      ui.edit = false; save(); renderAll(); toast('고쳤어요.');
+    } else if (f.id === 'numForm' && L) {
+      const inp = $('#numIn'); const nums = (inp.value.match(/\d+/g) || []).map(Number); inp.value = '';
+      if (!nums.length) { toast('번호를 넣어 주세요.'); return; }
+      const done = [], none = [];
+      nums.forEach((n) => {
+        const s = students.find((x) => x.num === n);
+        if (!s) { none.push(n); return; }
+        const nx = cycle(L, s.key); afterMark(L, s.key, true); done.push(who(s) + ' → ' + LABEL[nx]);
+      });
+      let t = done.length > 2 ? done.length + '명 표시했어요 (' + done.slice(-1)[0] + ' 등)' : done.join(', ');
+      if (none.length) t += (t ? ' · ' : '') + none.join(', ') + '번 학생은 명단에 없어요.';
+      toast(t);
+      inp.focus();
+    } else if (f.id === 'noteForm' && L && ui.noteKey !== null) {
+      const k = ui.noteKey; const v = $('#noteIn').value.trim().slice(0, 40);
+      if (v) L.notes[k] = v; else delete L.notes[k];
+      ui.noteKey = null; save(); renderNote(L); afterMark(L, k, false); focusTileBtn(k, '.nbtn'); toast(v ? '메모를 남겼어요.' : '메모를 지웠어요.');
+    }
+  });
+
+  document.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t.id === 'remember') {
+      S.remember = t.checked;
+      if (S.remember) { save(); toast('이 기기 브라우저에 저장해요.'); }
+      else { lsDel(RKEY); lsSet(KEY, JSON.stringify({ v: 2, remember: false })); toast('이제 저장하지 않아요. 저장돼 있던 기록도 지웠어요.'); }
+      renderSaveNote();
+    } else if (t.id === 'missNum') { ui.missNum = t.checked; const L = curList(); if (L) renderMiss(L); }
+    else if (t.id === 'mArch') { ui.mArch = t.checked; renderMatrix(); }
+    else if (t.id === 'mSort') { ui.mSort = t.value; renderMatrix(); }
+    else if (t.id === 'bigNames') { ui.bigNames = t.checked; renderBig(); }
+  });
+
+  $('#roster').addEventListener('input', () => {
+    rosterText = $('#roster').value; students = parseRoster(rosterText);
+    save(); renderRosterInfo(); renderLists(); renderCheck(); if (ui.tab === 'matrix') renderMatrix();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const t = e.target; const tag = t && t.tagName;
+    const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable);
+    if (e.key === 'Escape') {
+      if (ui.big) { e.preventDefault(); closeBig(); return; }
+      if (ui.confirm) { ui.confirm = null; renderAll(); return; }
+      if (ui.noteKey !== null) { const k = ui.noteKey; ui.noteKey = null; renderNote(curList()); focusTileBtn(k, '.nbtn'); return; }
+      if (ui.edit) { ui.edit = false; const L = curList(); if (L) renderCkPanel(L); return; }
+      return;
+    }
+    if (ui.big) return;
+    if (t && t.getAttribute && t.getAttribute('role') === 'tab' && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+      e.preventDefault(); const other = t.id === 'tabCheck' ? $('#tabMatrix') : $('#tabCheck'); other.focus(); other.click(); return;
+    }
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 'z' || e.key === 'Z') && !typing && ui.tab === 'check' && curList()) { e.preventDefault(); undo(); return; }
+    if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (ui.tab !== 'check' || !curList() || $('#checkBody').hidden) return;
+    if (/^[0-9]$/.test(e.key)) { e.preventDefault(); const inp = $('#numIn'); inp.focus(); inp.value += e.key; }
+  });
+
+  window.addEventListener('beforeprint', () => buildPrint(printKind || (ui.tab === 'matrix' ? 'matrix' : 'check')));
+  window.addEventListener('afterprint', () => { printKind = null; });
+
+  /* ---------- 시작 ---------- */
+  document.querySelectorAll('[data-ic]').forEach((el) => el.insertAdjacentHTML('afterbegin', svg(el.getAttribute('data-ic'))));
+  $('#presets').innerHTML = PRESETS.map((n) => '<option value="' + esc(n) + '"></option>').join('');
+  load();
+  $('#roster').value = rosterText;
+  students = parseRoster(rosterText);
+  $('#rosterBox').open = !students.length;
+  renderAll();
+})();
+</script>
+</body>
+</html>

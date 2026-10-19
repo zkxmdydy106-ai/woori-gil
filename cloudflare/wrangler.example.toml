@@ -1,0 +1,20 @@
+# Cloudflare Pages 설정 예시: 이 파일을 wrangler.toml 로 이름을 바꾸고 <...> 를 채우세요.
+# 화면 = ../site (node src/build.mjs ... --api /api --out site 로 만든 결과), 저장소 = functions/ (api.js + D1 + KV)
+name = "<프로젝트 이름, 예: ourschool-gil>"
+pages_build_output_dir = "../site"
+compatibility_date = "2024-09-23"
+
+# (선택) 나이스 급식·학사일정: 학교 코드(공개 정보). 인증키는 파일에 적지 말고
+#   npx wrangler pages secret put NEIS_KEY   로 넣으세요.
+# [vars]
+# NEIS_ATPT = "<시도교육청 코드, 예: N10>"
+# NEIS_SCHUL = "<학교 코드 7자리>"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "<D1 이름, 예: ourschool-db>"
+database_id = "<npx wrangler d1 create ... 가 알려 준 id>"
+
+[[kv_namespaces]]
+binding = "FILES"
+id = "<npx wrangler kv namespace create FILES 가 알려 준 id>"
