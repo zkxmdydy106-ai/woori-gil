@@ -1,0 +1,21 @@
+{
+  "name": "woori-gil",
+  "version": "1.0.0",
+  "private": true,
+  "description": "우리 학교 전용 자료 공간 — 규정·서식·절차를 함께 채우고 찾고, 학교 선생님이 만든 도구를 한곳에서",
+  "license": "CC-BY-NC-4.0",
+  "scripts": {
+    "setup": "node setup.mjs",
+    "update": "node setup.mjs --update",
+    "backup": "node setup.mjs --backup",
+    "neis": "node setup.mjs --neis",
+    "build": "node src/build.mjs --icons node_modules/@tabler/icons/icons/outline"
+  },
+  "devDependencies": {
+    "@tabler/icons": "3.19.0",
+    "wrangler": "3.114.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리학교 길잡이 설치 안내</title>
+<meta name="description" content="우리 학교 전용 자료 공간 '길잡이'를 10분 만에 만드는 방법. AI(Claude Code·Codex·Antigravity)에게 맡기기, 직접 따라 하기, 구글 시트 방법과 관리자·보안 안내.">
+<meta property="og:title" content="우리학교 길잡이 설치 안내">
+<meta property="og:description" content="우리 학교에만 있는 규정·서식·절차를 선생님들이 함께 채우고 찾는 곳. 10분이면 열려요.">
+<meta property="og:image" content="img/home.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314684e'/%3E%3Cpath d='M30 12h4v40h-4z M16 18h26l7 6-7 6H16z M48 34H22l-7 6 7 6h26z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root {
+  --bg: #f6f4ee; --paper: #fffdf8; --ink: #17201c; --muted: #5b6862; --faint: #8a958f; --line: #e3ded2; --line-strong: #cfc8b8;
+  --green: #14684e; --green-deep: #0d4a37; --green-soft: #e3f0ea; --amber: #f2b632; --amber-soft: #fdf1d3; --red: #b4382e; --red-soft: #fbe7e4;
+  --code-bg: #14211c; --code-ink: #e6f2ec; --code-dim: #8fb3a3; --shadow: 0 1px 2px rgb(23 32 28 / .06), 0 8px 24px rgb(23 32 28 / .07);
+  --r: 16px; --font: "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --mono: "D2Coding", "Cascadia Mono", Consolas, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #111714; --paper: #18201c; --ink: #e9efeb; --muted: #a7b4ad; --faint: #7d8a83; --line: #2a3530; --line-strong: #3a4842;
+    --green: #4cc196; --green-deep: #8fe0bf; --green-soft: #17322a; --amber: #f2c056; --amber-soft: #33290f; --red: #ff8f84; --red-soft: #3a1f1c;
+    --code-bg: #0b120f; --shadow: 0 1px 2px rgb(0 0 0 / .4), 0 8px 24px rgb(0 0 0 / .35); color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16.5px/1.7 var(--font); letter-spacing: -0.01em; -webkit-font-smoothing: antialiased; word-break: keep-all; overflow-wrap: anywhere; }
+a { color: var(--green); }
+img { max-width: 100%; height: auto; display: block; }
+h1, h2, h3 { letter-spacing: -0.035em; line-height: 1.25; text-wrap: balance; margin: 0; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+kbd { font: 600 13px var(--mono); background: var(--paper); border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 6px; padding: 1px 6px; }
+
+/* ── 위쪽 줄 ── */
+.top { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 14px; height: 64px; }
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-weight: 800; letter-spacing: -0.04em; font-size: 18px; flex: none; }
+.logo .mk { width: 36px; height: 36px; border-radius: 10px; background: var(--green); display: grid; place-items: center; color: #fff; }
+.logo .mk svg { width: 22px; height: 22px; }
+.nav { display: flex; gap: 2px; margin-left: auto; overflow-x: auto; scrollbar-width: none; }
+.nav a { padding: 8px 12px; border-radius: 10px; text-decoration: none; color: var(--muted); font-size: 15px; font-weight: 600; white-space: nowrap; transition: background .2s, color .2s; }
+.nav a:hover { background: var(--green-soft); color: var(--green-deep); }
+.nav a.on { background: var(--green-soft); color: var(--green-deep); }
+.top .btn { flex: none; }
+@media (max-width: 860px) { .nav { display: none; } .top .btn { margin-left: auto; } }
+
+/* ── 단추 (누르면 눌리고 물결) ── */
+.btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 20px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--paper); color: var(--ink); font: 650 16px var(--font); text-decoration: none; cursor: pointer; transition: transform .12s ease, box-shadow .2s, background .2s, border-color .2s; -webkit-tap-highlight-color: transparent; }
+.btn:hover { border-color: var(--green); box-shadow: var(--shadow); }
+.btn:active { transform: scale(.96); }
+.btn.primary { background: var(--green); border-color: var(--green); color: #fff; }
+.btn.primary:hover { background: var(--green-deep); }
+@media (prefers-color-scheme: dark) { .btn.primary { color: #08140f; } }
+.btn.sm { min-height: 36px; padding: 0 12px; font-size: 14px; border-radius: 10px; }
+.btn svg { width: 19px; height: 19px; flex: none; }
+.ripple { position: absolute; border-radius: 50%; transform: scale(0); background: currentColor; opacity: .22; pointer-events: none; animation: rip .55s ease-out forwards; }
+@keyframes rip { to { transform: scale(2.6); opacity: 0; } }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--green) 55%, transparent); outline-offset: 2px; }
+
+/* ── 첫 화면 ── */
+.hero { padding: 56px 0 40px; position: relative; overflow: hidden; }
+.hero .wrap { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+.eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--green-deep); background: var(--green-soft); padding: 5px 12px; border-radius: 999px; }
+.hero h1 { font-size: clamp(34px, 5.2vw, 58px); font-weight: 850; margin: 18px 0 16px; }
+.hero h1 em { font-style: normal; color: var(--green); position: relative; white-space: nowrap; }
+.hero h1 em::after { content: ""; position: absolute; left: -2px; right: -2px; bottom: 4px; height: .28em; background: var(--amber); opacity: .55; z-index: -1; border-radius: 4px; transform: scaleX(0); transform-origin: left; animation: mark .9s .5s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes mark { to { transform: scaleX(1); } }
+.hero p.lead { font-size: 19px; color: var(--muted); margin: 0 0 26px; max-width: 34em; }
+.hero .cta { display: flex; gap: 10px; flex-wrap: wrap; }
+.hero .facts { display: flex; gap: 22px; margin-top: 28px; flex-wrap: wrap; color: var(--muted); font-size: 14.5px; }
+.hero .facts b { display: block; font-size: 22px; color: var(--ink); letter-spacing: -0.03em; }
+.stage { position: relative; min-height: 360px; }
+.frame { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 30px 60px -20px rgb(13 74 55 / .35), var(--shadow); overflow: hidden; }
+.frame .bar { height: 30px; display: flex; align-items: center; gap: 6px; padding: 0 12px; background: color-mix(in srgb, var(--paper) 80%, var(--line)); border-bottom: 1px solid var(--line); }
+.frame .bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong); }
+.frame .bar span { margin-left: 10px; font: 12px var(--mono); color: var(--faint); }
+.stage .desk { transform: perspective(1400px) rotateY(-6deg); transform-origin: left center; }
+.stage .phone { position: absolute; right: -8px; bottom: -26px; width: 34%; border-radius: 26px; border: 6px solid #1b2420; box-shadow: 0 24px 50px -12px rgb(0 0 0 / .45); overflow: hidden; transform: rotate(3deg); background: #fff; }
+.route { position: absolute; inset: auto -40px -60px auto; width: 420px; opacity: .55; pointer-events: none; }
+.route path { stroke-dasharray: 900; stroke-dashoffset: 900; animation: draw 2.6s .2s ease-out forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@media (max-width: 900px) { .hero .wrap { grid-template-columns: 1fr; } .stage { min-height: 0; margin-top: 10px; } }
+
+/* ── 구역 ── */
+section { padding: 72px 0; }
+section + section { border-top: 1px solid var(--line); }
+.sec-head { display: grid; gap: 10px; margin-bottom: 32px; max-width: 46em; }
+.sec-head .no { font: 800 13px var(--mono); color: var(--green); letter-spacing: .08em; }
+.sec-head h2 { font-size: clamp(27px, 3.6vw, 38px); font-weight: 820; }
+.sec-head p { margin: 0; color: var(--muted); font-size: 17.5px; }
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── 탭 (밑줄이 미끄러짐) ── */
+.tabs { position: relative; display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
+.tabs button { position: relative; border: 0; background: none; padding: 12px 14px; font: 650 15.5px var(--font); color: var(--muted); cursor: pointer; border-radius: 10px 10px 0 0; transition: color .2s, background .2s; display: inline-flex; gap: 7px; align-items: center; }
+.tabs button:hover { color: var(--ink); background: color-mix(in srgb, var(--green-soft) 60%, transparent); }
+.tabs button[aria-selected="true"] { color: var(--green-deep); }
+.tabs button svg { width: 18px; height: 18px; }
+.tabs .ink { position: absolute; bottom: -1px; height: 3px; border-radius: 3px; background: var(--green); transition: left .35s cubic-bezier(.2,.8,.2,1), width .35s cubic-bezier(.2,.8,.2,1); }
+.panel { animation: fadeUp .45s cubic-bezier(.2,.8,.2,1); }
+.panel[hidden] { display: none; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ── 둘러보기 갤러리 ── */
+.tour { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.9fr); gap: 28px; align-items: start; }
+.tour-list { display: grid; gap: 8px; }
+.tour-list button { text-align: left; display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: start; padding: 14px; border-radius: 14px; border: 1px solid transparent; background: none; cursor: pointer; font: inherit; color: inherit; transition: background .25s, border-color .25s, transform .12s; }
+.tour-list button:hover { background: var(--paper); border-color: var(--line); }
+.tour-list button:active { transform: scale(.98); }
+.tour-list button[aria-selected="true"] { background: var(--paper); border-color: var(--green); box-shadow: var(--shadow); }
+.tour-list .ti { width: 40px; height: 40px; border-radius: 11px; background: var(--green-soft); color: var(--green-deep); display: grid; place-items: center; }
+.tour-list .ti svg { width: 21px; height: 21px; }
+.tour-list b { display: block; font-size: 16.5px; letter-spacing: -0.02em; }
+.tour-list span { display: block; color: var(--muted); font-size: 14.5px; line-height: 1.55; margin-top: 2px; }
+.shot { position: sticky; top: 88px; }
+.shot .frame img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; cursor: zoom-in; transition: opacity .25s; }
+.shot .frame img.swap { opacity: 0; }
+.shot .cap { margin: 12px 4px 0; color: var(--muted); font-size: 14.5px; }
+@media (max-width: 900px) { .tour { grid-template-columns: 1fr; } .shot { position: static; order: -1; } }
+
+/* ── 방법 고르기 ── */
+.paths { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.path { position: relative; text-align: left; padding: 22px; border-radius: var(--r); border: 2px solid var(--line); background: var(--paper); cursor: pointer; font: inherit; color: inherit; display: grid; gap: 10px; align-content: start; transition: border-color .25s, transform .15s, box-shadow .25s; }
+.path:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.path:active { transform: translateY(0) scale(.98); }
+.path[aria-pressed="true"] { border-color: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+.path .pi { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; background: var(--green-soft); color: var(--green-deep); }
+.path .pi svg { width: 24px; height: 24px; }
+.path h3 { font-size: 20px; }
+.path p { margin: 0; color: var(--muted); font-size: 15px; }
+.path .meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.tag { font-size: 12.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--green-soft); color: var(--green-deep); }
+.tag.amber { background: var(--amber-soft); color: #7a5300; }
+.tag.red { background: var(--red-soft); color: var(--red); }
+@media (prefers-color-scheme: dark) { .tag.amber { color: var(--amber); } }
+.path .badge { position: absolute; top: -12px; right: 16px; background: var(--amber); color: #3b2a00; font-size: 12.5px; font-weight: 800; padding: 4px 10px; border-radius: 999px; box-shadow: var(--shadow); }
+.path .check { position: absolute; top: 18px; right: 18px; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line-strong); display: grid; place-items: center; transition: background .25s, border-color .25s; }
+.path .check svg { width: 15px; height: 15px; color: #fff; stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset .35s .05s; }
+.path[aria-pressed="true"] .check { background: var(--green); border-color: var(--green); }
+.path[aria-pressed="true"] .check svg { stroke-dashoffset: 0; }
+@media (max-width: 860px) { .paths { grid-template-columns: 1fr; } }
+.install { margin-top: 30px; }
+
+/* ── 진행 막대 ── */
+.progress { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); margin-bottom: 18px; position: sticky; top: 74px; z-index: 5; }
+.progress .track { flex: 1; height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.progress .fill { height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, var(--green), color-mix(in srgb, var(--green) 60%, var(--amber))); transition: width .6s cubic-bezier(.2,.8,.2,1); }
+.progress b { font-size: 14.5px; min-width: 5.5em; text-align: right; font-variant-numeric: tabular-nums; }
+.progress .reset { border: 0; background: none; color: var(--faint); font: 13px var(--font); cursor: pointer; text-decoration: underline; }
+
+/* ── 단계 카드 ── */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.step { position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 16px; padding: 20px 20px 20px 18px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); transition: border-color .3s, background .3s; }
+.step.done { border-color: color-mix(in srgb, var(--green) 45%, var(--line)); background: color-mix(in srgb, var(--green-soft) 45%, var(--paper)); }
+.step .tick { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--paper); cursor: pointer; display: grid; place-items: center; font: 800 17px var(--font); color: var(--muted); transition: background .25s, border-color .25s, transform .15s; position: relative; }
+.step .tick:hover { border-color: var(--green); }
+.step .tick:active { transform: scale(.9); }
+.step .tick svg { position: absolute; width: 22px; height: 22px; color: #fff; stroke-dasharray: 30; stroke-dashoffset: 30; transition: stroke-dashoffset .4s .05s; }
+.step.done .tick { background: var(--green); border-color: var(--green); color: transparent; }
+.step.done .tick svg { stroke-dashoffset: 0; }
+.step.pop .tick { animation: pop .45s cubic-bezier(.3,1.6,.5,1); }
+@keyframes pop { 40% { transform: scale(1.18); } }
+.step h3 { font-size: 19px; margin: 6px 0 6px; }
+.step p { margin: 0 0 10px; color: var(--muted); }
+.step p:last-child { margin-bottom: 0; }
+.step ul, .step ol { margin: 4px 0 10px; padding-left: 20px; color: var(--muted); }
+.step li { margin: 3px 0; }
+.step li b, .step p b { color: var(--ink); }
+.step .imgs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 10px 0; }
+.step .imgs img { border-radius: 10px; border: 1px solid var(--line); cursor: zoom-in; }
+details.stuck { margin-top: 8px; border-radius: 10px; background: var(--amber-soft); padding: 2px 14px; }
+details.stuck summary { cursor: pointer; font-weight: 700; font-size: 14.5px; padding: 8px 0; color: #6b4a00; list-style: none; display: flex; gap: 6px; align-items: center; }
+@media (prefers-color-scheme: dark) { details.stuck summary { color: var(--amber); } }
+details.stuck summary::before { content: "▸"; transition: transform .2s; }
+details.stuck[open] summary::before { transform: rotate(90deg); }
+details.stuck div { padding: 0 0 10px; font-size: 15px; color: var(--muted); }
+@media (max-width: 560px) { .step { grid-template-columns: 1fr; } .step .tick { width: 38px; height: 38px; } }
+
+/* ── 명령어 칸 ── */
+.code { position: relative; margin: 10px 0; border-radius: 12px; background: var(--code-bg); color: var(--code-ink); font: 14.5px/1.65 var(--mono); }
+.code pre { margin: 0; padding: 14px 112px 14px 16px; overflow-x: auto; white-space: pre; }
+.code pre.wrapped { white-space: pre-wrap; padding-right: 16px; padding-top: 50px; font: 15px/1.75 var(--font); }
+.code .c { color: var(--code-dim); }
+.code .copy { position: absolute; top: 8px; right: 8px; min-height: 34px; padding: 0 12px; border-radius: 9px; border: 1px solid rgb(255 255 255 / .18); background: rgb(255 255 255 / .08); color: #fff; font: 650 13.5px var(--font); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; transition: background .2s, transform .12s; overflow: hidden; }
+.code .copy:hover { background: rgb(255 255 255 / .16); }
+.code .copy:active { transform: scale(.94); }
+.code .copy.ok { background: var(--green); border-color: var(--green); }
+.code .copy svg { width: 16px; height: 16px; }
+.code .label { position: absolute; left: 16px; top: 13px; font: 700 12px var(--font); color: var(--code-dim); letter-spacing: .04em; }
+.os { display: inline-flex; padding: 4px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); gap: 2px; margin-bottom: 16px; }
+.os button { border: 0; background: none; padding: 8px 16px; border-radius: 9px; font: 650 15px var(--font); color: var(--muted); cursor: pointer; transition: background .25s, color .25s; display: inline-flex; gap: 6px; align-items: center; }
+.os button[aria-pressed="true"] { background: var(--green); color: #fff; }
+@media (prefers-color-scheme: dark) { .os button[aria-pressed="true"] { color: #08140f; } }
+[data-os="mac"] .win-only, [data-os="win"] .mac-only { display: none; }
+
+/* ── AI 문구 만들기 ── */
+.agent-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 22px; align-items: start; }
+@media (max-width: 900px) { .agent-grid { grid-template-columns: 1fr; } }
+.card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; }
+.card h3 { font-size: 18px; margin-bottom: 10px; }
+.field { display: grid; gap: 6px; margin-bottom: 14px; }
+.field label { font-weight: 700; font-size: 15px; }
+.field .help { color: var(--faint); font-size: 13.5px; }
+.field input { height: 48px; border-radius: 12px; border: 1.5px solid var(--line-strong); background: var(--bg); color: var(--ink); padding: 0 14px; font: 500 16.5px var(--font); transition: border-color .2s, box-shadow .2s; }
+.field input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+.field input.bad { border-color: var(--red); box-shadow: 0 0 0 4px var(--red-soft); animation: shake .35s; }
+@keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.field .err { color: var(--red); font-size: 13.5px; min-height: 1em; }
+.urlprev { font: 600 15px var(--mono); color: var(--green-deep); background: var(--green-soft); padding: 8px 12px; border-radius: 10px; overflow-wrap: anywhere; }
+.agent-steps { list-style: none; counter-reset: a; padding: 0; margin: 0; display: grid; gap: 12px; }
+.agent-steps li { counter-increment: a; display: grid; grid-template-columns: 30px 1fr; gap: 10px; }
+.agent-steps li::before { content: counter(a); width: 28px; height: 28px; border-radius: 50%; background: var(--green); color: #fff; font-weight: 800; font-size: 14px; display: grid; place-items: center; }
+@media (prefers-color-scheme: dark) { .agent-steps li::before { color: #08140f; } }
+.agent-steps li > div > b { display: block; }
+.agent-steps span { color: var(--muted); font-size: 15px; }
+.note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: var(--green-soft); color: var(--green-deep); font-size: 15px; margin-top: 14px; }
+.note.amber { background: var(--amber-soft); color: #6b4a00; }
+.note.red { background: var(--red-soft); color: var(--red); }
+@media (prefers-color-scheme: dark) { .note.amber { color: var(--amber); } }
+.note svg { width: 20px; height: 20px; flex: none; margin-top: 3px; }
+
+/* ── AI 에게 부탁하기 카드 (업데이트·백업) ── */
+.ask-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.ask { display: grid; gap: 6px; align-content: start; transition: transform .2s, box-shadow .2s; }
+.ask:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.ask-h { display: flex; gap: 12px; align-items: center; }
+.ask-h .pi { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--green-soft); color: var(--green-deep); flex: none; }
+.ask-h .pi svg { width: 22px; height: 22px; }
+.ask-h h3 { margin: 0; }
+.ask-h span { color: var(--faint); font-size: 14px; }
+.ask .code pre.wrapped { font-size: 14.5px; }
+.ask-note { margin: 2px 0 0; color: var(--muted); font-size: 14.5px; }
+@media (max-width: 860px) { .ask-grid { grid-template-columns: 1fr; } }
+
+/* ── 관리자 ── */
+.admin { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 26px; align-items: start; }
+.admin .frame img { cursor: zoom-in; }
+.admin ul { padding-left: 20px; margin: 8px 0 0; color: var(--muted); }
+.admin li { margin: 6px 0; }
+.admin li b { color: var(--ink); }
+@media (max-width: 900px) { .admin { grid-template-columns: 1fr; } }
+.routine { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 26px; }
+.routine .card b { display: block; font-size: 17px; margin-bottom: 4px; }
+.routine .card p { margin: 0; color: var(--muted); font-size: 15px; }
+@media (max-width: 760px) { .routine { grid-template-columns: 1fr; } }
+
+/* ── 보안 ── */
+.sec-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.sec-item { display: grid; grid-template-columns: 44px 1fr; gap: 14px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; }
+.sec-item .si { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--green-soft); color: var(--green-deep); }
+.sec-item.warn .si { background: var(--red-soft); color: var(--red); }
+.sec-item .si svg { width: 22px; height: 22px; }
+.sec-item b { display: block; font-size: 17px; margin-bottom: 4px; letter-spacing: -0.02em; }
+.sec-item p { margin: 0; color: var(--muted); font-size: 15px; }
+@media (max-width: 760px) { .sec-grid { grid-template-columns: 1fr; } }
+table.where { width: 100%; border-collapse: collapse; margin-top: 22px; font-size: 15px; background: var(--paper); border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); }
+table.where th, table.where td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.where th { background: color-mix(in srgb, var(--green-soft) 60%, var(--paper)); font-size: 14px; }
+.tbl { overflow-x: auto; }
+
+/* ── 선생님 안내 ── */
+.tgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.tcard { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; transition: transform .2s, box-shadow .2s; }
+.tcard:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.tcard img { aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; border-bottom: 1px solid var(--line); cursor: zoom-in; }
+.tcard div { padding: 14px 16px 16px; }
+.tcard b { display: block; font-size: 17px; margin-bottom: 4px; }
+.tcard p { margin: 0; color: var(--muted); font-size: 15px; }
+@media (max-width: 900px) { .tgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .tgrid { grid-template-columns: 1fr; } }
+
+/* ── 자주 묻는 것 ── */
+.faq { display: grid; gap: 10px; }
+.faq details { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 0 18px; transition: border-color .2s; }
+.faq details[open] { border-color: var(--green); }
+.faq summary { cursor: pointer; padding: 16px 0; font-weight: 700; font-size: 16.5px; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.faq summary::after { content: "+"; font-size: 22px; line-height: 1; color: var(--green); transition: transform .3s; }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq .ans { padding: 0 0 16px; color: var(--muted); animation: fadeUp .35s; }
+
+/* ── 크게 보기 ── */
+.lightbox { position: fixed; inset: 0; z-index: 60; background: rgb(10 16 13 / .82); display: grid; place-items: center; padding: 24px; opacity: 0; transition: opacity .25s; cursor: zoom-out; }
+.lightbox.on { opacity: 1; }
+.lightbox img { max-width: min(1400px, 100%); max-height: 88vh; border-radius: 12px; box-shadow: 0 30px 80px rgb(0 0 0 / .5); transform: scale(.94); transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.lightbox.on img { transform: none; }
+.lightbox p { color: #fff; margin: 12px 0 0; text-align: center; }
+
+/* ── 알림 ── */
+.toast { position: fixed; left: 50%; bottom: 28px; z-index: 70; transform: translate(-50%, 30px); opacity: 0; background: var(--ink); color: var(--bg); padding: 12px 18px; border-radius: 12px; font-weight: 650; box-shadow: var(--shadow); transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .35s; pointer-events: none; }
+.toast.on { transform: translate(-50%, 0); opacity: 1; }
+.totop { position: fixed; right: 18px; bottom: 18px; z-index: 40; width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); box-shadow: var(--shadow); cursor: pointer; display: grid; place-items: center; color: var(--green); opacity: 0; transform: translateY(14px); transition: opacity .3s, transform .3s; }
+.totop.on { opacity: 1; transform: none; }
+.totop svg { width: 22px; height: 22px; }
+
+/* ── 맨 아래 ── */
+footer { background: #10201a; color: #c9d8d0; padding: 44px 0 calc(40px + env(safe-area-inset-bottom)); margin-top: 20px; }
+footer .f1 { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 16px; }
+footer .f1 b { color: #fff; font-size: 18px; letter-spacing: -0.03em; }
+footer .bar { width: 1px; height: 14px; background: #3c564b; }
+footer .f2 { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 18px 0; padding: 14px 0; border-top: 1px solid #23392f; border-bottom: 1px solid #23392f; }
+footer .f2 a { color: #c9d8d0; text-decoration: none; font-size: 15px; }
+footer .f2 a:hover { color: #fff; text-decoration: underline; }
+footer .f3 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 14px; color: #8fa89c; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .reveal { opacity: 1; transform: none; } html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-sign" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 6h11l3 2.5L16 11H5z"/><path d="M19 13H8l-3 2.5L8 18h11z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/></symbol>
+    <symbol id="i-columns" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 4v16"/></symbol>
+    <symbol id="i-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h13v-4"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .7 3.2 2.5 3.6 5.2"/></symbol>
+    <symbol id="i-tools" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M14.5 6.5a4 4 0 0 1-5 5L4 17l3 3 5.5-5.5a4 4 0 0 1 5-5L21 6l-3-3z"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M11 18h2"/></symbol>
+    <symbol id="i-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="4"/><path d="M12 4v4M9 13.5h.01M15 13.5h.01M9.5 17h5"/><circle cx="12" cy="3.5" r="1"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M12.5 15H17"/></symbol>
+    <symbol id="i-sheet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M14.5 8.5l2 2"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
+    <symbol id="i-win" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.5v7H3zM11.5 4.4 21 3v8.5h-9.5zM3 12.5h7.5v7L3 18.5zM11.5 12.5H21V21l-9.5-1.4z"/></symbol>
+    <symbol id="i-apple" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.8-3.5.8-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.7 0 0-2.5-1-2.5-3.5zM14.1 5.6c.6-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.1 1.8-1 2.9 1.1.1 2.1-.6 2.8-1.4z"/></symbol>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#"><span class="mk"><svg><use href="#i-sign"/></svg></span>우리학교 길잡이</a>
+    <nav class="nav" aria-label="안내 목차">
+      <a href="#tour">둘러보기</a><a href="#install">만들기</a><a href="#first">처음 설정</a><a href="#admin">관리자</a><a href="#teachers">선생님 안내</a><a href="#update">업데이트·백업</a><a href="#security">보안</a><a href="#faq">자주 묻는 것</a>
+    </nav>
+    <a class="btn sm primary" href="../" target="_blank" rel="noopener"><svg><use href="#i-eye"/></svg>시연 보기</a>
+  </div>
+</header>
+
+<main>
+<!-- ───────── 첫 화면 ───────── -->
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow"><svg width="16" height="16"><use href="#i-sign"/></svg>우리 학교 전용 자료 공간</span>
+      <h1>우리 학교만의 <em>길잡이</em>,<br>10분이면 열려요</h1>
+      <p class="lead">"결석계 어디 있어요?", "출장비는 어떻게 올려요?" 해마다 반복되는 질문을, 선생님들이 함께 채우는 한 곳에서 찾아요. 우리 학교에만 있는 규정·서식·절차·도구를 모읍니다.</p>
+      <div class="cta">
+        <a class="btn primary" href="#install"><svg><use href="#i-arrow"/></svg>우리 학교 길잡이 만들기</a>
+        <a class="btn" href="../" target="_blank" rel="noopener"><svg><use href="#i-eye"/></svg>시연 학교 둘러보기</a>
+      </div>
+      <div class="facts"><div><b>무료</b>Cloudflare 무료 요금제</div><div><b>10분</b>AI에게 맡기면 더 쉽게</div><div><b>학교 소유</b>자료는 우리 학교 계정에</div></div>
+    </div>
+    <div class="stage" aria-hidden="true">
+      <div class="frame desk"><div class="bar"><i></i><i></i><i></i><span>https://우리학교-gil.pages.dev</span></div><img src="img/home.jpg" alt="" width="1920" height="1200"></div>
+      <div class="phone"><img src="img/mobile-home.jpg" alt=""></div>
+      <svg class="route" viewBox="0 0 420 260" fill="none"><path d="M10 240 C 90 220, 70 130, 160 140 S 260 60, 300 90 S 380 40, 410 12" stroke="var(--amber)" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 14"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- ───────── 둘러보기 ───────── -->
+<section id="tour">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="no">01 · 둘러보기</span><h2>길잡이는 이런 곳이에요</h2><p>왼쪽을 누르면 실제 화면이 바뀌어요. 화면을 누르면 크게 볼 수 있어요. (가상 학교 'OO고등학교' 예시)</p></div>
+    <div class="tour reveal">
+      <div class="tour-list" role="tablist" aria-label="기능 둘러보기" id="tourList">
+        <button role="tab" aria-selected="true" data-img="search" data-cap="낱말·초성(ㅊㅎ)·영어 자판 실수(cpgjagkrtmq)로도 찾고, 찾은 곳(본문·제N조·첨부 PDF n쪽)을 미리 보여 줘요."><span class="ti"><svg><use href="#i-search"/></svg></span><span><b>무엇이든 찾기</b><span>규정·서식·첨부 파일 속 글·도구까지 한 번에</span></span></button>
+        <button role="tab" aria-selected="false" data-img="doc-pane" data-cap="설명은 왼쪽, 첨부 서식은 오른쪽에 바로 떠요. 엑셀은 수식 그대로 계산되고 '바로 인쇄'로 원본처럼 인쇄해요."><span class="ti"><svg><use href="#i-columns"/></svg></span><span><b>설명 옆에 파일이 바로</b><span>읽으면서 바로 쓰고, 파일 안에서도 찾기</span></span></button>
+        <button role="tab" aria-selected="false" data-img="form" data-cap="입력한 내용은 이 PC 에만 자동 저장돼요. 다음에 열면 그대로, '원본으로 초기화'도 돼요."><span class="ti"><svg><use href="#i-print"/></svg></span><span><b>서식 쓰고 인쇄</b><span>엑셀·한글·PDF 를 원본 모양 그대로</span></span></button>
+        <button role="tab" aria-selected="false" data-img="propose" data-cap="'##' 같은 기호를 몰라도 돼요. 칸에 평소 말투로 쓰면 번호와 모양이 저절로 붙고, 다른 문서는 이름으로 찾아 연결해요."><span class="ti"><svg><use href="#i-pen"/></svg></span><span><b>누구나 바로 고치기</b><span>칸에 쓰면 끝, 관리자가 나중에 확인</span></span></button>
+        <button role="tab" aria-selected="false" data-img="lessons" data-cap="교과별 학습지·수업용 웹앱을 모으고, 유용한 사이트는 누구나 추가해요."><span class="ti"><svg><use href="#i-book"/></svg></span><span><b>수업 자료</b><span>학습지·웹앱·교과별 유용한 사이트</span></span></button>
+        <button role="tab" aria-selected="false" data-img="homeroom" data-cap="자리 바꾸기·청소 구역·모둠 뽑기·1인 1역·수업 타이머… 학생 이름은 그 기기 밖으로 나가지 않아요."><span class="ti"><svg><use href="#i-users"/></svg></span><span><b>학급 운영 도구</b><span>담임 업무를 덜어 주는 도구 모음</span></span></button>
+        <button role="tab" aria-selected="false" data-img="tools" data-cap="학교 선생님이 만든 웹앱을 누구나 올려요. 관리자가 확인하기 전까지 '승인 전' 표시가 붙어요."><span class="ti"><svg><use href="#i-tools"/></svg></span><span><b>우리 학교 도구</b><span>선생님이 만든 웹앱을 한곳에</span></span></button>
+        <button role="tab" aria-selected="false" data-img="mobile-search" data-cap="휴대폰에서도 그대로. 홈 화면에 추가하면 앱처럼 열려요."><span class="ti"><svg><use href="#i-phone"/></svg></span><span><b>휴대폰에서도</b><span>홈 화면에 추가해 앱처럼</span></span></button>
+      </div>
+      <div class="shot">
+        <div class="frame"><div class="bar"><i></i><i></i><i></i><span id="tourUrl">길잡이 · 찾기</span></div><img id="tourImg" src="img/search.jpg" alt="길잡이 찾기 화면" data-zoom></div>
+        <p class="cap" id="tourCap">낱말·초성(ㅊㅎ)·영어 자판 실수(cpgjagkrtmq)로도 찾고, 찾은 곳(본문·제N조·첨부 PDF n쪽)을 미리 보여 줘요.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 만들기 ───────── -->
+<section id="install">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="no">02 · 만들기</span><h2>어떤 방법으로 만들까요?</h2><p>코딩을 몰라도 괜찮아요. 처음이라면 <b>AI에게 맡기기</b>를 추천해요. 문구를 붙여 넣으면 AI가 알아서 설치하고, 선생님은 로그인만 하면 돼요.</p></div>
+    <div class="paths reveal" role="group" aria-label="설치 방법 고르기">
+      <button class="path" data-path="ai" aria-pressed="true"><span class="badge">가장 쉬워요</span><span class="check"><svg><use href="#i-check"/></svg></span><span class="pi"><svg><use href="#i-bot"/></svg></span><h3>AI에게 맡기기</h3><p>Claude Code·Codex·Antigravity 에 문구 하나만 붙여 넣으면 끝까지 알아서 해요.</p><span class="meta"><span class="tag">빠르고 모든 기능</span><span class="tag amber">AI 도구 필요</span></span></button>
+      <button class="path" data-path="manual" aria-pressed="false"><span class="check"><svg><use href="#i-check"/></svg></span><span class="pi"><svg><use href="#i-terminal"/></svg></span><h3>직접 따라 하기</h3><p>명령어 두 줄을 복사해 붙여 넣는 방법. 화면마다 사진과 '막히면 여기'가 있어요.</p><span class="meta"><span class="tag">빠르고 모든 기능</span><span class="tag">AI 없이</span></span></button>
+      <button class="path" data-path="sheet" aria-pressed="false"><span class="check"><svg><use href="#i-check"/></svg></span><span class="pi"><svg><use href="#i-sheet"/></svg></span><h3>구글 시트로</h3><p>프로그램 설치 없이 학교 구글 계정만으로. 대신 열고 저장할 때 조금 느려요.</p><span class="meta"><span class="tag amber">조금 느림</span><span class="tag red">일부 기능 빠짐</span></span></button>
+    </div>
+
+    <div class="install">
+      <!-- AI 에게 맡기기 -->
+      <div class="panel" data-for="ai">
+        <div class="agent-grid">
+          <div class="card">
+            <h3>① 우리 학교 정보 넣기</h3>
+            <div class="field"><label for="fSchool">학교 이름</label><input id="fSchool" placeholder="예: 한빛고등학교" maxlength="30" autocomplete="off"><span class="err" id="eSchool"></span></div>
+            <div class="field"><label for="fName">사이트 영어 이름</label><span class="help">영어 소문자·숫자·- 만. 학교 영어 약칭 + -gil 을 추천해요.</span><input id="fName" placeholder="예: hanbit-gil" maxlength="42" autocomplete="off" spellcheck="false" inputmode="url"><span class="err" id="eName"></span></div>
+            <div class="urlprev" id="urlPrev">https://hanbit-gil.pages.dev</div>
+            <div class="note amber"><svg><use href="#i-info"/></svg><div>AI 도구는 유료 요금제가 필요할 수 있어요 (Claude Pro, ChatGPT Plus 등). Antigravity 는 Google 계정으로 쓸 수 있어요. 길잡이 자체는 무료예요.</div></div>
+          </div>
+          <div class="card">
+            <h3>② 쓰는 AI 고르기</h3>
+            <div class="tabs" role="tablist" aria-label="AI 도구" id="agentTabs">
+              <button role="tab" aria-selected="true" data-agent="claude">Claude Code</button>
+              <button role="tab" aria-selected="false" data-agent="codex">Codex</button>
+              <button role="tab" aria-selected="false" data-agent="anti">Antigravity</button>
+              <span class="ink"></span>
+            </div>
+            <div class="panel" data-agentp="claude"><ol class="agent-steps">
+              <li><div><b>Claude Code 설치</b><span>Claude 데스크톱 앱(<a href="https://claude.ai/download" target="_blank" rel="noopener">claude.ai/download</a>)을 설치하고 <b>Code</b> 탭을 열어요. 터미널을 쓰신다면 <a href="https://docs.claude.com/en/docs/claude-code/setup" target="_blank" rel="noopener">공식 설치 안내</a>의 한 줄 명령으로도 돼요.</span></div></li>
+              <li><div><b>작업 폴더 고르기</b><span>'문서' 폴더처럼 찾기 쉬운 곳을 골라요. 여기에 길잡이 폴더가 생겨요.</span></div></li>
+              <li><div><b>아래 문구를 붙여 넣고 Enter</b><span>명령을 실행해도 되는지 물으면 내용을 보고 허용해 주세요.</span></div></li>
+            </ol></div>
+            <div class="panel" data-agentp="codex" hidden><ol class="agent-steps">
+              <li><div><b>Codex 설치</b><span>Codex 앱을 쓰거나, Node.js 가 있다면 터미널에서 <kbd>npm install -g @openai/codex</kbd> 뒤 <kbd>codex</kbd> 를 실행하고 ChatGPT 계정으로 로그인해요. (<a href="https://developers.openai.com/codex" target="_blank" rel="noopener">공식 안내</a>)</span></div></li>
+              <li><div><b>작업 폴더에서 열기</b><span>'문서' 폴더에서 Codex 를 열어요.</span></div></li>
+              <li><div><b>아래 문구를 붙여 넣고 Enter</b><span>명령 실행 승인을 물으면 내용을 보고 허용해 주세요.</span></div></li>
+            </ol></div>
+            <div class="panel" data-agentp="anti" hidden><ol class="agent-steps">
+              <li><div><b>Antigravity 설치</b><span><a href="https://antigravity.google/download" target="_blank" rel="noopener">antigravity.google/download</a> 에서 내 컴퓨터용을 받아 설치하고 Google 계정으로 로그인해요.</span></div></li>
+              <li><div><b>폴더 열기</b><span><b>Open Folder</b> 로 '문서' 폴더를 열어요.</span></div></li>
+              <li><div><b>에이전트 창에 붙여 넣기</b><span>에이전트가 세운 계획과 실행할 명령을 확인하고 진행(Accept)을 눌러 주세요.</span></div></li>
+            </ol></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>③ 이 문구를 통째로 복사해 붙여 넣기</h3>
+          <div class="code"><span class="label">AI 에게 보낼 문구</span><button class="copy" data-copy="#prompt"><svg><use href="#i-copy"/></svg><span>복사</span></button><pre class="wrapped" id="prompt"></pre></div>
+          <div class="note"><svg><use href="#i-shield"/></svg><div>AI 가 중간에 <b>Cloudflare 로그인</b>을 하라고 하면 열린 브라우저에서 로그인(없으면 무료 가입)하고 <b>Allow</b> 를 눌러 주세요. 비밀번호·인증키는 AI 에게 채팅으로 알려 주지 마세요. 관리자 비밀번호는 다 만든 뒤 사이트 화면에서 직접 정해요.</div></div>
+          <p style="margin:14px 0 0;color:var(--muted)">끝나면 AI 가 <b>https://&lt;영어 이름&gt;.pages.dev</b> 주소를 알려 줘요. 그다음은 <a href="#first">처음 설정</a>으로!</p>
+        </div>
+      </div>
+
+      <!-- 직접 따라 하기 -->
+      <div class="panel" data-for="manual" hidden>
+        <div class="os" role="group" aria-label="컴퓨터 종류"><button data-os="win" aria-pressed="true"><svg width="16" height="16"><use href="#i-win"/></svg>Windows</button><button data-os="mac" aria-pressed="false"><svg width="16" height="16"><use href="#i-apple"/></svg>Mac</button></div>
+        <div class="progress"><div class="track"><div class="fill" id="pFill"></div></div><b id="pText">0 / 6 단계</b><button class="reset" id="pReset">처음부터</button></div>
+        <ol class="steps" id="steps">
+          <li class="step" data-step="1"><button class="tick" aria-label="1단계 다 했어요"><svg><use href="#i-check"/></svg>1</button><div>
+            <h3>Node.js 설치하기</h3>
+            <p>길잡이를 설치하는 데 쓰는 무료 프로그램이에요. <a href="https://nodejs.org/ko" target="_blank" rel="noopener">nodejs.org</a> 에서 <b>LTS(권장)</b> 를 받아 '다음'만 눌러 설치해요.</p>
+            <p class="win-only">설치 확인: <kbd>시작</kbd> 단추 → <b>cmd</b> 입력 → '명령 프롬프트'를 열고 아래를 붙여 넣어 Enter. <b>v20</b> 처럼 숫자가 나오면 성공!</p>
+            <p class="mac-only">설치 확인: <kbd>⌘</kbd>+<kbd>Space</kbd> → <b>터미널</b> 입력 → 아래를 붙여 넣어 Enter. <b>v20</b> 처럼 숫자가 나오면 성공!</p>
+            <div class="code"><button class="copy" data-copy-text="node -v"><svg><use href="#i-copy"/></svg><span>복사</span></button><pre>node -v</pre></div>
+            <details class="stuck"><summary>막히면 여기</summary><div>'node' 은(는) 내부 또는 외부 명령이 아닙니다 → 설치 뒤 <b>명령 프롬프트(터미널)를 닫고 새로 열어</b> 다시 해 보세요. 그래도 안 되면 컴퓨터를 다시 시작해요. 학교 PC 라 설치가 막혔다면 정보 담당 선생님께 'Node.js LTS 설치'를 부탁하세요.</div></details>
+          </div></li>
+          <li class="step" data-step="2"><button class="tick" aria-label="2단계 다 했어요"><svg><use href="#i-check"/></svg>2</button><div>
+            <h3>Cloudflare 무료 가입하기</h3>
+            <p><a href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noopener">dash.cloudflare.com/sign-up</a> 에서 이메일로 가입하고, 받은 메일의 인증 링크를 눌러요. 결제 정보는 넣지 않아도 돼요. 학교 업무용이라면 <b>학교 메일</b>로 가입하고 담당자가 바뀔 때 넘겨주세요.</p>
+            <details class="stuck"><summary>막히면 여기</summary><div>인증 메일이 안 오면 스팸함을 확인해요. 가입 뒤 나오는 '도메인 추가' 같은 화면은 그냥 닫아도 돼요. 길잡이는 Cloudflare 가 주는 무료 주소(…pages.dev)를 써요.</div></details>
+          </div></li>
+          <li class="step" data-step="3"><button class="tick" aria-label="3단계 다 했어요"><svg><use href="#i-check"/></svg>3</button><div>
+            <h3>길잡이 내려받기</h3>
+            <ol><li><a href="https://github.com/zkxmdydy106-ai/woori-gil/archive/refs/heads/main.zip">이 링크(ZIP 받기)</a> 를 눌러 내려받아요.</li><li>받은 <b>woori-gil-main.zip</b> 을 '문서' 폴더로 옮기고 <span class="win-only">마우스 오른쪽 → <b>압축 풀기</b></span><span class="mac-only">두 번 눌러 압축을 풀어요</span>.</li><li><b>woori-gil-main</b> 폴더가 생기면 성공!</li></ol>
+            <details class="stuck"><summary>Git 을 쓸 줄 안다면</summary><div><div class="code"><button class="copy" data-copy-text="git clone https://github.com/zkxmdydy106-ai/woori-gil.git"><svg><use href="#i-copy"/></svg><span>복사</span></button><pre>git clone https://github.com/zkxmdydy106-ai/woori-gil.git</pre></div>Git 으로 받으면 나중에 <kbd>git pull</kbd> 한 줄로 새 버전을 받을 수 있어요.</div></details>
+          </div></li>
+          <li class="step" data-step="4"><button class="tick" aria-label="4단계 다 했어요"><svg><use href="#i-check"/></svg>4</button><div>
+            <h3>그 폴더에서 명령 창 열기</h3>
+            <p class="win-only"><b>woori-gil-main</b> 폴더 안으로 들어가서, 위쪽 <b>주소창</b>을 한 번 누르고 <b>cmd</b> 라고 쓴 뒤 Enter. 검은 창이 그 폴더에서 열려요.</p>
+            <p class="mac-only">Finder 에서 <b>woori-gil-main</b> 폴더를 <kbd>control</kbd>+클릭(오른쪽 클릭) → <b>폴더에서 새로운 터미널</b>.</p>
+            <details class="stuck"><summary>막히면 여기</summary><div>열린 창의 맨 아래 줄 끝이 <b>woori-gil-main&gt;</b> (Mac 은 woori-gil-main %) 로 끝나면 제자리예요. 아니라면 창을 닫고 다시 해요. 폴더 안에 또 woori-gil-main 폴더가 있다면 한 번 더 들어가요.</div></details>
+          </div></li>
+          <li class="step" data-step="5"><button class="tick" aria-label="5단계 다 했어요"><svg><use href="#i-check"/></svg>5</button><div>
+            <h3>설치 명령 한 줄</h3>
+            <p>아래를 복사해 붙여 넣고 Enter. 그다음은 화면이 묻는 대로 하면 돼요.</p>
+            <div class="code"><button class="copy" data-copy-text="node setup.mjs"><svg><use href="#i-copy"/></svg><span>복사</span></button><pre>node setup.mjs</pre></div>
+            <ol><li><b>학교 이름은?</b> → 예: 한빛고등학교</li><li><b>사이트 영어 이름은?</b> → 예: hanbit-gil (주소가 https://hanbit-gil.pages.dev 가 돼요)</li><li><b>브라우저가 열리면</b> Cloudflare 에 로그인하고 <b>Allow</b></li><li>5~10분 기다리면 <b>✔ 다 됐어요!</b> 와 주소가 나와요.</li></ol>
+            <details class="stuck"><summary>막히면 여기</summary><div><b>사이트 이름을 쓸 수 없어요</b> → 다른 사람이 쓰는 이름이에요. 다른 영어 이름으로 다시 실행해요. <b>npm install 이 실패</b> → 인터넷 연결 확인 뒤 다시. 학교 망에서 막히면 휴대폰 테더링으로 해 보세요. <b>로그인이 안 끝나요</b> → 창을 닫고 <kbd>npx wrangler logout</kbd> 뒤 다시 <kbd>node setup.mjs</kbd>. 중간에 멈췄다면 같은 명령을 다시 실행해도 괜찮아요(만든 것은 다시 만들지 않아요).</div></details>
+          </div></li>
+          <li class="step" data-step="6"><button class="tick" aria-label="6단계 다 했어요"><svg><use href="#i-check"/></svg>6</button><div>
+            <h3>주소를 열고 처음 설정</h3>
+            <p>나온 주소를 브라우저로 열면 '처음 설정' 화면이 나와요. 아래 <a href="#first">처음 설정</a>을 보고 마무리해요. 🎉</p>
+          </div></li>
+        </ol>
+      </div>
+
+      <!-- 구글 시트 -->
+      <div class="panel" data-for="sheet" hidden>
+        <div class="agent-grid">
+          <div>
+            <ol class="steps">
+              <li class="step"><span class="tick" aria-hidden="true">1</span><div><h3>시연 사이트에서 '우리 학교도 만들기'</h3><p>시연 사이트 위쪽 초록 띠의 <b>우리 학교도 만들기</b> 를 눌러요.</p><a class="btn sm primary" href="../#/setup" target="_blank" rel="noopener"><svg><use href="#i-arrow"/></svg>만들기 화면 열기</a></div></li>
+              <li class="step"><span class="tick" aria-hidden="true">2</span><div><h3>새 구글 시트 + 코드 붙여 넣기</h3><p>학교 구글 계정으로 새 시트를 만들고 <b>확장 프로그램 → Apps Script</b> 에 화면의 코드를 통째로 붙여 넣어 저장해요.</p></div></li>
+              <li class="step"><span class="tick" aria-hidden="true">3</span><div><h3>웹 앱으로 배포</h3><p><b>배포 → 새 배포 → 웹 앱</b>, 실행: <b>나</b>, 액세스: <b>모든 사용자</b>. 나온 웹 앱 URL 을 복사해요.</p></div></li>
+              <li class="step"><span class="tick" aria-hidden="true">4</span><div><h3>학교 정보 넣고 연결</h3><p>웹 앱 URL·학교 이름·접속 코드·관리자 비밀번호를 넣으면 끝. 공유 주소와 QR 이 나와요.</p></div></li>
+            </ol>
+          </div>
+          <div>
+            <div class="frame"><div class="bar"><i></i><i></i><i></i><span>우리 학교도 만들기</span></div><img src="img/setup.jpg" alt="구글 시트로 만들기 화면" data-zoom></div>
+            <div class="note amber"><svg><use href="#i-alert"/></svg><div><b>알아 두세요</b> — 구글 시트 방식은 열고 저장할 때마다 1~3초씩 걸리고, 여러 선생님이 동시에 고치면 차례를 기다려요. 검색 결과 화면 그림, 아이폰용 한글 쪽 그림, 웹앱 로그인 판별, 급식·학사일정은 빠져요. 나중에 Cloudflare 로 옮길 수 있어요(관리자 → 자료 내보내기).</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 처음 설정 ───────── -->
+<section id="first">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="no">03 · 처음 설정</span><h2>주소를 열면 두 가지만 정해요</h2><p>설치가 끝난 주소를 열면 '처음 설정' 화면이 나와요. 딱 한 번만 하면 돼요.</p></div>
+    <div class="sec-grid reveal">
+      <div class="sec-item"><span class="si"><svg><use href="#i-key"/></svg></span><div><b>학교 접속 코드</b><p>선생님들이 처음 들어올 때 넣는 코드예요(4자 이상). 교무회의에서 알려 주세요. 한 번 넣으면 그 기기에서는 다시 묻지 않아요.</p></div></div>
+      <div class="sec-item"><span class="si"><svg><use href="#i-lock"/></svg></span><div><b>관리자 비밀번호</b><p>8자 이상. 승인·신고 처리, 분류·도구 관리에 써요. <b>관리자(1~2명)만</b> 알아야 해요.</p></div></div>
+      <div class="sec-item"><span class="si"><svg><use href="#i-file"/></svg></span><div><b>예시 안내·서식 넣기 (선택)</b><p>결석계 제출, 출장 여비 처리 같은 예시 문서와 서식이 들어가요. 우리 학교에 맞게 고치거나 지우세요. 가상 학교 규정집은 넣지 않아요.</p></div></div>
+      <div class="sec-item"><span class="si"><svg><use href="#i-users"/></svg></span><div><b>선생님들께 알리기</b><p>관리 → 학교 설정의 <b>주소·QR 보기</b>를 교무회의 화면에 띄우거나, 주소와 접속 코드를 메신저로 보내요. 휴대폰은 '홈 화면에 추가'하면 앱처럼 열린다고 알려 주세요. 처음 쓰는 분은 사이트 첫 화면의 <b>사용 방법</b>을 보면 돼요.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 관리자 ───────── -->
+<section id="admin">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="no">04 · 관리자</span><h2>관리자는 '확인'만 해요</h2><p>선생님들이 올리고 고친 내용은 <b>바로 모두에게 보여요</b>. 관리자는 메뉴 <b>관리</b>에서 비밀번호를 넣고 확인·되돌리기만 하면 돼요.</p></div>
+    <div class="tabs reveal" role="tablist" aria-label="관리자 화면" id="adminTabs">
+      <button role="tab" aria-selected="true" data-admin="pending">승인 대기</button>
+      <button role="tab" aria-selected="false" data-admin="reports">신고</button>
+      <button role="tab" aria-selected="false" data-admin="cats">분류</button>
+      <button role="tab" aria-selected="false" data-admin="tools">도구</button>
+      <button role="tab" aria-selected="false" data-admin="sites">사이트</button>
+      <button role="tab" aria-selected="false" data-admin="settings">학교 설정</button>
+      <span class="ink"></span>
+    </div>
+    <div class="admin reveal">
+      <div id="adminText"></div>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i><span id="adminUrl">관리 · 승인 대기</span></div><img id="adminImg" src="img/admin-pending.jpg" alt="관리자 화면" data-zoom></div>
+    </div>
+    <div class="routine reveal">
+      <div class="card"><b>매주 한 번 (5분)</b><p>승인 대기·신고 확인. 이상한 것만 되돌리고 나머지는 승인.</p></div>
+      <div class="card"><b>학기마다</b><p>규정 개정이 있었는지 확인하고, 옛 파일은 '바꾸기'로 새 판 올리기. 백업 한 번.</p></div>
+      <div class="card"><b>담당자가 바뀔 때</b><p>관리자 비밀번호·접속 코드 바꾸기, Cloudflare 계정 넘겨주기.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 선생님 안내 ───────── -->
+<section id="teachers">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="no">05 · 선생님 안내</span><h2>선생님들은 이렇게 써요</h2><p>로그인 없이 바로 써요. 아래를 교무회의 자료로 그대로 보여 주셔도 좋아요.</p></div>
+    <div class="tgrid reveal">
+      <div class="tcard"><img src="img/results.jpg" alt="검색 결과" data-zoom><div><b>물어보듯 찾기</b><p>'결석', '출장비'처럼 치면 문서·서식·도구가 함께. 초성·영어 자판 실수도 알아들어요.</p></div></div>
+      <div class="tcard"><img src="img/doc-pane.jpg" alt="문서와 서식" data-zoom><div><b>읽으면서 바로 쓰기</b><p>문서 옆에 서식이 떠요. 쓰고 '바로 인쇄'. 입력은 그 PC 에만 저장돼요.</p></div></div>
+      <div class="tcard"><img src="img/propose.jpg" alt="문서 고치기" data-zoom><div><b>틀린 곳은 바로 고치기</b><p>'고치기' → 칸에 쓰고 저장. 바로 반영되고 관리자가 나중에 확인해요.</p></div></div>
+      <div class="tcard"><img src="img/fav.jpg" alt="즐겨찾기" data-zoom><div><b>즐겨찾기</b><p>내 업무 문서·서식의 ☆ 를 누르면 '즐겨찾기'와 첫 화면에 모여요.</p></div></div>
+      <div class="tcard"><img src="img/sites.jpg" alt="유용한 사이트" data-zoom><div><b>수업 자료·사이트</b><p>학습지·웹앱을 올리고, 교과별 유용한 사이트를 누구나 추가해요.</p></div></div>
+      <div class="tcard"><img src="img/gongmun.jpg" alt="공문 작성" data-zoom><div><b>공문·학급 도구</b><p>공문 기안 도우미, 자리 바꾸기·모둠 뽑기 같은 학급 도구도 한곳에.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 업데이트·백업 ───────── -->
+<section id="update">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="no">06 · 업데이트·백업</span><h2>AI 에게 이렇게 부탁하세요</h2><p>설치할 때 쓴 AI(Claude Code·Codex·Antigravity)를 <b>설치한 그 컴퓨터</b>에서 열고, 아래 문구를 복사해 붙여 넣으면 돼요. 업데이트해도 선생님들이 올린 문서·파일은 그대로예요.</p></div>
+    <div class="ask-grid reveal">
+      <div class="card ask"><div class="ask-h"><span class="pi"><svg><use href="#i-refresh"/></svg></span><div><h3>새 버전으로 업데이트</h3><span>새 기능이 나왔을 때 · 몇 달에 한 번</span></div></div>
+        <div class="code"><button class="copy" data-copy="#askUpdate"><svg><use href="#i-copy"/></svg><span>복사</span></button><pre class="wrapped" id="askUpdate">'문서' 폴더에 있는 우리 학교 길잡이 폴더(woori-gil 또는 woori-gil-main)를 찾아서, 그 안의 AGENTS.md 안내대로 길잡이를 새 버전으로 업데이트해 줘.
+- 선생님들이 올린 문서와 파일은 그대로 두어야 해.
+- ZIP 으로 받은 폴더라면 새 버전을 받은 뒤 gil.config.json 과 cloudflare/wrangler.toml 을 옮겨서 해 줘.
+- 끝나면 사이트 주소와 무엇이 바뀌었는지 쉬운 말로 알려 줘.</pre></div>
+      </div>
+      <div class="card ask"><div class="ask-h"><span class="pi"><svg><use href="#i-db"/></svg></span><div><h3>자료 백업</h3><span>학기마다 한 번 추천</span></div></div>
+        <div class="code"><button class="copy" data-copy="#askBackup"><svg><use href="#i-copy"/></svg><span>복사</span></button><pre class="wrapped" id="askBackup">'문서' 폴더에 있는 우리 학교 길잡이 폴더에서 AGENTS.md 안내대로 길잡이 자료를 백업해 줘.
+- 백업 파일이 어느 폴더에 무슨 이름으로 저장됐는지 알려 줘.
+- 그 파일을 학교 공유 드라이브에도 올려 두면 좋은지 알려 줘.</pre></div>
+        <p class="ask-note">관리자 화면의 <b>학교 설정 → 자료 내보내기</b>로도 직접 받을 수 있어요.</p>
+      </div>
+      <div class="card ask"><div class="ask-h"><span class="pi"><svg><use href="#i-book"/></svg></span><div><h3>오늘의 급식·학사일정 넣기</h3><span>선택 · 나이스 인증키 필요</span></div></div>
+        <div class="code"><button class="copy" data-copy="#askNeis"><svg><use href="#i-copy"/></svg><span>복사</span></button><pre class="wrapped" id="askNeis">우리 학교 길잡이 첫 화면에 오늘의 급식과 학사일정을 넣고 싶어. AGENTS.md 안내대로 도와줘.
+- 우리 학교의 시도교육청 코드와 학교 행정표준코드를 찾는 방법을 알려 줘.
+- 나이스 인증키는 채팅으로 보내지 않을게. 내가 직접 넣어야 하는 단계가 오면 무엇을 어디에 붙여 넣으면 되는지 차례대로 알려 줘.</pre></div>
+        <p class="ask-note">인증키는 <a href="https://open.neis.go.kr" target="_blank" rel="noopener">나이스 교육정보 개방 포털</a>에서 무료로 받아요. 키는 AI 에게 보내지 말고 화면 안내에 따라 직접 붙여 넣어요.</p>
+      </div>
+      <div class="card ask"><div class="ask-h"><span class="pi"><svg><use href="#i-alert"/></svg></span><div><h3>사이트가 이상할 때</h3><span>안 열리거나 오류가 날 때</span></div></div>
+        <div class="code"><button class="copy" data-copy="#askFix"><svg><use href="#i-copy"/></svg><span>복사</span></button><pre class="wrapped" id="askFix">우리 학교 길잡이 사이트가 이상해: (여기에 어떤 문제인지 적기, 예: 주소가 안 열려요)
+'문서' 폴더의 길잡이 폴더와 AGENTS.md 를 보고 원인을 찾아 줘.
+- 학교 자료가 지워지거나 바뀌는 일은 하기 전에 꼭 나에게 먼저 물어봐 줘.
+- 무엇이 문제였고 어떻게 고쳤는지 쉬운 말로 알려 줘.</pre></div>
+      </div>
+    </div>
+    <details class="stuck reveal" style="margin-top:16px"><summary>AI 없이 직접 하고 싶다면 (명령어)</summary><div>설치한 길잡이 폴더에서 명령 창을 열고 — 업데이트: <kbd>git pull</kbd> 뒤 <kbd>node setup.mjs --update</kbd> · 백업: <kbd>node setup.mjs --backup</kbd> · 급식·학사일정: <kbd>node setup.mjs --neis</kbd></div></details>
+  </div>
+</section>
+
+<!-- ───────── 보안 ───────── -->
+<section id="security">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="no">07 · 보안과 개인정보</span><h2>꼭 알아 둘 것</h2><p>길잡이는 '학교 업무 자료'를 위한 곳이에요. 학생·교직원 개인정보를 모으는 곳이 아니에요.</p></div>
+    <div class="sec-grid reveal">
+      <div class="sec-item warn"><span class="si"><svg><use href="#i-alert"/></svg></span><div><b>개인정보는 올리지 않아요</b><p>학생·교직원 이름, 연락처, 성적·출결·상담 내용, 주민등록번호는 문서·파일 어디에도 넣지 않아요. 주민등록번호로 보이는 글은 저장이 막히고, 연락처 등은 경고해요.</p></div></div>
+      <div class="sec-item warn"><span class="si"><svg><use href="#i-file"/></svg></span><div><b>올린 파일은 '주소를 아는 사람'이 열 수 있어요</b><p>엑셀 화면 보기·미리보기를 위해 파일마다 추측할 수 없는 긴 주소가 있어요. 그 주소가 밖으로 퍼지지 않게 하고, 외부에 공개되면 안 되는 파일은 올리지 마세요.</p></div></div>
+      <div class="sec-item"><span class="si"><svg><use href="#i-key"/></svg></span><div><b>접속 코드와 관리자 비밀번호는 따로</b><p>접속 코드는 선생님 모두, 관리자 비밀번호는 관리자만. 틀린 시도가 많으면 10분 동안 막혀요. 담당자가 바뀌면 관리자 → 학교 설정에서 바꿔요.</p></div></div>
+      <div class="sec-item"><span class="si"><svg><use href="#i-shield"/></svg></span><div><b>Cloudflare 계정 지키기</b><p>계정에 2단계 인증(Authenticator 앱)을 켜 두세요. 계정은 개인보다 학교 메일로 만들고, 인수인계 문서에 남겨 두세요.</p></div></div>
+      <div class="sec-item"><span class="si"><svg><use href="#i-lock"/></svg></span><div><b>인증키·비밀번호는 파일·채팅에 적지 않아요</b><p>나이스 인증키는 Cloudflare 비밀 설정으로만 들어가요. AI 도구에도 채팅으로 알려 주지 마세요. 설치 폴더의 설정 파일(gil.config.json 등)은 공개 저장소에 올리지 않아요.</p></div></div>
+      <div class="sec-item"><span class="si"><svg><use href="#i-users"/></svg></span><div><b>학생 정보는 기기 밖으로 나가지 않는 도구만</b><p>학급 도구(자리 바꾸기 등)는 학생 이름을 그 기기 브라우저 안에서만 써요. 학생 정보를 서버로 보내는 웹앱은 '도구'에 올리지 마세요.</p></div></div>
+      <div class="sec-item"><span class="si"><svg><use href="#i-flag"/></svg></span><div><b>누구나 고치니까, 기록이 남아요</b><p>고친 부분은 노란색으로 보이고 관리자가 이전 내용으로 되돌릴 수 있어요. 문제 있는 글은 '신고'를 누르면 관리자에게 가요.</p></div></div>
+      <div class="sec-item"><span class="si"><svg><use href="#i-db"/></svg></span><div><b>자료는 우리 학교 계정에</b><p>문서·파일은 그 학교의 Cloudflare 계정(또는 학교 구글 시트)에만 저장돼요. 만든 사람이나 다른 학교는 볼 수 없어요. 정기적으로 백업하세요.</p></div></div>
+    </div>
+    <div class="tbl reveal"><table class="where">
+      <thead><tr><th>무엇이</th><th>어디에 저장되나요</th><th>누가 볼 수 있나요</th></tr></thead>
+      <tbody>
+        <tr><td>문서·분류·도구·사이트 목록</td><td>학교 Cloudflare D1 (구글 시트 방식은 학교 시트)</td><td>접속 코드를 아는 선생님</td></tr>
+        <tr><td>올린 파일 (한글·PDF·엑셀·이미지·웹앱)</td><td>학교 Cloudflare KV</td><td>선생님 + 파일 주소를 아는 사람</td></tr>
+        <tr><td>서식에 입력한 내용, 즐겨찾기</td><td>그 선생님의 PC 브라우저</td><td>그 PC 를 쓰는 사람 (공용 PC 는 '내 양식 지우기')</td></tr>
+        <tr><td>학급 도구의 학생 이름</td><td>그 기기 브라우저</td><td>그 기기를 쓰는 사람만</td></tr>
+        <tr><td>관리자 비밀번호</td><td>되돌릴 수 없는 형태(해시)로만 저장</td><td>아무도 원래 비밀번호를 볼 수 없음</td></tr>
+        <tr><td>나이스 인증키</td><td>Cloudflare 비밀 설정</td><td>화면·파일에서 볼 수 없음</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ───────── 자주 묻는 것 ───────── -->
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="no">08 · 자주 묻는 것</span><h2>막히거나 궁금할 때</h2></div>
+    <div class="faq reveal">
+      <details><summary>정말 무료인가요?</summary><div class="ans">네. Cloudflare 무료 요금제(하루 요청 10만 번, 데이터베이스 5GB 등) 안에서 한 학교가 쓰기에 충분해요. 결제 정보도 넣지 않아요. AI 도구(Claude·ChatGPT)는 각자 요금제가 필요할 수 있지만, 설치할 때 한 번만 쓰면 돼요.</div></details>
+      <details><summary>컴퓨터를 잘 몰라도 할 수 있나요?</summary><div class="ans">AI 에게 맡기기를 추천해요. 문구를 붙여 넣고, Cloudflare 로그인 창에서 'Allow' 만 누르면 돼요. 직접 하더라도 복사·붙여 넣기 두 번이에요. 학교 정보 담당 선생님과 같이 하면 10분이면 끝나요.</div></details>
+      <details><summary>아이폰에서 한글 파일이 안 열려요</summary><div class="ans">아이폰·아이패드(사파리)는 한글 편집기를 열 수 없어서, PC 에서 한 번 연 파일은 '쪽 그림'으로 보여 줘요. 기본 한글 서식은 간단 편집기로 쓰고 인쇄할 수 있어요. 파일 받기 → 한컴오피스 Viewer 앱으로 열 수도 있어요.</div></details>
+      <details><summary>웹앱이 길잡이 안에서 로그인이 안 돼요</summary><div class="ans">구글 로그인 같은 로그인은 다른 사이트 안(옆 칸)에서 브라우저가 막아요. 길잡이가 알아서 '새 창으로 열기'를 보여 주고, 위쪽 한 줄 안내의 '새 창으로 열기'를 눌러도 돼요. 도구를 올릴 때 '로그인이 필요해요'를 체크해 주세요.</div></details>
+      <details><summary>사이트 주소를 바꾸거나 학교 도메인으로 쓰고 싶어요</summary><div class="ans">Cloudflare 화면 → Workers &amp; Pages → 길잡이 프로젝트 → Custom domains 에서 학교 도메인을 연결할 수 있어요. 영어 이름 자체를 바꾸려면 새 이름으로 다시 설치하고, 옛 사이트 관리자 화면의 '자료 내보내기' → 새 사이트 '자료 가져오기'로 옮겨요.</div></details>
+      <details><summary>담당자가 바뀌면 어떻게 넘겨주나요?</summary><div class="ans">① Cloudflare 계정(가능하면 학교 메일 계정) ② 설치 폴더(gil.config.json, cloudflare/wrangler.toml 포함) ③ 관리자 비밀번호를 넘기고, 받은 분이 관리자 → 학교 설정에서 비밀번호를 새로 바꿔요.</div></details>
+      <details><summary>여러 학교가 한 길잡이를 같이 쓸 수 있나요?</summary><div class="ans">학교마다 따로 만드는 걸 권해요. 자료가 섞이지 않고, 각 학교가 자기 자료를 소유해요. 교육청·연수 단위 공통 자료는 교육청 자료 검색 도구를 함께 쓰면 좋아요.</div></details>
+      <details><summary>오류를 찾았거나 기능을 제안하고 싶어요</summary><div class="ans"><a href="https://github.com/zkxmdydy106-ai/woori-gil/issues" target="_blank" rel="noopener">GitHub 의 Issues</a> 에 남겨 주세요. 학교 이름·개인정보는 빼고 화면 사진과 함께 알려 주시면 고치기 쉬워요.</div></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="f1"><b>우리학교 길잡이</b><span class="bar"></span><span>만든 사람 충남교육청 수학교사 김요한</span><span class="bar"></span><span>NWEC 26 바이브코딩 공모전 출품작에서 시작</span></div>
+    <nav class="f2" aria-label="바로 가기">
+      <a href="../" target="_blank" rel="noopener">시연 사이트</a><a href="#install">설치 안내</a><a href="#admin">관리자 안내</a><a href="#faq">자주 묻는 것</a><a href="https://github.com/zkxmdydy106-ai/woori-gil/issues" target="_blank" rel="noopener">문제 알리기</a><a href="https://github.com/zkxmdydy106-ai/woori-gil" target="_blank" rel="noopener">GitHub 저장소</a><a href="#security">개인정보·보안 안내</a><a href="https://github.com/zkxmdydy106-ai/woori-gil/blob/main/LICENSE" target="_blank" rel="noopener">사용 조건 (CC BY-NC 4.0)</a>
+    </nav>
+    <div class="f3"><span>우리 학교에만 있는 자료를, 우리 학교 선생님이 함께 · 교육 목적 비영리 무료 공개</span><span>© 2026 우리학교 길잡이 · 충남교육청 수학교사 김요한</span></div>
+  </div>
+</footer>
+
+<button class="totop" id="toTop" aria-label="맨 위로"><svg><use href="#i-up"/></svg></button>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const store = { get(k, d) { try { const v = localStorage.getItem('gilguide.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem('gilguide.' + k, JSON.stringify(v)); } catch (e) {} } };
+  let tt; const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 1800); };
+
+  // 단추를 누르면 물결
+  document.addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('.btn, .copy'); if (!b) return;
+    const r = b.getBoundingClientRect(), s = Math.max(r.width, r.height), d = document.createElement('span');
+    d.className = 'ripple'; d.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s / 2}px;top:${e.clientY - r.top - s / 2}px`;
+    b.appendChild(d); setTimeout(() => d.remove(), 600);
+  });
+
+  // 복사 (클립보드가 막히면 골라 두기)
+  async function copy(text, btn) {
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {
+      const ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select();
+      try { ok = document.execCommand('copy'); } catch (er) {} ta.remove();
+    }
+    if (btn) { const sp = btn.querySelector('span'), old = sp.textContent; btn.classList.add('ok'); sp.textContent = ok ? '복사됨' : '직접 골라 복사'; btn.querySelector('use').setAttribute('href', ok ? '#i-check' : '#i-copy'); setTimeout(() => { btn.classList.remove('ok'); sp.textContent = old; btn.querySelector('use').setAttribute('href', '#i-copy'); }, 1600); }
+    toast(ok ? '복사했어요. 붙여 넣으세요 (Ctrl+V / ⌘+V)' : '복사가 막혔어요. 글자를 끌어서 골라 복사해 주세요');
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.copy'); if (!b) return;
+    const text = b.dataset.copyText != null ? b.dataset.copyText : ($(b.dataset.copy) || {}).textContent || '';
+    copy(text, b);
+  });
+
+  // 탭 밑줄 미끄러지기
+  function inkTo(tabs) { const sel = $('[aria-selected="true"]', tabs), ink = $('.ink', tabs); if (!sel || !ink) return; ink.style.left = sel.offsetLeft + 'px'; ink.style.width = sel.offsetWidth + 'px'; }
+  addEventListener('resize', () => $$('.tabs').forEach(inkTo));
+
+  // 둘러보기
+  const tourImg = $('#tourImg');
+  $$('#tourList button').forEach((b) => b.addEventListener('click', () => {
+    $$('#tourList button').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    tourImg.classList.add('swap');
+    const next = new Image(); next.src = 'img/' + b.dataset.img + '.jpg';
+    next.onload = next.onerror = () => { tourImg.src = next.src; tourImg.alt = b.querySelector('b').textContent; $('#tourUrl').textContent = '길잡이 · ' + b.querySelector('b').textContent; requestAnimationFrame(() => tourImg.classList.remove('swap')); };
+    $('#tourCap').textContent = b.dataset.cap;
+  }));
+
+  // 방법 고르기
+  function choose(p, scroll) {
+    $$('.path').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.path === p)));
+    $$('.install > .panel').forEach((x) => { x.hidden = x.dataset.for !== p; });
+    store.set('path', p); inkTo($('#agentTabs'));
+    if (scroll) $('.install').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $$('.path').forEach((b) => b.addEventListener('click', () => choose(b.dataset.path, true)));
+  choose(store.get('path', 'ai'), false);
+
+  // AI 고르기
+  function agent(a) { $$('#agentTabs button').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.agent === a))); $$('[data-agentp]').forEach((x) => { x.hidden = x.dataset.agentp !== a; }); inkTo($('#agentTabs')); store.set('agent', a); }
+  $$('#agentTabs button').forEach((b) => b.addEventListener('click', () => agent(b.dataset.agent)));
+  agent(store.get('agent', 'claude'));
+
+  // AI 에게 보낼 문구: 학교 이름·영어 이름을 넣으면 바로 바뀐다
+  const fS = $('#fSchool'), fN = $('#fName');
+  fS.value = store.get('school', ''); fN.value = store.get('name', '');
+  const NAME_OK = /^[a-z0-9][a-z0-9-]{1,40}[a-z0-9]$/;
+  function prompt() {
+    const s = fS.value.trim() || '○○고등학교', n = fN.value.trim().toLowerCase() || '○○-gil';
+    $('#urlPrev').textContent = 'https://' + n + '.pages.dev';
+    $('#prompt').textContent =
+`아래 GitHub 저장소로 우리 학교 '길잡이' 사이트를 만들어 줘.
+https://github.com/zkxmdydy106-ai/woori-gil
+
+- 학교 이름: ${s}
+- 사이트 영어 이름: ${n}  (주소: https://${n}.pages.dev)
+
+해 줄 일
+1. 이 컴퓨터의 '문서' 폴더에 저장소를 내려받아 줘. (git 이 없으면 ZIP 으로 받아서 풀어 줘)
+2. 그 폴더의 AGENTS.md 안내대로 설치해 줘:  node setup.mjs --school "${s}" --name ${n}
+3. Node.js 가 없거나 낮으면, 설치해도 되는지 나에게 먼저 묻고 설치해 줘.
+4. Cloudflare 로그인 창(브라우저)이 열리면 나에게 알려 줘. 내가 로그인하고 Allow 를 누를게.
+5. 사이트 이름이 이미 쓰이고 있으면 비슷한 이름을 제안하고 다시 해 줘.
+6. 비밀번호·인증키·접속 코드는 채팅으로 묻지 말아 줘. 관리자 비밀번호는 내가 사이트에서 직접 정할게.
+7. 다 끝나면 사이트 주소와 다음에 할 일(처음 설정)을 쉬운 말로 알려 줘.`;
+  }
+  function check(show) {
+    let ok = true;
+    const n = fN.value.trim().toLowerCase();
+    if (fN.value !== fN.value.toLowerCase()) fN.value = fN.value.toLowerCase();
+    $('#eName').textContent = n && !NAME_OK.test(n) ? '영어 소문자·숫자·- 만, 3~42자로 써 주세요 (예: hanbit-gil)' : '';
+    fN.classList.toggle('bad', !!(show && n && !NAME_OK.test(n)));
+    if (n && !NAME_OK.test(n)) ok = false;
+    store.set('school', fS.value.trim()); store.set('name', n);
+    prompt(); return ok;
+  }
+  fS.addEventListener('input', () => check(false));
+  fN.addEventListener('input', () => check(false));
+  fN.addEventListener('blur', () => check(true));
+  // 학교 이름을 쓰면 영어 이름 칸이 비어 있을 때 예시를 보여 준다
+  check(false);
+  $('.copy[data-copy="#prompt"]').addEventListener('click', (e) => {
+    if (!fS.value.trim() || !fN.value.trim() || !check(true)) {
+      e.stopImmediatePropagation();
+      if (!fS.value.trim()) { fS.classList.add('bad'); $('#eSchool').textContent = '학교 이름을 먼저 써 주세요'; fS.focus(); setTimeout(() => fS.classList.remove('bad'), 600); }
+      else if (!fN.value.trim()) { fN.classList.add('bad'); $('#eName').textContent = '사이트 영어 이름을 먼저 써 주세요'; fN.focus(); setTimeout(() => fN.classList.remove('bad'), 600); }
+      toast('학교 이름과 영어 이름을 먼저 넣어 주세요');
+    } else $('#eSchool').textContent = '';
+  }, true);
+
+  // 직접 따라 하기: 컴퓨터 종류, 단계 체크·진행 막대
+  const manual = $('[data-for="manual"]');
+  function os(o) { manual.dataset.os = o; $$('.os button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.os === o))); store.set('os', o); }
+  $$('.os button').forEach((b) => b.addEventListener('click', () => os(b.dataset.os)));
+  os(store.get('os', /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? 'mac' : 'win'));
+  const done = new Set(store.get('done', []));
+  function paint() {
+    const all = $$('#steps .step');
+    all.forEach((s) => s.classList.toggle('done', done.has(s.dataset.step)));
+    $('#pFill').style.width = (done.size / all.length * 100) + '%';
+    $('#pText').textContent = done.size === all.length ? '다 했어요 🎉' : `${done.size} / ${all.length} 단계`;
+    store.set('done', [...done]);
+  }
+  $$('#steps .tick').forEach((t) => t.addEventListener('click', () => {
+    const s = t.closest('.step'), k = s.dataset.step;
+    if (done.has(k)) done.delete(k); else { done.add(k); s.classList.remove('pop'); void s.offsetWidth; s.classList.add('pop'); const nx = s.nextElementSibling; if (nx && !done.has(nx.dataset.step)) setTimeout(() => nx.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350); }
+    paint(); if (done.size === $$('#steps .step').length) toast('설치 끝! 이제 처음 설정만 하면 돼요');
+  }));
+  $('#pReset').addEventListener('click', () => { done.clear(); paint(); toast('처음부터 다시 체크해요'); });
+  paint();
+
+  // 관리자 탭
+  const ADMIN = {
+    pending: ['관리 · 승인 대기', '<h3>승인 대기 — 새로 올리고 고친 것</h3><ul><li><b>새 문서·새 분류·새 도구</b>와 <b>고친 문서·도구</b>가 모여요. 고친 것은 바뀐 줄이 색으로 보여요.</li><li><b>승인</b>: \'승인 전\' 표시만 사라져요 (내용은 이미 모두에게 보이고 있어요).</li><li><b>되돌리기 / 내리기</b>: 고친 것은 이전 내용으로, 새 것은 목록에서 내려요.</li><li>잘못 누르면 신고 탭의 \'숨긴 문서\'에서 다시 공개할 수 있어요.</li></ul>'],
+    reports: ['관리 · 신고', '<h3>신고 — 선생님이 알린 문제</h3><ul><li>개인정보·저작권·틀린 내용 신고가 모여요. 신고한 사람은 기록되지 않아요.</li><li><b>그대로 두기</b> 또는 <b>문서 숨기기</b>를 골라요.</li><li><b>숨긴 문서</b> 목록에서 다시 공개할 수 있어요.</li></ul>'],
+    cats: ['관리 · 분류', '<h3>분류 — 첫 화면의 업무 칸</h3><ul><li>이름·아이콘·순서를 바꾸고, 쓰지 않는 분류는 숨겨요.</li><li>선생님이 만든 새 분류는 승인 대기에 먼저 와요.</li></ul>'],
+    tools: ['관리 · 도구', '<h3>도구 — 학교 선생님이 만든 웹앱</h3><ul><li>선생님들도 도구 탭에서 직접 올릴 수 있고, 여기서는 관리자가 바로 추가·고치기·빼기 해요.</li><li>\'학생 정보는 기기 안에서만\', \'로그인 필요\' 표시를 확인해 주세요.</li></ul>'],
+    sites: ['관리 · 사이트', '<h3>사이트 — 유용한 사이트 목록</h3><ul><li>선생님이 뺀 사이트가 모여요. 실수였다면 <b>되살리기</b>.</li><li>기본 목록으로 되돌리기도 할 수 있어요.</li></ul>'],
+    settings: ['관리 · 학교 설정', '<h3>학교 설정</h3><ul><li><b>학교 이름·접속 코드·관리자 비밀번호</b>를 바꿔요. 접속 코드를 바꾸면 선생님들이 새 코드를 한 번 넣어야 해요.</li><li><b>수업 탭 교과</b>(국어, 수학 …)와 <b>학급 탭 기본 도구</b>를 정해요.</li><li><b>자료 내보내기</b>로 학교 자료 전체를 파일 하나로 받고, <b>자료 가져오기</b>로 옮겨 넣어요.</li><li><b>주소·QR 보기</b>로 선생님들께 알릴 주소와 QR 코드를 띄워요.</li></ul>']
+  };
+  function admin(k) {
+    $$('#adminTabs button').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.admin === k)));
+    const t = $('#adminText'); t.classList.remove('panel'); void t.offsetWidth; t.classList.add('panel');
+    t.innerHTML = ADMIN[k][1]; $('#adminUrl').textContent = ADMIN[k][0];
+    const img = $('#adminImg'); img.style.opacity = 0; setTimeout(() => { img.src = 'img/admin-' + k + '.jpg'; img.onload = () => { img.style.opacity = 1; }; }, 120);
+    inkTo($('#adminTabs'));
+  }
+  $('#adminImg').style.transition = 'opacity .25s';
+  $$('#adminTabs button').forEach((b) => b.addEventListener('click', () => admin(b.dataset.admin)));
+  admin('pending');
+
+  // 크게 보기
+  document.addEventListener('click', (e) => {
+    const img = e.target.closest('img[data-zoom]'); if (!img) return;
+    const lb = document.createElement('div'); lb.className = 'lightbox'; lb.innerHTML = `<div><img src="${img.src}" alt=""><p>누르면 닫혀요</p></div>`;
+    document.body.appendChild(lb); requestAnimationFrame(() => lb.classList.add('on'));
+    const close = () => { lb.classList.remove('on'); setTimeout(() => lb.remove(), 250); removeEventListener('keydown', esc); };
+    const esc = (ev) => { if (ev.key === 'Escape') close(); };
+    lb.addEventListener('click', close); addEventListener('keydown', esc);
+  });
+
+  // 스크롤: 나타나기, 목차 표시, 맨 위로
+  const io = new IntersectionObserver((es) => es.forEach((x) => { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }), { rootMargin: '0px 0px -8% 0px' });
+  $$('.reveal').forEach((x) => io.observe(x));
+  const secs = $$('main section'), links = $$('.nav a');
+  addEventListener('scroll', () => {
+    let cur = ''; secs.forEach((s) => { if (s.getBoundingClientRect().top < 120) cur = s.id; });
+    links.forEach((a) => a.classList.toggle('on', a.getAttribute('href') === '#' + cur));
+    $('#toTop').classList.toggle('on', scrollY > 900);
+  }, { passive: true });
+  $('#toTop').addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+  requestAnimationFrame(() => $$('.tabs').forEach(inkTo));
+})();
+</script>
+</body>
+</html>

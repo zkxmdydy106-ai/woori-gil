@@ -26,6 +26,8 @@ const SGB_URL = 'https://script.google.com/macros/s/AKfycbyMVUw_equYXMDl3Vl279dH
 F.config = Object.assign({}, F.config, { sgbUrl: SGB_URL });
 if (arg('--api')) F.config = Object.assign({}, F.config, { flavor: 'school', api: arg('--api') });
 if (arg('--title')) F.config = Object.assign({}, F.config, { title: arg('--title') });
+// 새 학교(setup.mjs): 처음 설정 화면의 학교 이름, 가상 학교 규정집은 넣지 않음
+if (arg('--school')) F.config = Object.assign({}, F.config, { schoolName: arg('--school'), fresh: true });
 const OUT = arg('--out') ? path.resolve(arg('--out')) : F.out;
 
 // 1) 아이콘

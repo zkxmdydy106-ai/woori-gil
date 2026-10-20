@@ -78,11 +78,17 @@ async function handle(env, req) {
   const a = req.action, p = req.payload || {};
   if (a === 'migrate') return migrate(env, db, req);
   const isInit = !!(await db.prop('schoolName'));
-  if (a === 'info') return { schoolName: (await db.prop('schoolName')) || '', initialized: isInit, needsCode: false };
+  // 접속 코드: 처음 설정에서 코드를 정한 학교(requireCode=1)만 묻는다. 예전부터 코드 없이 쓰던 학교는 그대로
+  const needsCode = isInit && (await db.prop('requireCode')) === '1';
+  if (a === 'info') return { schoolName: (await db.prop('schoolName')) || '', initialized: isInit, needsCode };
   if (a === 'setup') return setup(db, p, isInit);
   if (!isInit) fail('아직 학교 정보가 없어요. 길잡이의 학교 개설 화면에서 연결해 주세요.', 'NOT_INIT');
   if (a === 'adminLogin') return adminLogin(db, p.pw);
   if (ADMIN_ACTIONS.includes(a)) { await checkToken(db, req.token); return admin(db, a, p); }
+  if (needsCode) {
+    await guard(db, 'code');
+    if (String(req.code || '') !== String((await db.prop('accessCode')) || '')) { await strike(db, 'code'); fail('접속 코드가 맞지 않아요.', 'BAD_CODE'); }
+  }
   // 학교 코드 없이 누구나 읽고 고친다. 쓰기는 같은 곳(IP)에서 한 시간에 120번까지
   if (['saveDoc', 'report', 'uploadFile', 'addLesson', 'updateLesson', 'removeLesson', 'saveSite', 'removeSite', 'saveSiteOrder', 'tempFile', 'thumb', 'proposeTool'].includes(a)) await rateLimit(db, req._ip);
   if (a === 'load') { const d = await load(db); d.neis = !!(env.NEIS_KEY && env.NEIS_SCHUL); return d; }
@@ -188,7 +194,9 @@ async function setup(db, p, isInit) {
   if (!name) fail('학교 이름을 적어 주세요.');
   if (pw.length < 8) fail('관리자 비밀번호는 8자 이상으로 해 주세요.');
   const salt = crypto.randomUUID();
+  if (code && code.length < 4) fail('접속 코드는 4자 이상으로 해 주세요.');
   await db.setProp('accessCode', code); await db.setProp('salt', salt); await db.setProp('pwHash', await hash(pw, salt));
+  if (code) await db.setProp('requireCode', '1');   // 새로 만든 학교는 접속 코드를 정말로 묻는다
   await db.setProp('schoolName', name);
   return { ok: true };
 }

@@ -2624,12 +2624,12 @@ ${App.needsCode ? `            <label class="field">학교 접속 코드 <span c
           <form class="form" id="ctForm">${((window.DEMO_DATA || {}).classTools || []).map((t) => `<label style="display:flex;gap:8px;align-items:center;font-size:15px"><input type="checkbox" name="ct" value="${esc(t.id)}" ${(ad.settings.hiddenClassTools || []).includes(t.id) ? '' : 'checked'} style="width:18px;height:18px;accent-color:var(--accent)"> ${esc(t.name)}</label>`).join('')}
           <div class="form-actions"><button class="btn primary">${ic('check')}저장</button></div></form></div>
         <div class="card"><h3 style="margin:0 0 6px;font-size:17px">자료 내보내기</h3><p class="count-line" style="margin:0 0 14px">학교 자료 전체를 파일 하나(JSON)로 받아요. 백업하거나 다른 저장소로 옮길 때 써요.</p><button class="btn" id="exportBtn">${ic('download')}전체 내보내기</button></div>
-        ${App.mode !== 'demo' && ((window.DEMO_DATA || {}).docs || []).length ? `<div class="card"><h3 style="margin:0 0 6px;font-size:17px">기본 자료 넣기</h3><p class="count-line" style="margin:0 0 14px">안내 문서 ${(window.DEMO_DATA.docs || []).length}개, 규정집 ${(window.DEMO_RULES || []).length}개, 수업 자료 ${(window.DEMO_DATA.lessons || []).length}개 가운데 저장소에 아직 없는 것만 넣어요. 선생님들이 고친 문서는 그대로 둬요.</p>
+        ${App.mode !== 'demo' && ((window.DEMO_DATA || {}).docs || []).length ? `<div class="card"><h3 style="margin:0 0 6px;font-size:17px">기본 자료 넣기</h3><p class="count-line" style="margin:0 0 14px">안내 문서 ${(window.DEMO_DATA.docs || []).length}개, ${(window.GIL_CONFIG || {}).fresh ? '' : `규정집 ${(window.DEMO_RULES || []).length}개, `}수업 자료 ${(window.DEMO_DATA.lessons || []).length}개 가운데 저장소에 아직 없는 것만 넣어요. 선생님들이 고친 문서는 그대로 둬요.</p>
           <button class="btn primary" id="seedBtn">${ic('download')}기본 자료 넣기</button> <span class="count-line" id="seedMsg"></span></div>` : ''}
         <div class="card"><h3 style="margin:0 0 6px;font-size:17px">자료 가져오기</h3><p class="count-line" style="margin:0 0 14px">규정집처럼 미리 정리한 파일(.json)을 한 번에 넣어요. 같은 문서는 새 내용으로 바뀌어요.</p>
           <label class="btn" style="cursor:pointer">${ic('upload')}파일 고르기<input type="file" id="importFile" accept=".json,application/json" hidden></label> <span class="count-line" id="importMsg"></span></div>
         <div class="card"><h3 style="margin:0 0 10px;font-size:17px">연결 상태</h3>
-          <dl class="kv"><dt>저장 방식</dt><dd>${App.mode === 'demo' ? '시연 모드 (이 브라우저 안)' : '학교 구글 시트'}</dd>
+          <dl class="kv"><dt>저장 방식</dt><dd>${App.mode === 'demo' ? '시연 모드 (이 브라우저 안)' : String(App.store.api || '').charAt(0) === '/' ? 'Cloudflare (학교 계정)' : '학교 구글 시트'}</dd>
           ${App.mode !== 'demo' ? `<dt>저장소 주소</dt><dd>${esc(App.store.api)}</dd>` : ''}
           <dt>공유 주소</dt><dd>${App.mode !== 'demo' ? `<button class="btn sm" id="shareBtn">${ic('qrcode')}주소·QR 보기</button>` : '학교를 개설하면 생겨요'}</dd></dl>
           ${App.mode !== 'demo' ? `<div class="card-actions"><button class="btn danger" id="disconnect">${ic('logout')}이 기기에서 연결 해제</button></div>` : ''}</div>
@@ -2680,7 +2680,7 @@ ${App.needsCode ? `            <label class="field">학교 접속 코드 <span c
       const seed = $('#seedBtn'); seed && seed.addEventListener('click', async () => {
         const m = $('#seedMsg'); seed.disabled = true;
         try {
-          const n = await importDefaults(Auth.adminToken(), (k, t) => { m.textContent = `넣는 중… ${k}/${t}`; });
+          const n = await importDefaults(Auth.adminToken(), (k, t) => { m.textContent = `넣는 중… ${k}/${t}`; }, (window.GIL_CONFIG || {}).fresh ? { rules: false, name: App.data.school.name } : null);
           App.data = await App.store.load(); m.textContent = `새로 넣은 자료 ${n}개`; toast('기본 자료를 넣었어요');
         } catch (err) { m.textContent = ''; toast(err.message); }
         seed.disabled = false;
@@ -2772,12 +2772,15 @@ ${App.needsCode ? `            <label class="field">학교 접속 코드 <span c
 
   /* ───────── 처음 설정: 학교 저장소가 비어 있으면 접속 코드·관리자 비밀번호를 정하고 기본 자료를 넣는다 ───────── */
   function viewFirstSetup() {
-    const D = window.DEMO_DATA || {};
+    const D = window.DEMO_DATA || {}, CFG = window.GIL_CONFIG || {};
+    // 새 학교(설치 스크립트로 만든 판): 학교 이름은 설치할 때 정한 이름, 가상 학교 규정집은 넣지 않고 예시 안내·서식은 고를 수 있게
+    const fresh = !!CFG.fresh, schoolName = CFG.schoolName || (D.school ? D.school.name : '');
     document.body.innerHTML = `<main class="gate"><div class="login card" style="max-width:460px">
-      <div class="ic">${ic('directions')}</div><h1>${esc(D.school ? D.school.name : '')} 길잡이 처음 설정</h1>
-      <p>선생님들이 들어올 때 쓸 접속 코드와 관리자 비밀번호를 정해 주세요. 정하면 규정집·안내문·수업 자료가 학교 저장소에 들어가요.</p>
+      <div class="ic">${ic('directions')}</div><h1>${esc(schoolName)} 길잡이 처음 설정</h1>
+      <p>선생님들이 들어올 때 쓸 접속 코드와 관리자 비밀번호를 정해 주세요.${fresh ? '' : ' 정하면 규정집·안내문·수업 자료가 학교 저장소에 들어가요.'}</p>
       <form class="form" id="fs"><label class="field">학교 접속 코드 <span class="help">4자 이상. 선생님들께 알려 줄 코드</span><input class="input" name="code" required minlength="4" autocomplete="off"></label>
       <label class="field">관리자 비밀번호 <span class="help">8자 이상. 승인·신고 처리용</span><input class="input" type="password" name="pw" required minlength="8" autocomplete="new-password"></label>
+      ${fresh ? `<label class="chk" style="display:flex;gap:8px;align-items:flex-start;font-size:15px;margin:4px 0 2px"><input type="checkbox" name="ex" checked style="width:18px;height:18px;margin-top:3px;accent-color:var(--accent)"><span>예시 안내 문서·서식 넣기 <span class="help" style="display:block">결석계 제출, 출장 여비 처리 같은 예시 ${(D.docs || []).length}개와 학습지·학급 자료예요. 우리 학교에 맞게 고쳐 쓰거나 지우세요. 규정집은 넣지 않아요(학교 규정은 직접 올려 주세요).</span></span></label>` : ''}
       <div id="fsMsg"></div><button class="btn primary" style="width:100%">${ic('check')}설정하고 시작하기</button></form></div></main>`;
     $('#fs').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2786,9 +2789,9 @@ ${App.needsCode ? `            <label class="field">학교 접속 코드 <span c
       if (code.length < 4 || pw.length < 8) { msg.innerHTML = `<div class="notice red">${ic('alert-triangle')}<div>접속 코드는 4자, 비밀번호는 8자 이상이에요.</div></div>`; return; }
       btn.disabled = true; msg.innerHTML = `<div class="notice green">${ic('refresh')}<div>학교 저장소를 준비하고 기본 자료를 넣는 중이에요… (1분쯤 걸려요)</div></div>`;
       try {
-        await App.store.setup({ schoolName: D.school.name, accessCode: code, adminPassword: pw });
+        await App.store.setup({ schoolName, accessCode: code, adminPassword: pw });
         const token = await App.store.adminLogin(pw);
-        await importDefaults(token, (k, n) => { msg.innerHTML = `<div class="notice green">${ic('refresh')}<div>기본 자료를 넣는 중이에요… (${k}/${n})</div></div>`; });
+        if (!fresh || fd.get('ex')) await importDefaults(token, (k, n) => { msg.innerHTML = `<div class="notice green">${ic('refresh')}<div>기본 자료를 넣는 중이에요… (${k}/${n})</div></div>`; }, fresh ? { rules: false, name: schoolName } : null);
         Auth.setAdminToken(token); Auth.remember(code); App.store.setCode(code);
         App.data = await App.store.load(); start();
         toast('설정을 마쳤어요. 접속 코드를 선생님들께 알려 주세요.');
@@ -2797,9 +2800,11 @@ ${App.needsCode ? `            <label class="field">학교 접속 코드 <span c
   }
 
   // 판에 들어 있는 기본 자료(안내 문서·규정집·수업 자료)를 학교 저장소에 몇 개씩 나눠 넣는다. 이미 있는 문서는 건드리지 않는다
-  async function importDefaults(token, progress) {
+  // opt.rules=false: 가상 학교 규정집은 빼고, opt.name: 예시 속 'OO고등학교'를 우리 학교 이름으로
+  async function importDefaults(token, progress, opt) {
     const D = window.DEMO_DATA || {};
-    const docs = (D.docs || []).concat(window.DEMO_RULES || []), lessons = D.lessons || [];
+    const rename = (d) => (opt && opt.name ? Object.assign({}, d, { title: String(d.title || '').replace(/OO고등학교/g, opt.name), body: String(d.body || '').replace(/OO고등학교/g, opt.name), review: undefined }) : d);
+    const docs = (D.docs || []).concat(opt && opt.rules === false ? [] : window.DEMO_RULES || []).map(rename), lessons = D.lessons || [];
     const STEP = 3, total = docs.length + (lessons.length ? 1 : 0);
     let added = 0, done = 0;
     for (let i = 0; i < docs.length; i += STEP) {

@@ -1,7 +1,10 @@
 node_modules/
 output/
 site/
+backups/
+gil.config.json
 .wrangler/
 cloudflare/wrangler.toml
+cloudflare/.wrangler/
 .DS_Store
 Thumbs.db

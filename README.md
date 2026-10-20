@@ -17,44 +17,47 @@
 
 ## 우리 학교 길잡이 만들기
 
-### 방법 1. 구글 시트 (추천 · 무료 · 10분)
+📘 **그림과 함께 보는 자세한 안내: https://zkxmdydy106-ai.github.io/woori-gil/guide/**
 
-학교 구글 계정 하나면 됩니다. 자료는 학교 구글 시트에 저장되어 담당자가 바뀌어도 그대로 넘겨줄 수 있어요.
+### 방법 1. AI 에게 맡기기 (가장 쉬움)
 
-1. 위 시연 사이트 위쪽의 **우리 학교도 만들기** 를 누릅니다. (바로 가기: https://zkxmdydy106-ai.github.io/woori-gil/#/setup )
-2. 학교 구글 계정으로 새 스프레드시트를 만들고 **확장 프로그램 → Apps Script** 에 화면의 저장소 코드를 붙여 넣습니다. (같은 코드: [`src/apps-script/Code.gs`](src/apps-script/Code.gs))
-3. **배포 → 새 배포 → 웹 앱** (실행: 나, 액세스: 모든 사용자) 로 배포하고 웹 앱 URL 을 복사합니다.
-4. 화면에 웹 앱 URL·학교 이름·접속 코드·관리자 비밀번호를 넣으면 끝. 선생님들께 알려 줄 주소와 QR 코드가 나옵니다.
+Claude Code · Codex · Antigravity 에 아래처럼 말하면 AI 가 [AGENTS.md](AGENTS.md) 를 보고 끝까지 설치합니다. (안내 사이트에서 학교 이름을 넣으면 문구가 자동으로 완성돼요)
 
-'모든 사용자'로 배포해도 학교 접속 코드를 모르면 자료를 볼 수 없어요.
+> https://github.com/zkxmdydy106-ai/woori-gil 로 우리 학교 길잡이를 만들어 줘. 학교 이름은 ○○고등학교, 사이트 영어 이름은 ○○-gil. AGENTS.md 안내대로 해 줘.
 
-### 방법 2. Cloudflare (선택 · 모든 기능)
+중간에 Cloudflare 로그인 창이 뜨면 로그인하고 **Allow** 만 누르면 돼요.
 
-방법 1 에 더해 검색 결과의 파일·사이트 화면 그림, 사파리용 한글 쪽 그림, 고친 엑셀을 Excel 화면으로 보기, 웹앱 로그인 판별, (나이스 키가 있으면) 오늘의 급식·학사일정까지 씁니다. 무료 요금제로 충분합니다.
+### 방법 2. 직접 (명령 두 줄 · 10분 · 모든 기능)
+
+[Node.js LTS](https://nodejs.org) 와 [Cloudflare 무료 계정](https://dash.cloudflare.com/sign-up)이 있으면 됩니다.
 
 ```bash
-git clone https://github.com/zkxmdydy106-ai/woori-gil.git && cd woori-gil
-npm i @tabler/icons
-node src/build.mjs --icons node_modules/@tabler/icons/icons/outline --api /api --out site --title "우리학교 길잡이"
-cd cloudflare
-npx wrangler d1 create ourschool-db                 # 나온 id 를 적어 둡니다
-npx wrangler kv namespace create FILES              # 나온 id 를 적어 둡니다
-cp wrangler.example.toml wrangler.toml              # <...> 를 채웁니다
-npx wrangler d1 execute ourschool-db --remote --file schema.sql
-npx wrangler pages deploy
+git clone https://github.com/zkxmdydy106-ai/woori-gil.git && cd woori-gil   # 또는 ZIP 으로 받아 풀기
+node setup.mjs
 ```
 
-배포된 주소를 열면 학교 이름·관리자 비밀번호를 넣는 처음 화면이 나옵니다.
-(선택) 급식·학사일정: [나이스 교육정보 개방 포털](https://open.neis.go.kr)에서 인증키를 받아 `npx wrangler pages secret put NEIS_KEY` 로 넣고, `wrangler.toml` 의 `[vars]` 에 교육청·학교 코드를 적어요. **인증키는 파일이나 코드에 적지 마세요.**
+학교 이름과 사이트 영어 이름을 묻고, 브라우저에서 Cloudflare 로그인을 한 번 하면 저장소 만들기·빌드·배포까지 자동으로 끝나요.
+나온 주소(`https://<영어이름>.pages.dev`)를 열어 **처음 설정**에서 학교 접속 코드와 관리자 비밀번호를 정하면 완성.
 
+| 하고 싶은 일 | 명령 |
+|---|---|
+| 새 버전으로 업데이트 (자료는 그대로) | `git pull && node setup.mjs --update` |
+| 자료 백업 | `node setup.mjs --backup` |
+| 오늘의 급식·학사일정 (나이스 인증키 필요) | `node setup.mjs --neis` |
+
+### 방법 3. 구글 시트 (설치 없이 · 대신 느림)
+
+학교 구글 계정만으로 만들 수 있어요. 시연 사이트의 **우리 학교도 만들기**(https://zkxmdydy106-ai.github.io/woori-gil/#/setup)에서 화면 안내대로 Apps Script 를 배포하면 됩니다. 열고 저장할 때 1~3초씩 걸리고, 화면 그림·급식 등 일부 기능은 빠져요.
 ## 폴더
 
 | 폴더 | 내용 |
 |---|---|
 | `docs/` | 빌드된 시연 사이트 (GitHub Pages 가 이 폴더를 엽니다). 인터넷 없이 `index.html` 을 열어도 시연 모드로 동작 |
 | `src/` | 화면 코드(`app.js`·`styles.css`), 검색(`search.js`), 엑셀·한글·PDF 보기, 시연 자료, 빌드(`build.mjs`) |
-| `src/apps-script/Code.gs` | 방법 1 의 학교 저장소 (구글 시트) |
-| `cloudflare/` | 방법 2 의 학교 저장소 (Pages Functions + D1 + KV) |
+| `setup.mjs`, `AGENTS.md` | 자동 설치·업데이트·백업, AI 에이전트용 안내 |
+| `docs/guide/` | 설치 안내 사이트 |
+| `src/apps-script/Code.gs` | 방법 3 의 학교 저장소 (구글 시트) |
+| `cloudflare/` | 방법 1·2 의 학교 저장소 (Pages Functions + D1 + KV) |
 
 ## 개인정보
 
@@ -65,4 +68,4 @@ npx wrangler pages deploy
 
 학교·교사·교육 목적이라면 누구나 자유롭게 쓰고 고칠 수 있어요. 영리 목적 사용은 안 됩니다. → [LICENSE](LICENSE) (CC BY-NC 4.0)
 
-NWEC 26 바이브코딩 공모전 출품작에서 시작했습니다.
+만든 사람: 충남교육청 수학교사 김요한 · NWEC 26 바이브코딩 공모전 출품작에서 시작했습니다.
