@@ -828,6 +828,8 @@ https://github.com/zkxmdydy106-ai/woori-gil
   }, { passive: true });
   $('#toTop').addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
   requestAnimationFrame(() => $$('.tabs').forEach(inkTo));
+  // #update 처럼 구역 주소로 들어오면, 그림이 다 그려진 뒤 그 구역으로 (그림 때문에 자리가 밀리지 않게)
+  addEventListener('load', () => { const id = decodeURIComponent(location.hash.slice(1)); const t = id && document.getElementById(id); if (t) setTimeout(() => t.scrollIntoView({ block: 'start' }), 60); });
 })();
 </script>
 </body>
