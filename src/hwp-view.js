@@ -138,7 +138,150 @@
     return out;
   }
 
+  /* ── 하이퍼링크: 쪽 그림(SVG)에는 링크가 없어서 파일에서 직접 읽어 그 글자 위에 얹는다 ──
+     결과: [{ text: 보이는 글, url }] (http·https·mailto 만) */
+  function linkUrl(cmd) {
+    // 한글의 링크 명령: 'http\://주소;1;0;0;' (\ 는 다음 글자를 그대로, ; 까지가 주소)
+    let u = '';
+    const s = String(cmd || '');
+    for (let i = 0; i < s.length; i++) { const c = s[i]; if (c === '\\') { u += s[++i] || ''; continue; } if (c === ';') break; u += c; }
+    u = u.trim();
+    if (/^www\./i.test(u) || /^[\w-]+(\.[\w-]+)+(\/|$)/.test(u)) u = 'https://' + u;
+    return /^(https?:|mailto:)/i.test(u) ? u : '';
+  }
+  // hwpx: 본문 XML 의 fieldBegin(type=HYPERLINK) ~ fieldEnd 사이 글자
+  async function hwpxLinks(u8) {
+    const files = (await window.HwpxEditor._unzip(u8)).filter((f) => /Contents\/section\d+\.xml$/.test(f.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    const out = [], dec = new TextDecoder();
+    for (const f of files) {
+      const doc = new DOMParser().parseFromString(dec.decode(f.data), 'application/xml');
+      const open = new Map();
+      const walk = (el) => {
+        for (const n of el.children) {
+          if (n.localName === 'fieldBegin') {
+            if (n.getAttribute('type') === 'HYPERLINK') {
+              const p = [...n.getElementsByTagNameNS('*', 'stringParam')];
+              const cmd = (p.find((x) => x.getAttribute('name') === 'Command') || p.find((x) => x.getAttribute('name') === 'Path') || { textContent: '' }).textContent;
+              const url = linkUrl(cmd);
+              if (url) { const l = { text: '', url }; open.set(n.getAttribute('id') || String(open.size), l); out.push(l); }
+            }
+          } else if (n.localName === 'fieldEnd') open.delete(n.getAttribute('beginIDRef'));
+          else if (n.localName === 't') { if (open.size) open.forEach((l) => { l.text += n.textContent; }); }
+          else walk(n);
+        }
+      };
+      walk(doc.documentElement);
+    }
+    return out;
+  }
+  // hwp(옛 형식): 복합 문서(CFB) 안 BodyText/Section 들의 레코드에서 %hlk 조종자를 찾는다
+  function cfb(u8) {
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    if (dv.getUint32(0, true) !== 0xE011CFD0) throw new Error('hwp 파일이 아니에요');
+    const ss = 1 << dv.getUint16(30, true), ms = 1 << dv.getUint16(32, true), off = (n) => (n + 1) * ss;
+    const difat = []; for (let i = 0; i < 109; i++) difat.push(dv.getUint32(76 + i * 4, true));
+    for (let d = dv.getUint32(68, true), k = 0; d < 0xFFFFFFFA && k < dv.getUint32(72, true); k++) { for (let i = 0; i < ss / 4 - 1; i++) difat.push(dv.getUint32(off(d) + i * 4, true)); d = dv.getUint32(off(d) + ss - 4, true); }
+    const fat = []; difat.filter((x) => x < 0xFFFFFFFA).forEach((s) => { for (let i = 0; i < ss / 4; i++) fat.push(dv.getUint32(off(s) + i * 4, true)); });
+    const chain = (s, tb) => { const c = []; while (s < 0xFFFFFFFA && c.length <= tb.length) { c.push(s); s = tb[s]; } return c; };
+    const big = (s) => { const c = chain(s, fat), o = new Uint8Array(c.length * ss); c.forEach((x, i) => o.set(u8.subarray(off(x), off(x) + ss), i * ss)); return o; };
+    const dirB = big(dv.getUint32(48, true)), dd = new DataView(dirB.buffer);
+    const dirs = []; for (let i = 0; i + 128 <= dirB.length; i += 128) { const nl = dd.getUint16(i + 64, true); dirs.push({ name: nl > 2 ? new TextDecoder('utf-16le').decode(dirB.subarray(i, i + nl - 2)) : '', type: dirB[i + 66], l: dd.getUint32(i + 68, true), r: dd.getUint32(i + 72, true), ch: dd.getUint32(i + 76, true), start: dd.getUint32(i + 116, true), size: dd.getUint32(i + 120, true) }); }
+    const mfB = big(dv.getUint32(60, true)), mfD = new DataView(mfB.buffer); const mfat = []; for (let i = 0; i + 4 <= mfB.length; i += 4) mfat.push(mfD.getUint32(i, true));
+    const mini = big(dirs[0].start), cutoff = dv.getUint32(56, true);
+    const read = (e) => { if (e.size >= cutoff) return big(e.start).subarray(0, e.size); const c = chain(e.start, mfat), o = new Uint8Array(c.length * ms); c.forEach((x, i) => o.set(mini.subarray(x * ms, x * ms + ms), i * ms)); return o.subarray(0, e.size); };
+    const kidsOf = (e) => { const o = []; const go = (i) => { if (i >= dirs.length || i === 0xFFFFFFFF) return; const d = dirs[i]; go(d.l); o.push(d); go(d.r); }; go(e.ch); return o; };
+    return { root: dirs[0], kidsOf, read };
+  }
+  async function inflate(bytes) {
+    const out = new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw')));
+    return new Uint8Array(await out.arrayBuffer());
+  }
+  const HLK = 0x25686C6B;   // '%hlk'
+  function sectionLinks(b, out) {
+    const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    const queue = {};   // 수준별: 문단 글에서 읽은 링크 글자들 (조종자가 뒤따라 나온다)
+    let p = 0;
+    while (p + 4 <= b.length) {
+      const h = dv.getUint32(p, true); p += 4;
+      const tag = h & 0x3FF, level = (h >>> 10) & 0x3FF; let size = h >>> 20;
+      if (size === 0xFFF) { size = dv.getUint32(p, true); p += 4; }
+      if (tag === 66) queue[level + 1] = [];                  // 문단 시작
+      else if (tag === 67) {                                  // 문단 글자
+        const stack = []; let i = p; const end = p + size, q = (queue[level] = queue[level] || []);
+        while (i + 2 <= end) {
+          const c = dv.getUint16(i, true);
+          if (c === 3) { const isL = i + 6 <= end && dv.getUint32(i + 2, true) === HLK; const o = isL ? { t: '' } : null; if (isL) q.push(o); stack.push(o); i += 16; continue; }
+          if (c === 4) { stack.pop(); i += 16; continue; }
+          if ([1, 2, 5, 6, 7, 8, 9, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].includes(c)) { i += 16; continue; }
+          if (c >= 32) { const ch = String.fromCharCode(c); stack.forEach((o) => { if (o) o.t += ch; }); }
+          i += 2;
+        }
+      } else if (tag === 71 && size >= 4 && dv.getUint32(p, true) === HLK) {   // 조종자 머리: 속성(4)·기타(1)·명령 길이(2)·명령
+        const n = size >= 11 ? dv.getUint16(p + 9, true) : 0;
+        const cmd = n && p + 11 + n * 2 <= p + size ? new TextDecoder('utf-16le').decode(b.subarray(p + 11, p + 11 + n * 2)) : '';
+        const shown = queue[level] && queue[level].shift();
+        const url = linkUrl(cmd);
+        if (url) out.push({ text: shown ? shown.t : '', url });
+      }
+      p += size;
+    }
+  }
+  async function hwpLinks(u8) {
+    const f = cfb(u8), top = f.kidsOf(f.root);
+    const head = top.find((e) => e.name === 'FileHeader');
+    const flags = head ? new DataView(f.read(head).buffer, f.read(head).byteOffset).getUint32(36, true) : 1;
+    if (flags & 6) return [];   // 암호·배포용 문서는 읽을 수 없다
+    const body = top.find((e) => e.name === 'BodyText'); if (!body) return [];
+    const secs = f.kidsOf(body).filter((e) => /^Section\d+$/.test(e.name)).sort((a, b) => +a.name.slice(7) - +b.name.slice(7));
+    const out = [];
+    for (const s of secs) { const raw = f.read(s); const b = new Uint8Array(flags & 1 ? await inflate(raw) : raw); sectionLinks(b, out); }
+    return out;
+  }
+  async function links(bytes) {
+    try {
+      const u8 = new Uint8Array(bytes instanceof ArrayBuffer ? bytes.slice(0) : bytes);
+      return u8[0] === 0x50 && u8[1] === 0x4B ? await hwpxLinks(u8) : await hwpLinks(u8);
+    } catch (e) { console.warn('한글 파일의 링크를 읽지 못했어요', e); return []; }
+  }
+  const NS_SVG = 'http://www.w3.org/2000/svg';
+  // 쪽 그림의 글자 위에 투명한 링크를 얹는다. 못 찾은 링크는 돌려준다
+  function overlayLinks(box, list) {
+    const norm = (s) => String(s || '').replace(/\s+/g, '').toLowerCase();
+    const pages = [...box.querySelectorAll('.hwpv-page svg')].map((svg) => { let s = ''; const parts = []; svg.querySelectorAll('text').forEach((t) => { const c = norm(t.textContent); if (!c) return; parts.push({ el: t, a: s.length, b: s.length + c.length }); s += c; }); return { s, parts }; });
+    const miss = [];
+    let cp = 0, ci = 0;
+    for (const l of list) {
+      const w = norm(l.text);
+      let at = null;
+      if (w) {
+        for (let k = cp; k < pages.length && !at; k++) { const i = pages[k].s.indexOf(w, k === cp ? ci : 0); if (i >= 0) at = { k, i }; }
+        for (let k = 0; k < pages.length && !at; k++) { const i = pages[k].s.indexOf(w); if (i >= 0) at = { k, i }; }
+      }
+      if (!at) { miss.push(l); continue; }
+      cp = at.k; ci = at.i + w.length;
+      const pg = pages[at.k], a0 = at.i, b0 = at.i + w.length;
+      pg.parts.filter((p) => p.b > a0 && p.a < b0).forEach((p) => {
+        try {
+          const bb = p.el.getBBox(), f0 = (Math.max(a0, p.a) - p.a) / (p.b - p.a), f1 = (Math.min(b0, p.b) - p.a) / (p.b - p.a);
+          const an = document.createElementNS(NS_SVG, 'a'); an.setAttribute('class', 'hv-link'); an.setAttribute('href', l.url); an.setAttribute('target', '_blank'); an.setAttribute('rel', 'noopener noreferrer');
+          const ti = document.createElementNS(NS_SVG, 'title'); ti.textContent = '누르면 새 창으로 열려요: ' + l.url; an.appendChild(ti);
+          const r = document.createElementNS(NS_SVG, 'rect'); r.setAttribute('x', bb.x + bb.width * f0); r.setAttribute('y', bb.y); r.setAttribute('width', Math.max(1, bb.width * (f1 - f0))); r.setAttribute('height', bb.height); an.appendChild(r);
+          p.el.parentNode.insertBefore(an, p.el.nextSibling);
+        } catch (e) { /* 재지 못하면 건너뛴다 */ }
+      });
+    }
+    return miss;
+  }
+  // 글자 위에 못 얹은 링크(또는 쪽 그림 화면)의 목록 줄
+  function linkBar(list) {
+    const bar = document.createElement('div'); bar.className = 'hwpv-linkbar';
+    bar.appendChild(Object.assign(document.createElement('span'), { className: 'lbl', textContent: '이 문서의 링크' }));
+    list.forEach((l) => { const a = document.createElement('a'); a.href = l.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = l.text.trim() || l.url; a.title = l.url; bar.appendChild(a); });
+    return bar;
+  }
+
   // 화면: 쪽들을 host 안에 그린다. 폭에 맞춰 줄이고(최대 100%), 다시 부르면 새로 그린다
+  // host._links 가 있으면(파일에서 읽은 링크) 글자 위에 얹는다
   async function mount(host, ed) {
     addWebFonts(document);
     const strs = await pagesOf(ed);
@@ -153,6 +296,7 @@
     });
     host.querySelectorAll('.hwpv-pages').forEach((n) => n.remove());
     host.appendChild(box);
+    if (host._links && host._links.length) { const miss = overlayLinks(box, host._links); if (miss.length) box.insertBefore(linkBar(miss), box.firstChild); }
     return strs.length;
   }
 
@@ -209,6 +353,6 @@ html, body { margin: 0; padding: 0; background: #fff; }
     } finally { printing = false; }
   }
 
-  const api = { mount, print, buildPrint, pagesOf, toSvg, chainFor, hasLocal };
+  const api = { mount, print, buildPrint, pagesOf, toSvg, chainFor, hasLocal, links, linkBar };
   window.HwpView = api;
 })();

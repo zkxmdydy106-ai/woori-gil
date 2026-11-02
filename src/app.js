@@ -360,6 +360,7 @@
       const m = await loadRhwp();
       if (!o.alive()) return;
       host.innerHTML = '<div class="hwpv-engine"></div>'; host.classList.add('hwpv', 'edit');
+      host._links = window.HwpView ? await window.HwpView.links(bytes()) : [];   // 원본 모양 화면에서 누를 수 있게
       ed = await withTimeout(m.createEditor($('.hwpv-engine', host)), 25000);
       await withTimeout(myHwp('form:' + id, 'v1', ed, bytes, meta.title + '.hwpx', o.where, async () => { if (!edit) await window.HwpView.mount(host, ed); }), 30000);
       if (window.HwpView) {
@@ -715,6 +716,8 @@
       if (ft === 'hwp' || ft === 'hwpx') {
         // rhwp 편집기는 뒤에서 문서를 읽고 쪽을 그리는 데만 쓰고, 화면에는 그 쪽 그림을 이 컴퓨터의 한컴 글꼴로 띄운다 (hwp-view.js)
         let ed, edit = false;
+        const docLinks = window.HwpView ? await window.HwpView.links(bytes) : [];   // 문서 속 하이퍼링크
+        host._links = docLinks;
         try {
           const m = await loadRhwp(); if (!o.alive()) return;
           host.insertAdjacentHTML('beforeend', '<div class="hwpv-engine"></div>'); host.classList.add('hwpv');
@@ -723,7 +726,7 @@
         } catch (e) {
           if (!o.alive()) return;
           if (e.message === 'offline') throw e;
-          return hwpPagesView(host, att, e.message);   // 사파리·편집기가 안 열릴 때: PC에서 만들어 둔 쪽 그림으로
+          return hwpPagesView(host, att, e.message, docLinks);   // 사파리·편집기가 안 열릴 때: PC에서 만들어 둔 쪽 그림으로
         }
         Thumbs.ensurePages(thumbOfAtt(att));   // 사파리용 쪽 그림이 아직 없으면 원본으로 만들어 둔다
         const fb = findBar(host, 'svg', host, o.q);   // 원본 모양 쪽에서 낱말 찾기 (고쳐 쓰기 화면에서는 숨김)
@@ -817,7 +820,7 @@
   }
 
   // 한글 편집기를 쓸 수 없을 때(아이폰·아이패드 사파리 등): PC에서 원본으로 만들어 둔 쪽 그림으로 보여 주고 인쇄. 고쳐 쓰기는 PC에서
-  async function hwpPagesView(host, att, why) {
+  async function hwpPagesView(host, att, why, docLinks) {
     host.classList.remove('hwpv', 'edit'); host.classList.add('pages-host');
     host.innerHTML = `<div class="hwp-loading">${ic('file-text')}<span>쪽 그림을 불러오는 중…</span></div>`;
     const urls = [];
@@ -829,6 +832,8 @@
     if (!host.isConnected) return;
     const dev = why === 'webkit' ? '아이폰·아이패드(사파리)에서는 한글 편집기가 열리지 않아요.' : '한글 편집기를 여는 데 시간이 너무 오래 걸려요.';
     host.innerHTML = `<div class="notice amber pg-note">${ic('info-circle')}<div>${dev} ${urls.length ? '<b>쪽 그림</b>으로 보여 드려요. 고쳐 쓰기는 PC에서 해 주세요.' : '아직 이 파일의 쪽 그림이 없어요. 누구든 PC에서 한 번 열면 만들어져요.'} <b>파일 받기</b>로 받아 한컴오피스 Viewer 앱에서 열 수도 있어요.</div></div>${urls.map((u, i) => `<img class="pg-img" src="${u}" alt="${i + 1}쪽">`).join('')}`;
+    // 쪽 그림 위에는 링크를 얹을 수 없어서 목록으로 보여 준다
+    if (docLinks && docLinks.length && window.HwpView) { const nt = $('.pg-note', host); if (nt) nt.after(window.HwpView.linkBar(docLinks)); }
     const pb = $('#fPrint'); if (pb) { pb.disabled = !urls.length; pb.onclick = () => window.print(); }
   }
 

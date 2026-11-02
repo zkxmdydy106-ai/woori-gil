@@ -793,6 +793,12 @@ body.embed .hero p { display: none; }
 .xl-shp { display: flex; flex-direction: column; overflow: hidden; line-height: 1.2; color: #000; }
 .xl-chart { border: 1px dashed #b0b7bd; background: #f6f7f8; color: #8a949c; align-items: center; justify-content: center; font-size: 13px; }
 .xl-sheet td.xl-in { cursor: cell; }
+/* 링크가 걸린 칸·그림·도형: 모양은 파일 그대로, 마우스를 올리면 손 모양과 밑줄 */
+.xl-sheet td.xl-lnk, .xl-sheet td.xl-lnk[tabindex]:hover { cursor: pointer; }
+.xl-sheet td.xl-lnk:hover .xl-v { text-decoration: underline; }
+.xl-link-shp { pointer-events: auto; cursor: pointer; }
+.xl-link-shp:hover { outline: 2px solid #14684e; outline-offset: 1px; }
+.xl-sheet td.xl-goto { outline: 3px solid #f2b632 !important; outline-offset: -3px; }
 .xl-sheet td.xl-in[tabindex]:hover { outline: 1px solid #14684e; outline-offset: -1px; cursor: text; }
 .xl-sheet td.xl-in[tabindex]:focus, .xl-sheet td.xl-in:focus-within { outline: 2px solid #14684e; outline-offset: -2px; }
 .xl-sheet td.xl-in:focus-within { position: relative; }
@@ -832,6 +838,15 @@ body.embed .hero p { display: none; }
 .hwpv-pages { position: relative; z-index: 1; flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 16px; background: #e9ecef; }
 .hwpv-page { flex: none; max-width: 100%; background: #fff; box-shadow: 0 2px 12px rgb(0 0 0 / .14); }
 .hwpv-page svg { display: block; width: 100%; height: auto; }
+/* 한글 쪽 그림 위의 링크 (투명, 올리면 살짝 칠함) */
+.hv-link { cursor: pointer; }
+.hv-link rect { fill: transparent; pointer-events: all; }
+.hv-link:hover rect { fill: rgb(20 104 78 / .16); }
+.hwpv-linkbar { align-self: stretch; flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 12px; margin-bottom: 4px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
+.pages-host .hwpv-linkbar { margin: 0 0 12px; }
+.hwpv-linkbar .lbl { font-weight: 650; color: var(--muted); }
+.hwpv-linkbar a { color: var(--accent); }
+@media print { .hwpv-linkbar { display: none !important; } }
 @media (max-width: 640px) { .hwpv-pages { padding: 8px; gap: 10px; } }
 .pv-bar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .pv-page { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); }

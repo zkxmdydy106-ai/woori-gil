@@ -513,6 +513,11 @@
     const bytes = typeof src === 'string' ? Uint8Array.from(atob(src), (c) => c.charCodeAt(0)) : new Uint8Array(src);
     const files = await HwpxEditor._unzip(bytes);
     const F = Object.fromEntries(files.map((f) => [f.name, f]));
+    // 하이퍼링크 관계만 (relsOf 는 바깥 주소를 버리므로 따로 읽는다)
+    const linkRelsOf = (path) => {
+      const rp = path.replace(/([^/]+)$/, '_rels/$1.rels'); if (!F[rp]) return {};
+      return Object.fromEntries(all(parse(F[rp].data), 'Relationship').filter((r) => /\/hyperlink$/.test(r.getAttribute('Type') || '')).map((r) => [r.getAttribute('Id'), r.getAttribute('Target') || '']));
+    };
     const relsOf = (path) => {
       const rp = path.replace(/([^/]+)$/, '_rels/$1.rels'); if (!F[rp]) return {};
       const dir = path.replace(/[^/]+$/, '');
@@ -713,6 +718,18 @@
       };
       const pt = names[sh.idx + ':_xlnm.Print_Titles'];
       if (pt) pt.split(',').forEach((p) => { const m = /!\$?(\d+):\$?(\d+)$/.exec(p); if (m) sh.page.titles = [+m[1], +m[2]]; });
+      // 하이퍼링크: 칸마다 바깥 주소(url) 또는 파일 안 위치(loc). 범위로 걸린 링크는 칸마다 펼친다
+      const lRels = linkRelsOf(sh.path);
+      sh.links = {};
+      all(root, 'hyperlink').forEach((h) => {
+        const ref = h.getAttribute('ref'); if (!ref) return;
+        const rid = h.getAttributeNS(NS_R, 'id') || h.getAttribute('r:id');
+        const lk = linkOf(rid ? lRels[rid] : '', h.getAttribute('location'));
+        if (!lk) return;
+        lk.tip = h.getAttribute('tooltip') || '';
+        const rg = parseRange(ref);
+        for (let r = rg.r1; r <= Math.min(rg.r2, rg.r1 + 200); r++) for (let c = rg.c1; c <= Math.min(rg.c2, rg.c1 + 50); c++) sh.links[colName(c) + r] = lk;
+      });
       // 그림·도형
       const sRels = relsOf(sh.path);
       sh.draw = [];
@@ -728,7 +745,8 @@
           if (p) a.pos = { x: +p.getAttribute('x'), y: +p.getAttribute('y') };
           const body = Array.from(an.children).find((n) => ['pic', 'sp', 'cxnSp', 'grpSp', 'graphicFrame'].includes(n.localName));
           if (!body || (!a.from && !a.pos)) return;
-          a.items = drawItems(body, { C, url: (rid) => dRels[rid] && mediaUrl(dRels[rid]) }, null);
+          const dLinks = linkRelsOf(dPath);
+          a.items = drawItems(body, { C, url: (rid) => dRels[rid] && mediaUrl(dRels[rid]), link: (rid) => linkOf(dLinks[rid], '') }, null);
           sh.draw.push(a);
         });
       }
@@ -751,6 +769,26 @@
   }
 
   /* ── 도형 읽기 ── */
+  // 링크 정리: 바깥 주소는 http·https·mailto·tel 만 연다 (www. 는 https 로). '#시트!A1' 은 파일 안 위치
+  function linkOf(target, location) {
+    let u = String(target || '').trim(), loc = String(location || '').trim();
+    if (u.charAt(0) === '#') { loc = u.slice(1); u = ''; }
+    if (/^www\./i.test(u)) u = 'https://' + u;
+    if (u && /^(https?:|mailto:|tel:)/i.test(u)) return { url: u, loc: '' };
+    return loc ? { url: '', loc } : null;
+  }
+  const linkTitle = (lk, editable) => (lk.tip ? lk.tip + ' · ' : '') + (lk.url ? '누르면 새 창으로 열려요: ' + lk.url : '누르면 ' + lk.loc + ' (으)로 가요') + (editable ? ' (고치려면 Ctrl+누르기)' : '');
+  const linkAttrs = (lk, editable) => ` data-link="${esc(lk.url || '')}" data-loc="${esc(lk.loc || '')}" title="${esc(linkTitle(lk, editable))}"`;
+  // =HYPERLINK("주소", "이름") 또는 =HYPERLINK(A1, ...) 칸의 링크
+  function formulaLink(book, sh, cell) {
+    if (!cell || !cell.f || !/^\s*HYPERLINK\s*\(/i.test(cell.f)) return null;
+    const s = /^\s*HYPERLINK\s*\(\s*"((?:[^"]|"")*)"/i.exec(cell.f);
+    if (s) return linkOf(s[1].replace(/""/g, '"'), '');
+    const r = /^\s*HYPERLINK\s*\(\s*\$?([A-Z]{1,3})\$?(\d+)\s*[,)]/i.exec(cell.f);
+    if (!r) return null;
+    const p = parseRef(r[1].toUpperCase() + r[2]);
+    return linkOf(String(book.calc.value(sh, p.r, p.c) || ''), '');
+  }
   function drawItems(el, X, grp) {
     const xfrm = (e) => { const x = all(e, 'xfrm')[0]; if (!x) return null; const o = kid(x, 'off'), ex = kid(x, 'ext'), co = kid(x, 'chOff'), ce = kid(x, 'chExt'); return { x: o ? +o.getAttribute('x') : 0, y: o ? +o.getAttribute('y') : 0, cx: ex ? +ex.getAttribute('cx') : 0, cy: ex ? +ex.getAttribute('cy') : 0, rot: +(x.getAttribute('rot') || 0) / 60000, fh: x.getAttribute('flipH') === '1', fv: x.getAttribute('flipV') === '1', chx: co ? +co.getAttribute('x') : 0, chy: co ? +co.getAttribute('y') : 0, chcx: ce ? +ce.getAttribute('cx') : 0, chcy: ce ? +ce.getAttribute('cy') : 0 }; };
     const n = el.localName;
@@ -760,6 +798,9 @@
     }
     const spPr = kid(el, 'spPr');
     const it = { kind: n, xf: spPr ? xfrm(spPr) : null, grp };
+    // 그림·도형에 걸린 링크
+    const hl = X.link && all(el, 'hlinkClick')[0];
+    if (hl) { const lk = X.link(hl.getAttributeNS(NS_R, 'id') || hl.getAttribute('r:id')); if (lk) it.link = lk; }
     if (it.xf && grp && grp.chcx) {
       const sx = grp.cx / grp.chcx, sy = grp.cy / (grp.chcy || 1);
       it.rel = { x: (it.xf.x - grp.chx) * sx, y: (it.xf.y - grp.chy) * sy, cx: it.xf.cx * sx, cy: it.xf.cy * sy };
@@ -1705,7 +1746,10 @@
       const listF = editable ? sh.valid[it.ref] : null;
       it.cls = (editable ? 'xl-in' : 'xl-f') + (isF ? ' xl-fx' : '');
       if (it.spill) it.cls += ' xl-sp';
-      it.td = (inner) => `<td${cs > 1 ? ` colspan="${cs}"` : ''}${rs > 1 ? ` rowspan="${rs}"` : ''} data-ref="${it.ref}" class="${it.cls}"${listF || !editable ? '' : ' tabindex="0"'} style="${esc(it.css)}">${inner}</td>`;
+      // 링크 칸: 글이 있으면 누를 때 열린다 (목록 칸·인쇄용 쪽은 제외)
+      it.link = !opt.static && !listF && it.inner ? (sh.links && sh.links[it.ref]) || formulaLink(book, sh, it.cell) : null;
+      if (it.link) it.cls += ' xl-lnk';
+      it.td = (inner) => `<td${cs > 1 ? ` colspan="${cs}"` : ''}${rs > 1 ? ` rowspan="${rs}"` : ''} data-ref="${it.ref}" class="${it.cls}"${listF || !editable ? '' : ' tabindex="0"'}${it.link ? linkAttrs(it.link, editable) : ''} style="${esc(it.css)}">${inner}</td>`;
       if (listF) {
         // 목록 칸: 값은 원래 값, 보이는 글은 칸의 표시 형식대로
         const opts = listOptions(book, sh, listF); const cur = it.v == null ? '' : formatValue(it.v, 'General');
@@ -1764,11 +1808,13 @@
         if (iw <= 0 && ih <= 0) continue;
         const tf = it.xf && (it.xf.rot || it.xf.fh || it.xf.fv) ? `transform:${it.xf.rot ? `rotate(${it.xf.rot}deg)` : ''}${it.xf.fh ? ' scaleX(-1)' : ''}${it.xf.fv ? ' scaleY(-1)' : ''};` : '';
         const box = `left:${ix.toFixed(1)}px;top:${iy.toFixed(1)}px;width:${Math.max(0, iw).toFixed(1)}px;height:${Math.max(0, ih).toFixed(1)}px;${tf}`;
+        // 링크가 걸린 그림·도형은 누를 수 있게
+        const lkc = it.link ? ' xl-link-shp' : '', lka = it.link ? linkAttrs(it.link, false) : '';
         if (it.kind === 'pic') {
           if (it.crop && it.crop.some(Boolean)) {
             const [l, t, r, b] = it.crop, sw = 1 - l - r, shh = 1 - t - b;
-            out += `<div class="xl-img" style="${box}overflow:hidden"><img src="${esc(it.src)}" alt="" style="position:absolute;left:${(-l / sw * 100).toFixed(2)}%;top:${(-t / shh * 100).toFixed(2)}%;width:${(100 / sw).toFixed(2)}%;height:${(100 / shh).toFixed(2)}%"></div>`;
-          } else out += `<img class="xl-img" src="${esc(it.src)}" alt="" style="${box}">`;
+            out += `<div class="xl-img${lkc}"${lka} style="${box}overflow:hidden"><img src="${esc(it.src)}" alt="" style="position:absolute;left:${(-l / sw * 100).toFixed(2)}%;top:${(-t / shh * 100).toFixed(2)}%;width:${(100 / sw).toFixed(2)}%;height:${(100 / shh).toFixed(2)}%"></div>`;
+          } else out += `<img class="xl-img${lkc}"${lka} src="${esc(it.src)}" alt="" style="${box}">`;
         } else if (it.chart) out += `<div class="xl-shp xl-chart" style="${box}">차트</div>`;
         else if (it.geom === 'line' || it.geom === 'straightConnector1' || /Connector/.test(it.geom) || it.kind === 'cxnSp') {
           const fl = it.xf && (it.xf.fh !== it.xf.fv);
@@ -1785,7 +1831,7 @@
             txt = it.paras.map((p) => `<div style="text-align:${p.algn === 'ctr' ? 'center' : p.algn === 'r' ? 'right' : p.algn === 'just' || p.algn === 'dist' ? 'justify' : 'left'};font-size:${pxs(p.sz || (p.runs.find((r) => r.sz) || {}).sz || 11)}">${p.runs.map((r) => (r.br ? '<br>' : `<span style="${esc([r.sz ? 'font-size:' + pxs(r.sz) : '', r.b ? 'font-weight:700' : '', r.i ? 'font-style:italic' : '', r.u ? 'text-decoration:underline' : '', r.color ? 'color:' + r.color : '', r.font ? 'font-family:' + famCss(r.font) : ''].filter(Boolean).join(';'))}">${esc(r.t)}</span>`)).join('') || '&#8203;'}</div>`).join('');
           }
           if (it.tcolor) st.push('color:' + it.tcolor);
-          out += `<div class="xl-shp" style="${esc(st.join(';'))}">${txt}</div>`;
+          out += `<div class="xl-shp${lkc}"${lka} style="${esc(st.join(';'))}">${txt}</div>`;
         }
       }
     }
@@ -1897,6 +1943,10 @@
     const patch = (td, m) => {
       if (td._css !== m.css) { td.setAttribute('style', m.css); td._css = m.css; }
       if (td.querySelector('select')) return;
+      // 칸 값이 바뀌면 링크도 다시 (글이 지워진 칸, =HYPERLINK(A1) 처럼 주소가 바뀌는 칸)
+      td.classList.toggle('xl-lnk', !!m.link);
+      if (m.link) { td.dataset.link = m.link.url || ''; td.dataset.loc = m.link.loc || ''; td.title = linkTitle(m.link, td.hasAttribute('tabindex')); }
+      else if ('link' in td.dataset) { delete td.dataset.link; delete td.dataset.loc; td.removeAttribute('title'); }
       if (td._inner !== m.inner) { td.innerHTML = m.inner; td._inner = m.inner; }
     };
     const refresh = () => {
@@ -1961,7 +2011,31 @@
       else if (ed && e.key === 'Escape') { ed.textContent = ed._edit0; ed.blur(); }
       else if (!ed && e.key === 'Enter' && e.target.matches && e.target.matches('td.xl-in[tabindex]')) { e.preventDefault(); e.target.dispatchEvent(new FocusEvent('focusin', { bubbles: true })); }
     });    host.addEventListener('change', (e) => { const s = e.target.closest('select.xl-sel'); if (s) setValue(s.dataset.ref, s.value); });
-    host.addEventListener('click', (e) => { const b = e.target.closest('.xl-tabs button'); if (b) { cur = book.sheets.find((s) => s.name === b.dataset.sh); draw(); } });
+    host.addEventListener('click', (e) => {
+      const b = e.target.closest('.xl-tabs button'); if (b) { cur = book.sheets.find((s) => s.name === b.dataset.sh); draw(); return; }
+      // 링크: 칸·그림·도형을 누르면 연다 (엑셀과 같음). Ctrl+누르기는 칸 고치기
+      const lk = e.target.closest('.xl-wrap .xl-lnk, .xl-wrap .xl-link-shp');
+      if (!lk || e.target.closest('.xl-ed') || e.ctrlKey || e.metaKey) return;
+      const act = document.activeElement; if (act && act.classList && act.classList.contains('xl-ed')) act.blur();   // 고치던 칸은 먼저 마무리
+      if (lk.dataset.link) window.open(lk.dataset.link, '_blank', 'noopener,noreferrer');
+      else if (lk.dataset.loc) goTo(lk.dataset.loc);
+    });
+    // 링크 칸을 눌렀을 때 편집 상자가 뜨지 않게 (누르는 순간의 칸 선택만 막는다)
+    host.addEventListener('mousedown', (e) => {
+      const lk = e.target.closest && e.target.closest('.xl-wrap td.xl-lnk');
+      if (lk && !e.target.closest('.xl-ed') && !e.ctrlKey && !e.metaKey) e.preventDefault();
+    });
+    // 파일 안 위치로 가기: 시트!A1, 'A 시트'!$B$2, A1
+    function goTo(loc) {
+      const m = /^(?:'((?:[^']|'')+)'|([^!']+))!\$?([A-Za-z]{1,3})\$?(\d+)/.exec(loc) || /^()()\$?([A-Za-z]{1,3})\$?(\d+)/.exec(loc);
+      if (!m) return;
+      const name = (m[1] || m[2] || '').replace(/''/g, "'");
+      const to = name ? book.sheets.find((s) => s.name === name) : cur;
+      if (!to || to.hidden) return;
+      if (to !== cur) { cur = to; draw(); }
+      const td = host.querySelector(`.xl-wrap td[data-ref="${m[3].toUpperCase()}${m[4]}"]`);
+      if (td) { td.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); td.classList.add('xl-goto'); setTimeout(() => td.classList.remove('xl-goto'), 1600); }
+    }
     const onBefore = () => { if (!host.isConnected) { window.removeEventListener('beforeprint', onBefore); return; } preparePrint(); };
     window.addEventListener('beforeprint', onBefore);
     draw();

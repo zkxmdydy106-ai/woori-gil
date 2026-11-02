@@ -807,6 +807,12 @@ body.embed .hero p { display: none; }
 .xl-shp { display: flex; flex-direction: column; overflow: hidden; line-height: 1.2; color: #000; }
 .xl-chart { border: 1px dashed #b0b7bd; background: #f6f7f8; color: #8a949c; align-items: center; justify-content: center; font-size: 13px; }
 .xl-sheet td.xl-in { cursor: cell; }
+/* 링크가 걸린 칸·그림·도형: 모양은 파일 그대로, 마우스를 올리면 손 모양과 밑줄 */
+.xl-sheet td.xl-lnk, .xl-sheet td.xl-lnk[tabindex]:hover { cursor: pointer; }
+.xl-sheet td.xl-lnk:hover .xl-v { text-decoration: underline; }
+.xl-link-shp { pointer-events: auto; cursor: pointer; }
+.xl-link-shp:hover { outline: 2px solid #14684e; outline-offset: 1px; }
+.xl-sheet td.xl-goto { outline: 3px solid #f2b632 !important; outline-offset: -3px; }
 .xl-sheet td.xl-in[tabindex]:hover { outline: 1px solid #14684e; outline-offset: -1px; cursor: text; }
 .xl-sheet td.xl-in[tabindex]:focus, .xl-sheet td.xl-in:focus-within { outline: 2px solid #14684e; outline-offset: -2px; }
 .xl-sheet td.xl-in:focus-within { position: relative; }
@@ -846,6 +852,15 @@ body.embed .hero p { display: none; }
 .hwpv-pages { position: relative; z-index: 1; flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 16px; background: #e9ecef; }
 .hwpv-page { flex: none; max-width: 100%; background: #fff; box-shadow: 0 2px 12px rgb(0 0 0 / .14); }
 .hwpv-page svg { display: block; width: 100%; height: auto; }
+/* 한글 쪽 그림 위의 링크 (투명, 올리면 살짝 칠함) */
+.hv-link { cursor: pointer; }
+.hv-link rect { fill: transparent; pointer-events: all; }
+.hv-link:hover rect { fill: rgb(20 104 78 / .16); }
+.hwpv-linkbar { align-self: stretch; flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 12px; margin-bottom: 4px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
+.pages-host .hwpv-linkbar { margin: 0 0 12px; }
+.hwpv-linkbar .lbl { font-weight: 650; color: var(--muted); }
+.hwpv-linkbar a { color: var(--accent); }
+@media print { .hwpv-linkbar { display: none !important; } }
 @media (max-width: 640px) { .hwpv-pages { padding: 8px; gap: 10px; } }
 .pv-bar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .pv-page { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); }
@@ -4663,7 +4678,150 @@ window.HWPX_FORMS = {"absence": {"title": "결석신고서", "page": {"w": 793.7
     return out;
   }
 
+  /* ── 하이퍼링크: 쪽 그림(SVG)에는 링크가 없어서 파일에서 직접 읽어 그 글자 위에 얹는다 ──
+     결과: [{ text: 보이는 글, url }] (http·https·mailto 만) */
+  function linkUrl(cmd) {
+    // 한글의 링크 명령: 'http\://주소;1;0;0;' (\ 는 다음 글자를 그대로, ; 까지가 주소)
+    let u = '';
+    const s = String(cmd || '');
+    for (let i = 0; i < s.length; i++) { const c = s[i]; if (c === '\\') { u += s[++i] || ''; continue; } if (c === ';') break; u += c; }
+    u = u.trim();
+    if (/^www\./i.test(u) || /^[\w-]+(\.[\w-]+)+(\/|$)/.test(u)) u = 'https://' + u;
+    return /^(https?:|mailto:)/i.test(u) ? u : '';
+  }
+  // hwpx: 본문 XML 의 fieldBegin(type=HYPERLINK) ~ fieldEnd 사이 글자
+  async function hwpxLinks(u8) {
+    const files = (await window.HwpxEditor._unzip(u8)).filter((f) => /Contents\/section\d+\.xml$/.test(f.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    const out = [], dec = new TextDecoder();
+    for (const f of files) {
+      const doc = new DOMParser().parseFromString(dec.decode(f.data), 'application/xml');
+      const open = new Map();
+      const walk = (el) => {
+        for (const n of el.children) {
+          if (n.localName === 'fieldBegin') {
+            if (n.getAttribute('type') === 'HYPERLINK') {
+              const p = [...n.getElementsByTagNameNS('*', 'stringParam')];
+              const cmd = (p.find((x) => x.getAttribute('name') === 'Command') || p.find((x) => x.getAttribute('name') === 'Path') || { textContent: '' }).textContent;
+              const url = linkUrl(cmd);
+              if (url) { const l = { text: '', url }; open.set(n.getAttribute('id') || String(open.size), l); out.push(l); }
+            }
+          } else if (n.localName === 'fieldEnd') open.delete(n.getAttribute('beginIDRef'));
+          else if (n.localName === 't') { if (open.size) open.forEach((l) => { l.text += n.textContent; }); }
+          else walk(n);
+        }
+      };
+      walk(doc.documentElement);
+    }
+    return out;
+  }
+  // hwp(옛 형식): 복합 문서(CFB) 안 BodyText/Section 들의 레코드에서 %hlk 조종자를 찾는다
+  function cfb(u8) {
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    if (dv.getUint32(0, true) !== 0xE011CFD0) throw new Error('hwp 파일이 아니에요');
+    const ss = 1 << dv.getUint16(30, true), ms = 1 << dv.getUint16(32, true), off = (n) => (n + 1) * ss;
+    const difat = []; for (let i = 0; i < 109; i++) difat.push(dv.getUint32(76 + i * 4, true));
+    for (let d = dv.getUint32(68, true), k = 0; d < 0xFFFFFFFA && k < dv.getUint32(72, true); k++) { for (let i = 0; i < ss / 4 - 1; i++) difat.push(dv.getUint32(off(d) + i * 4, true)); d = dv.getUint32(off(d) + ss - 4, true); }
+    const fat = []; difat.filter((x) => x < 0xFFFFFFFA).forEach((s) => { for (let i = 0; i < ss / 4; i++) fat.push(dv.getUint32(off(s) + i * 4, true)); });
+    const chain = (s, tb) => { const c = []; while (s < 0xFFFFFFFA && c.length <= tb.length) { c.push(s); s = tb[s]; } return c; };
+    const big = (s) => { const c = chain(s, fat), o = new Uint8Array(c.length * ss); c.forEach((x, i) => o.set(u8.subarray(off(x), off(x) + ss), i * ss)); return o; };
+    const dirB = big(dv.getUint32(48, true)), dd = new DataView(dirB.buffer);
+    const dirs = []; for (let i = 0; i + 128 <= dirB.length; i += 128) { const nl = dd.getUint16(i + 64, true); dirs.push({ name: nl > 2 ? new TextDecoder('utf-16le').decode(dirB.subarray(i, i + nl - 2)) : '', type: dirB[i + 66], l: dd.getUint32(i + 68, true), r: dd.getUint32(i + 72, true), ch: dd.getUint32(i + 76, true), start: dd.getUint32(i + 116, true), size: dd.getUint32(i + 120, true) }); }
+    const mfB = big(dv.getUint32(60, true)), mfD = new DataView(mfB.buffer); const mfat = []; for (let i = 0; i + 4 <= mfB.length; i += 4) mfat.push(mfD.getUint32(i, true));
+    const mini = big(dirs[0].start), cutoff = dv.getUint32(56, true);
+    const read = (e) => { if (e.size >= cutoff) return big(e.start).subarray(0, e.size); const c = chain(e.start, mfat), o = new Uint8Array(c.length * ms); c.forEach((x, i) => o.set(mini.subarray(x * ms, x * ms + ms), i * ms)); return o.subarray(0, e.size); };
+    const kidsOf = (e) => { const o = []; const go = (i) => { if (i >= dirs.length || i === 0xFFFFFFFF) return; const d = dirs[i]; go(d.l); o.push(d); go(d.r); }; go(e.ch); return o; };
+    return { root: dirs[0], kidsOf, read };
+  }
+  async function inflate(bytes) {
+    const out = new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw')));
+    return new Uint8Array(await out.arrayBuffer());
+  }
+  const HLK = 0x25686C6B;   // '%hlk'
+  function sectionLinks(b, out) {
+    const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    const queue = {};   // 수준별: 문단 글에서 읽은 링크 글자들 (조종자가 뒤따라 나온다)
+    let p = 0;
+    while (p + 4 <= b.length) {
+      const h = dv.getUint32(p, true); p += 4;
+      const tag = h & 0x3FF, level = (h >>> 10) & 0x3FF; let size = h >>> 20;
+      if (size === 0xFFF) { size = dv.getUint32(p, true); p += 4; }
+      if (tag === 66) queue[level + 1] = [];                  // 문단 시작
+      else if (tag === 67) {                                  // 문단 글자
+        const stack = []; let i = p; const end = p + size, q = (queue[level] = queue[level] || []);
+        while (i + 2 <= end) {
+          const c = dv.getUint16(i, true);
+          if (c === 3) { const isL = i + 6 <= end && dv.getUint32(i + 2, true) === HLK; const o = isL ? { t: '' } : null; if (isL) q.push(o); stack.push(o); i += 16; continue; }
+          if (c === 4) { stack.pop(); i += 16; continue; }
+          if ([1, 2, 5, 6, 7, 8, 9, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].includes(c)) { i += 16; continue; }
+          if (c >= 32) { const ch = String.fromCharCode(c); stack.forEach((o) => { if (o) o.t += ch; }); }
+          i += 2;
+        }
+      } else if (tag === 71 && size >= 4 && dv.getUint32(p, true) === HLK) {   // 조종자 머리: 속성(4)·기타(1)·명령 길이(2)·명령
+        const n = size >= 11 ? dv.getUint16(p + 9, true) : 0;
+        const cmd = n && p + 11 + n * 2 <= p + size ? new TextDecoder('utf-16le').decode(b.subarray(p + 11, p + 11 + n * 2)) : '';
+        const shown = queue[level] && queue[level].shift();
+        const url = linkUrl(cmd);
+        if (url) out.push({ text: shown ? shown.t : '', url });
+      }
+      p += size;
+    }
+  }
+  async function hwpLinks(u8) {
+    const f = cfb(u8), top = f.kidsOf(f.root);
+    const head = top.find((e) => e.name === 'FileHeader');
+    const flags = head ? new DataView(f.read(head).buffer, f.read(head).byteOffset).getUint32(36, true) : 1;
+    if (flags & 6) return [];   // 암호·배포용 문서는 읽을 수 없다
+    const body = top.find((e) => e.name === 'BodyText'); if (!body) return [];
+    const secs = f.kidsOf(body).filter((e) => /^Section\d+$/.test(e.name)).sort((a, b) => +a.name.slice(7) - +b.name.slice(7));
+    const out = [];
+    for (const s of secs) { const raw = f.read(s); const b = new Uint8Array(flags & 1 ? await inflate(raw) : raw); sectionLinks(b, out); }
+    return out;
+  }
+  async function links(bytes) {
+    try {
+      const u8 = new Uint8Array(bytes instanceof ArrayBuffer ? bytes.slice(0) : bytes);
+      return u8[0] === 0x50 && u8[1] === 0x4B ? await hwpxLinks(u8) : await hwpLinks(u8);
+    } catch (e) { console.warn('한글 파일의 링크를 읽지 못했어요', e); return []; }
+  }
+  const NS_SVG = 'http://www.w3.org/2000/svg';
+  // 쪽 그림의 글자 위에 투명한 링크를 얹는다. 못 찾은 링크는 돌려준다
+  function overlayLinks(box, list) {
+    const norm = (s) => String(s || '').replace(/\s+/g, '').toLowerCase();
+    const pages = [...box.querySelectorAll('.hwpv-page svg')].map((svg) => { let s = ''; const parts = []; svg.querySelectorAll('text').forEach((t) => { const c = norm(t.textContent); if (!c) return; parts.push({ el: t, a: s.length, b: s.length + c.length }); s += c; }); return { s, parts }; });
+    const miss = [];
+    let cp = 0, ci = 0;
+    for (const l of list) {
+      const w = norm(l.text);
+      let at = null;
+      if (w) {
+        for (let k = cp; k < pages.length && !at; k++) { const i = pages[k].s.indexOf(w, k === cp ? ci : 0); if (i >= 0) at = { k, i }; }
+        for (let k = 0; k < pages.length && !at; k++) { const i = pages[k].s.indexOf(w); if (i >= 0) at = { k, i }; }
+      }
+      if (!at) { miss.push(l); continue; }
+      cp = at.k; ci = at.i + w.length;
+      const pg = pages[at.k], a0 = at.i, b0 = at.i + w.length;
+      pg.parts.filter((p) => p.b > a0 && p.a < b0).forEach((p) => {
+        try {
+          const bb = p.el.getBBox(), f0 = (Math.max(a0, p.a) - p.a) / (p.b - p.a), f1 = (Math.min(b0, p.b) - p.a) / (p.b - p.a);
+          const an = document.createElementNS(NS_SVG, 'a'); an.setAttribute('class', 'hv-link'); an.setAttribute('href', l.url); an.setAttribute('target', '_blank'); an.setAttribute('rel', 'noopener noreferrer');
+          const ti = document.createElementNS(NS_SVG, 'title'); ti.textContent = '누르면 새 창으로 열려요: ' + l.url; an.appendChild(ti);
+          const r = document.createElementNS(NS_SVG, 'rect'); r.setAttribute('x', bb.x + bb.width * f0); r.setAttribute('y', bb.y); r.setAttribute('width', Math.max(1, bb.width * (f1 - f0))); r.setAttribute('height', bb.height); an.appendChild(r);
+          p.el.parentNode.insertBefore(an, p.el.nextSibling);
+        } catch (e) { /* 재지 못하면 건너뛴다 */ }
+      });
+    }
+    return miss;
+  }
+  // 글자 위에 못 얹은 링크(또는 쪽 그림 화면)의 목록 줄
+  function linkBar(list) {
+    const bar = document.createElement('div'); bar.className = 'hwpv-linkbar';
+    bar.appendChild(Object.assign(document.createElement('span'), { className: 'lbl', textContent: '이 문서의 링크' }));
+    list.forEach((l) => { const a = document.createElement('a'); a.href = l.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = l.text.trim() || l.url; a.title = l.url; bar.appendChild(a); });
+    return bar;
+  }
+
   // 화면: 쪽들을 host 안에 그린다. 폭에 맞춰 줄이고(최대 100%), 다시 부르면 새로 그린다
+  // host._links 가 있으면(파일에서 읽은 링크) 글자 위에 얹는다
   async function mount(host, ed) {
     addWebFonts(document);
     const strs = await pagesOf(ed);
@@ -4678,6 +4836,7 @@ window.HWPX_FORMS = {"absence": {"title": "결석신고서", "page": {"w": 793.7
     });
     host.querySelectorAll('.hwpv-pages').forEach((n) => n.remove());
     host.appendChild(box);
+    if (host._links && host._links.length) { const miss = overlayLinks(box, host._links); if (miss.length) box.insertBefore(linkBar(miss), box.firstChild); }
     return strs.length;
   }
 
@@ -4734,7 +4893,7 @@ html, body { margin: 0; padding: 0; background: #fff; }
     } finally { printing = false; }
   }
 
-  const api = { mount, print, buildPrint, pagesOf, toSvg, chainFor, hasLocal };
+  const api = { mount, print, buildPrint, pagesOf, toSvg, chainFor, hasLocal, links, linkBar };
   window.HwpView = api;
 })();
 
@@ -5260,6 +5419,11 @@ window.XLSX_FORMS = {"travel": {"title": "국내출장 여비 신청서", "zip":
     const bytes = typeof src === 'string' ? Uint8Array.from(atob(src), (c) => c.charCodeAt(0)) : new Uint8Array(src);
     const files = await HwpxEditor._unzip(bytes);
     const F = Object.fromEntries(files.map((f) => [f.name, f]));
+    // 하이퍼링크 관계만 (relsOf 는 바깥 주소를 버리므로 따로 읽는다)
+    const linkRelsOf = (path) => {
+      const rp = path.replace(/([^/]+)$/, '_rels/$1.rels'); if (!F[rp]) return {};
+      return Object.fromEntries(all(parse(F[rp].data), 'Relationship').filter((r) => /\/hyperlink$/.test(r.getAttribute('Type') || '')).map((r) => [r.getAttribute('Id'), r.getAttribute('Target') || '']));
+    };
     const relsOf = (path) => {
       const rp = path.replace(/([^/]+)$/, '_rels/$1.rels'); if (!F[rp]) return {};
       const dir = path.replace(/[^/]+$/, '');
@@ -5460,6 +5624,18 @@ window.XLSX_FORMS = {"travel": {"title": "국내출장 여비 신청서", "zip":
       };
       const pt = names[sh.idx + ':_xlnm.Print_Titles'];
       if (pt) pt.split(',').forEach((p) => { const m = /!\$?(\d+):\$?(\d+)$/.exec(p); if (m) sh.page.titles = [+m[1], +m[2]]; });
+      // 하이퍼링크: 칸마다 바깥 주소(url) 또는 파일 안 위치(loc). 범위로 걸린 링크는 칸마다 펼친다
+      const lRels = linkRelsOf(sh.path);
+      sh.links = {};
+      all(root, 'hyperlink').forEach((h) => {
+        const ref = h.getAttribute('ref'); if (!ref) return;
+        const rid = h.getAttributeNS(NS_R, 'id') || h.getAttribute('r:id');
+        const lk = linkOf(rid ? lRels[rid] : '', h.getAttribute('location'));
+        if (!lk) return;
+        lk.tip = h.getAttribute('tooltip') || '';
+        const rg = parseRange(ref);
+        for (let r = rg.r1; r <= Math.min(rg.r2, rg.r1 + 200); r++) for (let c = rg.c1; c <= Math.min(rg.c2, rg.c1 + 50); c++) sh.links[colName(c) + r] = lk;
+      });
       // 그림·도형
       const sRels = relsOf(sh.path);
       sh.draw = [];
@@ -5475,7 +5651,8 @@ window.XLSX_FORMS = {"travel": {"title": "국내출장 여비 신청서", "zip":
           if (p) a.pos = { x: +p.getAttribute('x'), y: +p.getAttribute('y') };
           const body = Array.from(an.children).find((n) => ['pic', 'sp', 'cxnSp', 'grpSp', 'graphicFrame'].includes(n.localName));
           if (!body || (!a.from && !a.pos)) return;
-          a.items = drawItems(body, { C, url: (rid) => dRels[rid] && mediaUrl(dRels[rid]) }, null);
+          const dLinks = linkRelsOf(dPath);
+          a.items = drawItems(body, { C, url: (rid) => dRels[rid] && mediaUrl(dRels[rid]), link: (rid) => linkOf(dLinks[rid], '') }, null);
           sh.draw.push(a);
         });
       }
@@ -5498,6 +5675,26 @@ window.XLSX_FORMS = {"travel": {"title": "국내출장 여비 신청서", "zip":
   }
 
   /* ── 도형 읽기 ── */
+  // 링크 정리: 바깥 주소는 http·https·mailto·tel 만 연다 (www. 는 https 로). '#시트!A1' 은 파일 안 위치
+  function linkOf(target, location) {
+    let u = String(target || '').trim(), loc = String(location || '').trim();
+    if (u.charAt(0) === '#') { loc = u.slice(1); u = ''; }
+    if (/^www\./i.test(u)) u = 'https://' + u;
+    if (u && /^(https?:|mailto:|tel:)/i.test(u)) return { url: u, loc: '' };
+    return loc ? { url: '', loc } : null;
+  }
+  const linkTitle = (lk, editable) => (lk.tip ? lk.tip + ' · ' : '') + (lk.url ? '누르면 새 창으로 열려요: ' + lk.url : '누르면 ' + lk.loc + ' (으)로 가요') + (editable ? ' (고치려면 Ctrl+누르기)' : '');
+  const linkAttrs = (lk, editable) => ` data-link="${esc(lk.url || '')}" data-loc="${esc(lk.loc || '')}" title="${esc(linkTitle(lk, editable))}"`;
+  // =HYPERLINK("주소", "이름") 또는 =HYPERLINK(A1, ...) 칸의 링크
+  function formulaLink(book, sh, cell) {
+    if (!cell || !cell.f || !/^\s*HYPERLINK\s*\(/i.test(cell.f)) return null;
+    const s = /^\s*HYPERLINK\s*\(\s*"((?:[^"]|"")*)"/i.exec(cell.f);
+    if (s) return linkOf(s[1].replace(/""/g, '"'), '');
+    const r = /^\s*HYPERLINK\s*\(\s*\$?([A-Z]{1,3})\$?(\d+)\s*[,)]/i.exec(cell.f);
+    if (!r) return null;
+    const p = parseRef(r[1].toUpperCase() + r[2]);
+    return linkOf(String(book.calc.value(sh, p.r, p.c) || ''), '');
+  }
   function drawItems(el, X, grp) {
     const xfrm = (e) => { const x = all(e, 'xfrm')[0]; if (!x) return null; const o = kid(x, 'off'), ex = kid(x, 'ext'), co = kid(x, 'chOff'), ce = kid(x, 'chExt'); return { x: o ? +o.getAttribute('x') : 0, y: o ? +o.getAttribute('y') : 0, cx: ex ? +ex.getAttribute('cx') : 0, cy: ex ? +ex.getAttribute('cy') : 0, rot: +(x.getAttribute('rot') || 0) / 60000, fh: x.getAttribute('flipH') === '1', fv: x.getAttribute('flipV') === '1', chx: co ? +co.getAttribute('x') : 0, chy: co ? +co.getAttribute('y') : 0, chcx: ce ? +ce.getAttribute('cx') : 0, chcy: ce ? +ce.getAttribute('cy') : 0 }; };
     const n = el.localName;
@@ -5507,6 +5704,9 @@ window.XLSX_FORMS = {"travel": {"title": "국내출장 여비 신청서", "zip":
     }
     const spPr = kid(el, 'spPr');
     const it = { kind: n, xf: spPr ? xfrm(spPr) : null, grp };
+    // 그림·도형에 걸린 링크
+    const hl = X.link && all(el, 'hlinkClick')[0];
+    if (hl) { const lk = X.link(hl.getAttributeNS(NS_R, 'id') || hl.getAttribute('r:id')); if (lk) it.link = lk; }
     if (it.xf && grp && grp.chcx) {
       const sx = grp.cx / grp.chcx, sy = grp.cy / (grp.chcy || 1);
       it.rel = { x: (it.xf.x - grp.chx) * sx, y: (it.xf.y - grp.chy) * sy, cx: it.xf.cx * sx, cy: it.xf.cy * sy };
@@ -6452,7 +6652,10 @@ window.XLSX_FORMS = {"travel": {"title": "국내출장 여비 신청서", "zip":
       const listF = editable ? sh.valid[it.ref] : null;
       it.cls = (editable ? 'xl-in' : 'xl-f') + (isF ? ' xl-fx' : '');
       if (it.spill) it.cls += ' xl-sp';
-      it.td = (inner) => `<td${cs > 1 ? ` colspan="${cs}"` : ''}${rs > 1 ? ` rowspan="${rs}"` : ''} data-ref="${it.ref}" class="${it.cls}"${listF || !editable ? '' : ' tabindex="0"'} style="${esc(it.css)}">${inner}</td>`;
+      // 링크 칸: 글이 있으면 누를 때 열린다 (목록 칸·인쇄용 쪽은 제외)
+      it.link = !opt.static && !listF && it.inner ? (sh.links && sh.links[it.ref]) || formulaLink(book, sh, it.cell) : null;
+      if (it.link) it.cls += ' xl-lnk';
+      it.td = (inner) => `<td${cs > 1 ? ` colspan="${cs}"` : ''}${rs > 1 ? ` rowspan="${rs}"` : ''} data-ref="${it.ref}" class="${it.cls}"${listF || !editable ? '' : ' tabindex="0"'}${it.link ? linkAttrs(it.link, editable) : ''} style="${esc(it.css)}">${inner}</td>`;
       if (listF) {
         // 목록 칸: 값은 원래 값, 보이는 글은 칸의 표시 형식대로
         const opts = listOptions(book, sh, listF); const cur = it.v == null ? '' : formatValue(it.v, 'General');
@@ -6511,11 +6714,13 @@ window.XLSX_FORMS = {"travel": {"title": "국내출장 여비 신청서", "zip":
         if (iw <= 0 && ih <= 0) continue;
         const tf = it.xf && (it.xf.rot || it.xf.fh || it.xf.fv) ? `transform:${it.xf.rot ? `rotate(${it.xf.rot}deg)` : ''}${it.xf.fh ? ' scaleX(-1)' : ''}${it.xf.fv ? ' scaleY(-1)' : ''};` : '';
         const box = `left:${ix.toFixed(1)}px;top:${iy.toFixed(1)}px;width:${Math.max(0, iw).toFixed(1)}px;height:${Math.max(0, ih).toFixed(1)}px;${tf}`;
+        // 링크가 걸린 그림·도형은 누를 수 있게
+        const lkc = it.link ? ' xl-link-shp' : '', lka = it.link ? linkAttrs(it.link, false) : '';
         if (it.kind === 'pic') {
           if (it.crop && it.crop.some(Boolean)) {
             const [l, t, r, b] = it.crop, sw = 1 - l - r, shh = 1 - t - b;
-            out += `<div class="xl-img" style="${box}overflow:hidden"><img src="${esc(it.src)}" alt="" style="position:absolute;left:${(-l / sw * 100).toFixed(2)}%;top:${(-t / shh * 100).toFixed(2)}%;width:${(100 / sw).toFixed(2)}%;height:${(100 / shh).toFixed(2)}%"></div>`;
-          } else out += `<img class="xl-img" src="${esc(it.src)}" alt="" style="${box}">`;
+            out += `<div class="xl-img${lkc}"${lka} style="${box}overflow:hidden"><img src="${esc(it.src)}" alt="" style="position:absolute;left:${(-l / sw * 100).toFixed(2)}%;top:${(-t / shh * 100).toFixed(2)}%;width:${(100 / sw).toFixed(2)}%;height:${(100 / shh).toFixed(2)}%"></div>`;
+          } else out += `<img class="xl-img${lkc}"${lka} src="${esc(it.src)}" alt="" style="${box}">`;
         } else if (it.chart) out += `<div class="xl-shp xl-chart" style="${box}">차트</div>`;
         else if (it.geom === 'line' || it.geom === 'straightConnector1' || /Connector/.test(it.geom) || it.kind === 'cxnSp') {
           const fl = it.xf && (it.xf.fh !== it.xf.fv);
@@ -6532,7 +6737,7 @@ window.XLSX_FORMS = {"travel": {"title": "국내출장 여비 신청서", "zip":
             txt = it.paras.map((p) => `<div style="text-align:${p.algn === 'ctr' ? 'center' : p.algn === 'r' ? 'right' : p.algn === 'just' || p.algn === 'dist' ? 'justify' : 'left'};font-size:${pxs(p.sz || (p.runs.find((r) => r.sz) || {}).sz || 11)}">${p.runs.map((r) => (r.br ? '<br>' : `<span style="${esc([r.sz ? 'font-size:' + pxs(r.sz) : '', r.b ? 'font-weight:700' : '', r.i ? 'font-style:italic' : '', r.u ? 'text-decoration:underline' : '', r.color ? 'color:' + r.color : '', r.font ? 'font-family:' + famCss(r.font) : ''].filter(Boolean).join(';'))}">${esc(r.t)}</span>`)).join('') || '&#8203;'}</div>`).join('');
           }
           if (it.tcolor) st.push('color:' + it.tcolor);
-          out += `<div class="xl-shp" style="${esc(st.join(';'))}">${txt}</div>`;
+          out += `<div class="xl-shp${lkc}"${lka} style="${esc(st.join(';'))}">${txt}</div>`;
         }
       }
     }
@@ -6644,6 +6849,10 @@ window.XLSX_FORMS = {"travel": {"title": "국내출장 여비 신청서", "zip":
     const patch = (td, m) => {
       if (td._css !== m.css) { td.setAttribute('style', m.css); td._css = m.css; }
       if (td.querySelector('select')) return;
+      // 칸 값이 바뀌면 링크도 다시 (글이 지워진 칸, =HYPERLINK(A1) 처럼 주소가 바뀌는 칸)
+      td.classList.toggle('xl-lnk', !!m.link);
+      if (m.link) { td.dataset.link = m.link.url || ''; td.dataset.loc = m.link.loc || ''; td.title = linkTitle(m.link, td.hasAttribute('tabindex')); }
+      else if ('link' in td.dataset) { delete td.dataset.link; delete td.dataset.loc; td.removeAttribute('title'); }
       if (td._inner !== m.inner) { td.innerHTML = m.inner; td._inner = m.inner; }
     };
     const refresh = () => {
@@ -6708,7 +6917,31 @@ window.XLSX_FORMS = {"travel": {"title": "국내출장 여비 신청서", "zip":
       else if (ed && e.key === 'Escape') { ed.textContent = ed._edit0; ed.blur(); }
       else if (!ed && e.key === 'Enter' && e.target.matches && e.target.matches('td.xl-in[tabindex]')) { e.preventDefault(); e.target.dispatchEvent(new FocusEvent('focusin', { bubbles: true })); }
     });    host.addEventListener('change', (e) => { const s = e.target.closest('select.xl-sel'); if (s) setValue(s.dataset.ref, s.value); });
-    host.addEventListener('click', (e) => { const b = e.target.closest('.xl-tabs button'); if (b) { cur = book.sheets.find((s) => s.name === b.dataset.sh); draw(); } });
+    host.addEventListener('click', (e) => {
+      const b = e.target.closest('.xl-tabs button'); if (b) { cur = book.sheets.find((s) => s.name === b.dataset.sh); draw(); return; }
+      // 링크: 칸·그림·도형을 누르면 연다 (엑셀과 같음). Ctrl+누르기는 칸 고치기
+      const lk = e.target.closest('.xl-wrap .xl-lnk, .xl-wrap .xl-link-shp');
+      if (!lk || e.target.closest('.xl-ed') || e.ctrlKey || e.metaKey) return;
+      const act = document.activeElement; if (act && act.classList && act.classList.contains('xl-ed')) act.blur();   // 고치던 칸은 먼저 마무리
+      if (lk.dataset.link) window.open(lk.dataset.link, '_blank', 'noopener,noreferrer');
+      else if (lk.dataset.loc) goTo(lk.dataset.loc);
+    });
+    // 링크 칸을 눌렀을 때 편집 상자가 뜨지 않게 (누르는 순간의 칸 선택만 막는다)
+    host.addEventListener('mousedown', (e) => {
+      const lk = e.target.closest && e.target.closest('.xl-wrap td.xl-lnk');
+      if (lk && !e.target.closest('.xl-ed') && !e.ctrlKey && !e.metaKey) e.preventDefault();
+    });
+    // 파일 안 위치로 가기: 시트!A1, 'A 시트'!$B$2, A1
+    function goTo(loc) {
+      const m = /^(?:'((?:[^']|'')+)'|([^!']+))!\$?([A-Za-z]{1,3})\$?(\d+)/.exec(loc) || /^()()\$?([A-Za-z]{1,3})\$?(\d+)/.exec(loc);
+      if (!m) return;
+      const name = (m[1] || m[2] || '').replace(/''/g, "'");
+      const to = name ? book.sheets.find((s) => s.name === name) : cur;
+      if (!to || to.hidden) return;
+      if (to !== cur) { cur = to; draw(); }
+      const td = host.querySelector(`.xl-wrap td[data-ref="${m[3].toUpperCase()}${m[4]}"]`);
+      if (td) { td.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); td.classList.add('xl-goto'); setTimeout(() => td.classList.remove('xl-goto'), 1600); }
+    }
     const onBefore = () => { if (!host.isConnected) { window.removeEventListener('beforeprint', onBefore); return; } preparePrint(); };
     window.addEventListener('beforeprint', onBefore);
     draw();
@@ -8208,6 +8441,7 @@ window.SUBJECT_SITES = [
       const m = await loadRhwp();
       if (!o.alive()) return;
       host.innerHTML = '<div class="hwpv-engine"></div>'; host.classList.add('hwpv', 'edit');
+      host._links = window.HwpView ? await window.HwpView.links(bytes()) : [];   // 원본 모양 화면에서 누를 수 있게
       ed = await withTimeout(m.createEditor($('.hwpv-engine', host)), 25000);
       await withTimeout(myHwp('form:' + id, 'v1', ed, bytes, meta.title + '.hwpx', o.where, async () => { if (!edit) await window.HwpView.mount(host, ed); }), 30000);
       if (window.HwpView) {
@@ -8563,6 +8797,8 @@ window.SUBJECT_SITES = [
       if (ft === 'hwp' || ft === 'hwpx') {
         // rhwp 편집기는 뒤에서 문서를 읽고 쪽을 그리는 데만 쓰고, 화면에는 그 쪽 그림을 이 컴퓨터의 한컴 글꼴로 띄운다 (hwp-view.js)
         let ed, edit = false;
+        const docLinks = window.HwpView ? await window.HwpView.links(bytes) : [];   // 문서 속 하이퍼링크
+        host._links = docLinks;
         try {
           const m = await loadRhwp(); if (!o.alive()) return;
           host.insertAdjacentHTML('beforeend', '<div class="hwpv-engine"></div>'); host.classList.add('hwpv');
@@ -8571,7 +8807,7 @@ window.SUBJECT_SITES = [
         } catch (e) {
           if (!o.alive()) return;
           if (e.message === 'offline') throw e;
-          return hwpPagesView(host, att, e.message);   // 사파리·편집기가 안 열릴 때: PC에서 만들어 둔 쪽 그림으로
+          return hwpPagesView(host, att, e.message, docLinks);   // 사파리·편집기가 안 열릴 때: PC에서 만들어 둔 쪽 그림으로
         }
         Thumbs.ensurePages(thumbOfAtt(att));   // 사파리용 쪽 그림이 아직 없으면 원본으로 만들어 둔다
         const fb = findBar(host, 'svg', host, o.q);   // 원본 모양 쪽에서 낱말 찾기 (고쳐 쓰기 화면에서는 숨김)
@@ -8665,7 +8901,7 @@ window.SUBJECT_SITES = [
   }
 
   // 한글 편집기를 쓸 수 없을 때(아이폰·아이패드 사파리 등): PC에서 원본으로 만들어 둔 쪽 그림으로 보여 주고 인쇄. 고쳐 쓰기는 PC에서
-  async function hwpPagesView(host, att, why) {
+  async function hwpPagesView(host, att, why, docLinks) {
     host.classList.remove('hwpv', 'edit'); host.classList.add('pages-host');
     host.innerHTML = `<div class="hwp-loading">${ic('file-text')}<span>쪽 그림을 불러오는 중…</span></div>`;
     const urls = [];
@@ -8677,6 +8913,8 @@ window.SUBJECT_SITES = [
     if (!host.isConnected) return;
     const dev = why === 'webkit' ? '아이폰·아이패드(사파리)에서는 한글 편집기가 열리지 않아요.' : '한글 편집기를 여는 데 시간이 너무 오래 걸려요.';
     host.innerHTML = `<div class="notice amber pg-note">${ic('info-circle')}<div>${dev} ${urls.length ? '<b>쪽 그림</b>으로 보여 드려요. 고쳐 쓰기는 PC에서 해 주세요.' : '아직 이 파일의 쪽 그림이 없어요. 누구든 PC에서 한 번 열면 만들어져요.'} <b>파일 받기</b>로 받아 한컴오피스 Viewer 앱에서 열 수도 있어요.</div></div>${urls.map((u, i) => `<img class="pg-img" src="${u}" alt="${i + 1}쪽">`).join('')}`;
+    // 쪽 그림 위에는 링크를 얹을 수 없어서 목록으로 보여 준다
+    if (docLinks && docLinks.length && window.HwpView) { const nt = $('.pg-note', host); if (nt) nt.after(window.HwpView.linkBar(docLinks)); }
     const pb = $('#fPrint'); if (pb) { pb.disabled = !urls.length; pb.onclick = () => window.print(); }
   }
 
