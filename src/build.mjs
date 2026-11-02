@@ -109,6 +109,7 @@ function copyDir(from, to, skip) {
 copyDir(path.join(SRC, 'tools'), path.join(OUT, 'tools'));
 copyDir(path.join(SRC, 'vendor', 'pdfjs'), path.join(OUT, 'vendor', 'pdfjs'));
 copyDir(path.join(SRC, 'apps'), path.join(OUT, 'apps'));
+if (FLAVOR === 'gg') copyDir(path.join(PRIV, 'gg', 'media'), path.join(OUT, 'media'));
 for (const dir of F.lessons) copyDir(dir, path.join(OUT, 'lessons'), /\.py$/);
 fs.mkdirSync(path.join(OUT, 'files'), { recursive: true });
 for (const f of fs.readdirSync(F.forms)) if (/\.(pdf|hwpx|xlsx)$/i.test(f)) fs.copyFileSync(path.join(F.forms, f), path.join(OUT, 'files', f));

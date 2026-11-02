@@ -12,7 +12,7 @@ const CATEGORIES = [
   { id: 'life', name: '학생 생활', icon: 'users' }, { id: 'event', name: '행사', icon: 'confetti' },
   { id: 'forms', name: '서식·서류', icon: 'file-text' }, { id: 'guide', name: '학교 생활 안내', icon: 'directions' }
 ];
-const ADMIN_ACTIONS = ['restoreSite', 'adminData', 'review', 'saveCats', 'resolveReport', 'restoreDoc', 'saveTool', 'deleteTool', 'saveSettings', 'exportAll', 'importDocs'];
+const ADMIN_ACTIONS = ['missDel', 'restoreSite', 'adminData', 'review', 'saveCats', 'resolveReport', 'restoreDoc', 'saveTool', 'deleteTool', 'saveSettings', 'exportAll', 'importDocs'];
 const BODY_MAX = 300000;
 
 class Fail extends Error { constructor(msg, code) { super(msg); this.code = code || ''; } }
@@ -94,6 +94,7 @@ async function handle(env, req) {
   if (a === 'load') { const d = await load(db); d.neis = !!(env.NEIS_KEY && env.NEIS_SCHUL); return d; }
   if (a === 'neis') return neis(env, p);
   if (a === 'hit') { const t = p.kind === 'lesson' ? 'lessons' : 'docs'; const d = await db.find(t, p.id); if (d) { d.views = (Number(d.views) || 0) + 1; await db.save(t, d); } return true; }
+  if (a === 'miss') return addMiss(db, p.q);
   if (a === 'thumb') return saveThumb(env, p);
   // 도구 탭: 누구나 더하고 고친다. 바로 보이고 관리자가 확인하기 전까지 '승인 전'
   if (a === 'proposeTool') {
@@ -390,9 +391,34 @@ async function adminLogin(db, pw) {
 }
 async function checkToken(db, t) { if (!t || !(await db.meta('adm_' + t))) fail('관리자 확인이 끝났어요. 다시 로그인해 주세요.', 'BAD_TOKEN'); }
 
+// 못 찾은 검색어: 낱말·횟수·날짜만 남긴다 (누가 찾았는지는 남기지 않음). 이름·연락처처럼 보이는 말은 저장하지 않고, 180일 지나면 지운다
+function missTerm(q) {
+  const t = String(q || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  if (t.length < 2 || t.length > 30 || /[ㄱ-ㅎㅏ-ㅣ]/.test(t) || /@|https?:|\d{5,}|\d{2,4}-\d{3,4}/.test(t)) return '';
+  return t.split(' ').some((w) => /^[김이박최정강조윤장임한오서신권황안송류전홍][가-힣]{2}(선생님?|쌤|학생|교사|교감|교장|부장)?$/.test(w)) ? '' : t;
+}
+function freshMisses(m) {
+  const from = new Date(Date.now() - 180 * 864e5).toISOString().slice(0, 10), out = {};
+  for (const [t, v] of Object.entries(m || {})) if (v && String(v.last) >= from) out[t] = v;
+  return out;
+}
+async function addMiss(db, q) {
+  const t = missTerm(q); if (!t) return true;
+  const m = freshMisses(parseJ(await db.prop('misses'), {}));
+  m[t] = { n: ((m[t] && m[t].n) || 0) + 1, last: today() };
+  const keys = Object.keys(m).sort((a, b) => m[b].n - m[a].n || String(m[b].last).localeCompare(String(m[a].last)));
+  await db.setProp('misses', JSON.stringify(Object.fromEntries(keys.slice(0, 300).map((k) => [k, m[k]]))));
+  return true;
+}
+
 async function admin(db, a, p) {
+  if (a === 'missDel') {
+    const m = p.all ? {} : parseJ(await db.prop('misses'), {});
+    if (!p.all) delete m[String(p.term || '')];
+    await db.setProp('misses', JSON.stringify(m)); return true;
+  }
   if (a === 'adminData') {
-    return { categories: await cats(db), reports: (await db.all('reports')).slice().reverse().slice(0, 200), docs: (await db.all('docs')).map(docOut),
+    return { misses: freshMisses(parseJ(await db.prop('misses'), {})), categories: await cats(db), reports: (await db.all('reports')).slice().reverse().slice(0, 200), docs: (await db.all('docs')).map(docOut),
       settings: { schoolName: await db.prop('schoolName'), accessCode: await db.prop('accessCode'), hiddenClassTools: parseJ(await db.prop('hiddenClassTools'), []) } };
   }
   if (a === 'review') {

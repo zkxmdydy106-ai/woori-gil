@@ -29,7 +29,8 @@
 | 사용자 말 | 할 일 |
 |---|---|
 | 업데이트해 줘 | `git pull` (git 으로 받은 경우) → `node setup.mjs --update`. 학교 자료는 그대로 남는다 |
-| 백업해 줘 | `node setup.mjs --backup` → `backups/` 폴더 |
+| 백업해 줘 | `node setup.mjs --backup` → `backups/` 폴더 (문서 + 올린 파일) |
+| 되살려 줘 | 사용자에게 지금 자료가 바뀐다고 확인받은 뒤 `node setup.mjs --restore backups/<파일>.sql --yes` (지금 상태를 먼저 백업함) |
 | 급식·학사일정 넣어 줘 | 인증키는 비밀이므로 **사용자가 직접 터미널에서** `node setup.mjs --neis` 를 실행하게 안내한다 |
 | 다른 컴퓨터에서 업데이트 | 원래 컴퓨터의 `gil.config.json`, `cloudflare/wrangler.toml` 을 같은 위치에 복사해 오게 한다 |
 

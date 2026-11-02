@@ -4,7 +4,8 @@
 //   처음 설치   node setup.mjs                         (학교 이름·사이트 이름을 물어봐요)
 //              node setup.mjs --school "한빛고등학교" --name hanbit-gil   (묻지 않고 바로 — AI 에이전트용)
 //   업데이트    node setup.mjs --update                 (새 버전 화면만 다시 올림. 학교 자료는 그대로)
-//   백업       node setup.mjs --backup                 (backups/ 폴더에 자료 전체를 .sql 로)
+//   백업       node setup.mjs --backup                 (backups/ 폴더에 문서와 올린 파일 전부)
+//   되살리기    node setup.mjs --restore backups/<파일>.sql   (지금 상태를 먼저 백업한 뒤 되살려요)
 //   급식·학사   node setup.mjs --neis                   (나이스 교육청·학교 코드와 인증키 넣기)
 //
 // 필요한 것: Node.js 18 이상, Cloudflare 무료 계정. 처음 한 번 브라우저에서 Cloudflare 로그인을 허용하면 돼요.
@@ -14,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
+import { backupAll, restoreAll } from './gil-backup.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const CF = path.join(ROOT, 'cloudflare');
@@ -194,13 +196,31 @@ async function backup() {
   if (!conf || !conf.d1) die('설치 기록(gil.config.json)이 없어요.', '설치한 컴퓨터의 길잡이 폴더에서 실행해 주세요.');
   prepare(); login();
   step('자료 백업');
-  const dir = path.join(ROOT, 'backups'); fs.mkdirSync(dir, { recursive: true });
+  const r = saveBackup(conf);
+  ok('문서: ' + path.relative(ROOT, r.sql));
+  ok(`올린 파일: backups/files/ 에 ${r.total}개 (${(r.bytes / 1048576).toFixed(1)}MB), 이번에 새로 받은 것 ${r.added}개`);
+  info('되살리기: node setup.mjs --restore backups/<파일>.sql');
+}
+
+const backupOpts = (conf) => ({ wrangler: [process.execPath, WR], cwd: CF, db: conf.name + '-db', kv: conf.kv, dir: path.join(ROOT, 'backups'), log: info });
+function saveBackup(conf) {
   const t = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 16).replace(/[-:T]/g, '');
-  const file = path.join(dir, `${conf.name}-${t}.sql`);
-  wr(['d1', 'export', conf.name + '-db', '--remote', '--output', file]);
-  ok('저장했어요: ' + path.relative(ROOT, file));
-  info('올린 파일(한글·PDF 등) 내용은 Cloudflare KV 에 있어요. 문서·목록 정보는 이 백업에 모두 들어 있어요.');
-  info('되살리기: npx wrangler d1 execute ' + conf.name + '-db --remote --file backups/<파일>.sql  (빈 저장소에)');
+  try { return backupAll({ ...backupOpts(conf), sqlName: `${conf.name}-${t}.sql` }); } catch (e) { die('백업이 끝나지 못했어요: ' + e.message, '인터넷 연결을 확인하고 다시 실행해 주세요. 사이트 자료는 그대로예요.'); }
+}
+
+async function restore() {
+  const conf = readConf();
+  if (!conf || !conf.d1) die('설치 기록(gil.config.json)이 없어요.', '설치한 컴퓨터의 길잡이 폴더에서 실행해 주세요.');
+  const sql = opt('--restore');
+  if (!sql || !fs.existsSync(path.resolve(ROOT, sql))) die('되살릴 백업 파일을 찾지 못했어요.', 'node setup.mjs --restore backups/<파일>.sql 처럼 넣어 주세요.');
+  console.log(C.y('\n지금 사이트의 문서가 이 백업 내용으로 바뀌어요: ' + sql));
+  if (!flag('--yes') && (await ask('정말 되살릴까요? "되살리기"라고 입력해 주세요')) !== '되살리기') die('취소했어요. 바뀐 것은 없어요.');
+  prepare(); login();
+  step('지금 상태 먼저 백업');
+  saveBackup(conf);
+  step('되살리기');
+  try { restoreAll({ ...backupOpts(conf), sql: path.resolve(ROOT, sql) }); } catch (e) { die('되살리지 못했어요: ' + e.message, '방금 만든 백업이 backups/ 폴더에 있어요.'); }
+  console.log('\n' + C.g('✔ 되살렸어요: ') + C.b(conf.url || 'https://' + conf.name + '.pages.dev') + '\n');
 }
 
 async function neis() {
@@ -221,5 +241,5 @@ async function neis() {
   console.log('\n' + C.g('✔ 첫 화면에 오늘의 급식·학사일정이 나와요.') + '\n');
 }
 
-const run = flag('--update') ? update : flag('--backup') ? backup : flag('--neis') ? neis : install;
+const run = flag('--update') ? update : flag('--backup') ? backup : flag('--restore') ? restore : flag('--neis') ? neis : install;
 run().catch((e) => die(e.message || String(e)));

@@ -16,7 +16,7 @@ var CATEGORIES = [
   { id: 'life', name: '학생 생활', icon: 'users' }, { id: 'event', name: '행사', icon: 'confetti' },
   { id: 'forms', name: '서식·서류', icon: 'file-text' }, { id: 'guide', name: '학교 생활 안내', icon: 'directions' }
 ];
-var ADMIN_ACTIONS = ['restoreSite', 'adminData', 'review', 'saveCats', 'resolveReport', 'restoreDoc', 'saveTool', 'deleteTool', 'saveSettings', 'exportAll', 'importDocs'];
+var ADMIN_ACTIONS = ['missDel', 'restoreSite', 'adminData', 'review', 'saveCats', 'resolveReport', 'restoreDoc', 'saveTool', 'deleteTool', 'saveSettings', 'exportAll', 'importDocs'];
 var CELL_MAX = 45000; // 시트 한 칸 글자 수 한도(5만)보다 조금 작게
 
 /* ───── 입구 ───── */
@@ -69,6 +69,7 @@ function handle_(req) {
   if (String(req.code || '') !== props_().getProperty('accessCode')) { strike_('code'); fail_('접속 코드가 맞지 않아요.', 'BAD_CODE'); }
   if (a === 'load') return load_();
   if (a === 'hit') return withLock_(function () { var d = find_('docs', p.id); if (d) { d.views = (Number(d.views) || 0) + 1; save_('docs', d); } return true; });
+  if (a === 'miss') return withLock_(function () { return addMiss_(p.q); });
   if (a === 'saveDoc') return saveDoc_(p);
   if (a === 'report') return report_(p);
   if (a === 'uploadFile') return uploadFile_(p);
@@ -284,9 +285,36 @@ function adminLogin_(pw) {
   return token;
 }
 function checkToken_(t) { if (!t || !CacheService.getScriptCache().get('adm_' + t)) fail_('관리자 확인이 끝났어요. 다시 로그인해 주세요.', 'BAD_TOKEN'); }
+// 못 찾은 검색어: 낱말·횟수·날짜만 남긴다 (누가 찾았는지는 남기지 않음). 이름·연락처처럼 보이는 말은 저장하지 않고, 180일 지나면 지운다
+function missTerm_(q) {
+  var t = String(q || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  if (t.length < 2 || t.length > 30 || /[ㄱ-ㅎㅏ-ㅣ]/.test(t) || /@|https?:|\d{5,}|\d{2,4}-\d{3,4}/.test(t)) return '';
+  return t.split(' ').some(function (w) { return /^[김이박최정강조윤장임한오서신권황안송류전홍][가-힣]{2}(선생님?|쌤|학생|교사|교감|교장|부장)?$/.test(w); }) ? '' : t;
+}
+function freshMisses_(m) {
+  var from = Utilities.formatDate(new Date(Date.now() - 180 * 864e5), Session.getScriptTimeZone() || 'Asia/Seoul', 'yyyy-MM-dd'), out = {};
+  Object.keys(m || {}).forEach(function (t) { if (m[t] && String(m[t].last) >= from) out[t] = m[t]; });
+  return out;
+}
+function addMiss_(q) {
+  var t = missTerm_(q); if (!t) return true;
+  var m = freshMisses_(parseJ_(props_().getProperty('misses'), {}));
+  m[t] = { n: ((m[t] && m[t].n) || 0) + 1, last: today_() };
+  var keys = Object.keys(m).sort(function (a, b) { return m[b].n - m[a].n || String(m[b].last).localeCompare(String(m[a].last)); }).slice(0, 80), out = {};
+  keys.forEach(function (k) { out[k] = m[k]; });
+  props_().setProperty('misses', JSON.stringify(out));
+  return true;
+}
 function admin_(a, p) {
+  if (a === 'missDel') {
+    return withLock_(function () {
+      var m = p.all ? {} : parseJ_(props_().getProperty('misses'), {});
+      if (!p.all) delete m[String(p.term || '')];
+      props_().setProperty('misses', JSON.stringify(m)); return true;
+    });
+  }
   if (a === 'adminData') {
-    return { categories: cats_(), reports: all_('reports').reverse().slice(0, 200), docs: all_('docs').map(docOut_), settings: { schoolName: props_().getProperty('schoolName'), accessCode: props_().getProperty('accessCode'), hiddenClassTools: parseJ_(props_().getProperty('hiddenClassTools'), []) } };
+    return { misses: freshMisses_(parseJ_(props_().getProperty('misses'), {})), categories: cats_(), reports: all_('reports').reverse().slice(0, 200), docs: all_('docs').map(docOut_), settings: { schoolName: props_().getProperty('schoolName'), accessCode: props_().getProperty('accessCode'), hiddenClassTools: parseJ_(props_().getProperty('hiddenClassTools'), []) } };
   }
   return withLock_(function () {
     if (a === 'review') {

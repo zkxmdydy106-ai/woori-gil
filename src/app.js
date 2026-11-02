@@ -403,6 +403,7 @@
   function viewHowto() {
     const first = (App.data.docs || []).find((d) => /새로 오신|첫 주/.test(d.title));
     const live = App.store.mode !== 'demo';
+    const CFG = window.GIL_CONFIG || {};
     const S = [
       ['search', '찾기', '#/', '찾으러 가기', [
         '첫 화면 검색창에 낱말을 넣으면 규정·서식·절차·올린 파일 속 글·도구·사이트까지 한 번에 나와요.',
@@ -440,6 +441,7 @@
 <div class="narrow howto-page">
   <a class="back" href="#/">${ic('arrow-left')}처음으로</a>
   <div class="page-head" style="display:block"><h1>우리학교 길잡이 사용 방법</h1><p class="count-line" style="margin-top:6px">처음 쓰시는 선생님을 위한 안내예요. 로그인 없이 바로 쓸 수 있고, 모르는 건 검색창에 물어보듯 쳐 보세요.</p></div>
+  ${CFG.howtoVideo ? `<figure class="howto-video"><video controls playsinline preload="none" ${CFG.howtoPoster ? `poster="${esc(CFG.howtoPoster)}"` : ''} aria-label="새 문서를 쓰고 검색하는 방법 영상"><source src="${esc(CFG.howtoVideo)}" type="video/mp4"></video><figcaption><b>1분 영상</b> 새 문서를 쓰고 검색으로 찾기까지 따라 해 보세요. 영상 속 문서는 예시예요.</figcaption></figure>` : ''}
   ${first ? `<a class="welcome" href="#/doc/${first.id}" style="margin-bottom:18px"><span class="ic">${ic('school')}</span><span class="tx"><b>새로 오셨나요?</b><span>${esc(first.title)}</span></span>${ic('arrow-right')}</a>` : ''}
   <ol class="howto-list">${S.map(([icon, title, href, label, items], k) => `<li class="howto-card">
     <div class="hc-head"><span class="ic">${ic(icon)}</span><h2><span class="n">${k + 1}</span>${esc(title)}</h2>${href ? `<a class="btn sm" href="${href}">${esc(label)}${ic('arrow-right')}</a>` : ''}</div>
@@ -1479,6 +1481,7 @@ ${gg && App.mode === 'demo' ? `<div class="demo-strip"><div class="demo-strip-in
       if (q.value.trim()) go(q.value);
     });
     if (!live) return;
+    let missTimer = 0;
     const render = () => {
       const val = q.value.trim();
       const qv = encodeURIComponent(val);
@@ -1491,7 +1494,12 @@ ${gg && App.mode === 'demo' ? `<div class="demo-strip"><div class="demo-strip-in
       // 이름에 바로 들어 있는 도구·사이트·자료를 맨 위에, 그다음 문서, 나머지
       items = extra.filter((x) => x.top).slice(0, 4).concat(docs.slice(0, 5), extra.filter((x) => !x.top).slice(0, 2)).slice(0, 8);
       active = -1;
-      if (!items.length) { sg.hidden = true; sg.innerHTML = ''; return; }
+      clearTimeout(missTimer);
+      if (!items.length) {
+        sg.hidden = true; sg.innerHTML = '';
+        if (val) missTimer = setTimeout(() => noteMiss(val), 2500);   // 다 치고 잠시 멈췄을 때만 (치는 중인 글자는 남기지 않게)
+        return;
+      }
       sg.innerHTML = items.map((r, k) => `<a href="${esc(r.href)}"${r.ext ? ' target="_blank" rel="noopener noreferrer"' : ''} role="option" data-k="${k}">${ic(r.icon)}<span class="sg-main"><span class="sg-t">${Search.highlight(esc(r.name), val)}</span>${r.snip ? `<span class="sg-s">${r.src ? `<span class="src">${esc(r.src)}</span>` : ''}${Search.highlight(esc(r.snip), val)}</span>` : ''}</span><span class="cat">${esc(r.cat)}${r.ext ? ' ↗' : ''}</span>${Thumbs.html(r.th, 'sm')}</a>`).join('');
       Thumbs.wire(sg, false);
       sg.hidden = false;
@@ -1860,10 +1868,19 @@ ${App.data.neis && App.store.neis ? `<div class="top-duo">
   }
 
   /* ───────── 검색 결과 ───────── */
+  // 아무것도 못 찾은 말을 관리자가 볼 수 있게 남긴다. 한 번 열어 둔 동안 같은 말은 한 번만, 많아도 20개까지
+  const missSeen = new Set();
+  function noteMiss(q) {
+    const t = String(q || '').trim();
+    if (!t || missSeen.has(t) || missSeen.size >= 20 || !App.store.miss) return;
+    missSeen.add(t);
+    App.store.miss(t);
+  }
   function viewSearch(q) {
     const res = byViews(Search.run(App.data.docs, q, (c) => catOf(c).name), q);
     const qp = '?q=' + encodeURIComponent(q);
     const { lres, tres } = searchExtras(q);
+    if (!res.length && !lres.length && !tres.length) noteMiss(q);
     const swapped = (Search.variants(q)[1] || '').match(/^[가-힣\s]+$/) ? Search.variants(q)[1] : '';
     const nRoom = lres.filter((l) => l.subject === HOMEROOM).length;
     const lessonBlock = lres.length ? `<h2 class="section-title" style="margin-top:26px">${nRoom === lres.length ? '학급 자료' : nRoom ? '수업·학급 자료' : '수업 자료'} ${lres.length}개</h2><div class="tool-grid">${lres.map((l) => `<article class="tool">
@@ -2148,7 +2165,9 @@ ${App.data.neis && App.store.neis ? `<div class="top-duo">
     if (!isNew && !d) return viewDoc(id, qs);
     const wantNewCat = isNew && qs.get('newcat') === '1';
     const firstCat = (App.data.categories.find((c) => c.id !== 'rules') || App.data.categories[0]).id;
-    const init = isNew ? { title: qs.get('title') || '', category: qs.get('cat') || firstCat, aliases: [], body: '' } : d;
+    // 못 찾은 검색어에서 왔으면 '이렇게도 찾아요'에 그 말을 미리 넣어 둔다
+    const addAlias = !isNew && qs.get('alias') && !(d.aliases || []).includes(qs.get('alias')) ? qs.get('alias') : '';
+    const init = isNew ? { title: qs.get('title') || '', category: qs.get('cat') || firstCat, aliases: [], body: '' } : addAlias ? Object.assign({}, d, { aliases: (d.aliases || []).concat(addAlias) }) : d;
     const back = isNew ? (qs.get('cat') ? '#/cat/' + qs.get('cat') : '#/') : '#/doc/' + d.id;
     // 첨부 파일 하나를 새 파일로 바꾸기 (?replace=번호) / 파일만 더 붙이기 (?addfile=1)
     const rep = !isNew && qs.get('replace') != null ? Number(qs.get('replace')) : -1;
@@ -2449,7 +2468,10 @@ ${App.data.neis && App.store.neis ? `<div class="top-duo">
     const open = ad.reports.filter((r) => r.status === 'open');
     const hidden = ad.docs.filter((d) => d.status === 'hidden');
     const tab = qs.get('tab') || 'pending';
-    const tabs = [['pending', '승인 대기', pend.length + pendCats.length + pendTools.length], ['reports', '신고', open.length], ['cats', '분류', 0], ['tools', '도구', 0], ['sites', '사이트', Object.values(App.data.siteEdits || {}).filter((x) => x.hidden).length], ['settings', '학교 설정', 0]];
+    // 그사이 문서가 생겨 이제 찾아지는 말은 뺀다
+    const misses = Object.entries(ad.misses || {}).filter(([t]) => { const x = searchExtras(t); return !Search.run(App.data.docs, t, (c) => catOf(c).name).length && !x.lres.length && !x.tres.length; })
+      .sort((a, b) => b[1].n - a[1].n || String(b[1].last).localeCompare(String(a[1].last)));
+    const tabs = [['pending', '승인 대기', pend.length + pendCats.length + pendTools.length], ['reports', '신고', open.length], ['misses', '못 찾은 검색어', misses.length], ['cats', '분류', 0], ['tools', '도구', 0], ['sites', '사이트', Object.values(App.data.siteEdits || {}).filter((x) => x.hidden).length], ['settings', '학교 설정', 0]];
     setView(`
 <div class="narrow">
   <div class="page-head"><h1>관리자</h1><span style="flex:1"></span><button class="btn sm ghost" id="logout">${ic('logout')}나가기</button></div>
@@ -2519,6 +2541,31 @@ ${App.data.neis && App.store.neis ? `<div class="top-duo">
       $$('[data-restore]', tb).forEach((b) => b.addEventListener('click', async () => {
         try { await App.store.restoreDoc(Auth.adminToken(), b.dataset.restore); App.data = await App.store.load(); toast('다시 공개했어요'); route(); } catch (e) { toast(e.message); }
       }));
+    }
+
+    if (tab === 'misses') {
+      tb.innerHTML = `<p class="count-line" style="margin:0 0 16px">선생님들이 찾았는데 아무것도 안 나온 말이에요. 많이 찾은 말부터 <b>문서를 쓰거나</b>, 이미 있는 문서를 다르게 부른 말이면 <b>이름 더하기</b>를 눌러 주세요. 그러면 다음부터 찾아지고 여기서 저절로 빠져요.</p>` +
+        (misses.length ? `<div class="miss-list">${misses.map(([t, v]) => `<div class="miss-row" data-term="${esc(t)}"><div class="miss-t"><b>${esc(t)}</b><span>${v.n}번 · 마지막 ${fmtDate(v.last)}</span></div>
+          <div class="miss-acts"><a class="btn sm" href="#/propose/new?title=${encodeURIComponent(t)}">${ic('file-plus')}문서 쓰기</a><button class="btn sm" data-miss="alias">${ic('link')}이름 더하기</button><button class="btn sm ghost" data-miss="del" aria-label="${esc(t)} 빼기">${ic('x')}빼기</button></div></div>`).join('')}</div>
+        <div class="form-actions" style="margin-top:14px"><button class="btn ghost" id="missAll">${ic('trash')}모두 비우기</button></div>` : `<div class="empty"><div class="ic">${ic('circle-check')}</div><h2>못 찾은 검색어가 없어요</h2><p>선생님이 찾았는데 아무것도 안 나온 말이 생기면 여기에 모여요.</p></div>`) +
+        `<p class="count-line" style="margin-top:18px">${ic('shield-lock')} 누가 찾았는지는 남기지 않아요. 사람 이름·연락처처럼 보이는 말은 저장하지 않고, 180일이 지나면 저절로 지워져요. 그래도 이름 같은 말이 보이면 <b>빼기</b>를 눌러 주세요.</p>`;
+      $$('.miss-row', tb).forEach((row) => {
+        const term = row.dataset.term;
+        $('[data-miss=alias]', row).addEventListener('click', async () => {
+          const doc = await pickDoc(); if (!doc) return;
+          const m = /^#\/doc\/([^?]+)/.exec(doc.href || '');
+          if (!m) return toast('문서를 골라 주세요. 수업 자료·도구에는 이름을 더할 수 없어요');
+          location.hash = `#/propose/${m[1]}?alias=${encodeURIComponent(term)}`;
+        });
+        $('[data-miss=del]', row).addEventListener('click', async () => {
+          try { await App.store.missDel(Auth.adminToken(), term); toast('목록에서 뺐어요'); route(); } catch (e) { toast(e.message); }
+        });
+      });
+      const allBtn = $('#missAll', tb);
+      if (allBtn) allBtn.addEventListener('click', async () => {
+        if (!(await confirmBox('모두 비울까요?', '지금까지 모인 못 찾은 검색어가 모두 지워져요.', '비우기', true))) return;
+        try { await App.store.missDel(Auth.adminToken(), '', true); toast('비웠어요'); route(); } catch (e) { toast(e.message); }
+      });
     }
 
     if (tab === 'cats') {

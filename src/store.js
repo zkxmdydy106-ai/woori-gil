@@ -60,13 +60,27 @@
         db.reports.unshift(Object.assign({ id: uid('r'), status: 'open', createdAt: today() }, r));
         save();
       },
+      // 못 찾은 검색어: 낱말·횟수·날짜만. 이름·연락처처럼 보이는 말은 저장하지 않는다
+      async miss(q) {
+        const t = String(q || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        if (t.length < 2 || t.length > 30 || /[ㄱ-ㅎㅏ-ㅣ]/.test(t) || /@|https?:|\d{5,}|\d{2,4}-\d{3,4}/.test(t)) return;
+        if (t.split(' ').some((w) => /^[김이박최정강조윤장임한오서신권황안송류전홍][가-힣]{2}(선생님?|쌤|학생|교사|교감|교장|부장)?$/.test(w))) return;
+        db.misses = db.misses || {};
+        db.misses[t] = { n: ((db.misses[t] && db.misses[t].n) || 0) + 1, last: today() };
+        save();
+      },
+      async missDel(token, term, all) {
+        if (!isAdmin(token)) throw new Error('다시 로그인해 주세요.');
+        if (all) db.misses = {}; else if (db.misses) delete db.misses[term];
+        save();
+      },
       async adminLogin(pw) {
         if (pw === db.school.adminPassword) return 'demo-admin';
         throw new Error('비밀번호가 맞지 않아요.');
       },
       async adminData(token) {
         if (!isAdmin(token)) throw new Error('다시 로그인해 주세요.');
-        return { reports: db.reports, docs: db.docs, categories: db.categories, settings: { schoolName: db.school.name, accessCode: db.school.accessCode, hiddenClassTools: db.hiddenClassTools || [] } };
+        return { misses: db.misses || {}, reports: db.reports, docs: db.docs, categories: db.categories, settings: { schoolName: db.school.name, accessCode: db.school.accessCode, hiddenClassTools: db.hiddenClassTools || [] } };
       },
       // 관리자 확인: approve=true 면 표시만 지우고, false 면 되돌린다 (새 문서는 내리고, 고친 문서는 이전 내용으로)
       async review(token, kind, id, approve) {
@@ -277,6 +291,8 @@
         const st = d.tools || [];
         d.tools = (D.tools || []).filter((t) => !st.some((x) => x.id === t.id)).concat(st).filter((t) => !t.hidden); d.forms = Object.assign({}, D.forms || {}, d.forms || {}); return d; },
       hit: (id, kind) => call('hit', kind ? { id, kind } : { id }).catch(() => { }),
+      miss: (q) => call('miss', { q }).catch(() => { }),
+      missDel: (token, term, all) => call('missDel', all ? { all: true } : { term }, { token }),
       saveDoc: (s, code) => call('saveDoc', Object.assign({}, s, { code2: code })),
       report: (r) => call('report', r),
       adminLogin: (pw) => call('adminLogin', { pw }),
